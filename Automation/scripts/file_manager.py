@@ -1,5 +1,6 @@
 import os
 import shutil
+from scripts.logger import log
 
 
 FILE_TYPES = {
@@ -42,9 +43,10 @@ def organize_files(folder_path):
                         target_folder
                     )
 
-                    print(
-                        f"Moved {file} → {folder}"
-                    )
+                    message = f"Moved {file} → {folder}"
+
+                    print(message)
+                    log(message)
 
                     moved = True
                     break
