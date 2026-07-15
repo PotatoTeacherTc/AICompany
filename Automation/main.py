@@ -1,0 +1,1 @@
+print("AICompany Automation System Start!")
