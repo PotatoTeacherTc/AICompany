@@ -1,7 +1,7 @@
-from scripts.file_manager import show_files
-from config.settings import APP_NAME
+from scripts.file_manager import organize_files
+from config.settings import APP_NAME, TARGET_FOLDER
 
 
 print(APP_NAME)
 
-show_files(".")
+organize_files(TARGET_FOLDER)
