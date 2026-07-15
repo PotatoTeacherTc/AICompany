@@ -1,7 +1,18 @@
 from scripts.file_manager import organize_files
-from config.settings import APP_NAME, TARGET_FOLDER
+from scripts.report_generator import generate_report
 
 
-print(APP_NAME)
+print("AICompany Automation")
 
-organize_files(TARGET_FOLDER)
+
+folder = "TestFiles"
+
+
+results = organize_files(folder)
+
+
+report = generate_report(results)
+
+
+print("Final Result:")
+print(report)

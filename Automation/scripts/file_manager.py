@@ -1,6 +1,8 @@
 import os
 import shutil
+
 from scripts.logger import log
+from scripts.error_handler import handle_error
 
 
 FILE_TYPES = {
@@ -13,16 +15,18 @@ FILE_TYPES = {
 
 def organize_files(folder_path):
 
+    results = []
+
     for file in os.listdir(folder_path):
 
         file_path = os.path.join(folder_path, file)
 
-        # 폴더는 제외
         if os.path.isfile(file_path):
 
             ext = os.path.splitext(file)[1].lower()
 
             moved = False
+
 
             for folder, extensions in FILE_TYPES.items():
 
@@ -38,18 +42,49 @@ def organize_files(folder_path):
                         exist_ok=True
                     )
 
-                    shutil.move(
-                        file_path,
-                        target_folder
-                    )
 
-                    message = f"Moved {file} → {folder}"
+                    try:
 
-                    print(message)
-                    log(message)
+                        shutil.move(
+                            file_path,
+                            target_folder
+                        )
 
-                    moved = True
-                    break
+                        message = f"SUCCESS | Moved {file} → {folder}"
+
+                        print(message)
+                        log(message)
+
+                        results.append("SUCCESS")
+
+                        moved = True
+                        break
+
+
+                    except Exception as e:
+
+                        handle_error(e)
+
+                        message = f"FAILED | {file}"
+
+                        print(message)
+                        log(message)
+
+                        results.append("FAILED")
+
+                        moved = True
+                        break
+
+
 
             if not moved:
-                print(f"Skipped: {file}")
+
+                message = f"SKIPPED | {file}"
+
+                print(message)
+                log(message)
+
+                results.append("SKIPPED")
+
+
+    return results
