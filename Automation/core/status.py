@@ -1,0 +1,11 @@
+class PipelineStatus:
+
+    SUCCESS = "SUCCESS"
+
+    FAILED = "FAILED"
+
+    NOT_IMPLEMENTED = "NOT_IMPLEMENTED"
+
+    PENDING = "PENDING"
+
+    RUNNING = "RUNNING"

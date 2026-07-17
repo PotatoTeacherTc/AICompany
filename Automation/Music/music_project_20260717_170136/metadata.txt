@@ -1,0 +1,7 @@
+project_name: music_project_20260717_170136
+request: Research AI music trends
+genre: AI Generated Music
+bpm: 100
+key: C Major
+structure: ['INTRO', 'VERSE 1', 'PRE-CHORUS', 'CHORUS', 'VERSE 2', 'CHORUS', 'BRIDGE', 'FINAL CHORUS', 'OUTRO']
+created_at: 2026-07-17T17:01:36.471262

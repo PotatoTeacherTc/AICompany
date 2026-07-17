@@ -1,0 +1,16 @@
+AICompany Music Project
+=======================
+
+Project: music_project_20260717_170136
+Request: Research AI music trends
+
+Song Structure:
+1. INTRO
+2. VERSE 1
+3. PRE-CHORUS
+4. CHORUS
+5. VERSE 2
+6. CHORUS
+7. BRIDGE
+8. FINAL CHORUS
+9. OUTRO

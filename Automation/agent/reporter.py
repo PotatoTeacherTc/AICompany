@@ -1,18 +1,11 @@
 class TaskReporter:
 
-    def create_report(self, validation):
+    def summarize(self, report):
 
-        report = f"""
-===== AI Automation Report =====
-
-SUCCESS : {validation['success']}
-FAILED  : {validation['failed']}
-SKIPPED : {validation['skipped']}
-
-STATUS :
-{validation['validation']}
-
-===============================
-"""
-
-        return report
+        return {
+            "status": report.get("status"),
+            "total_files": report.get("total"),
+            "success": report.get("success"),
+            "failed": report.get("failed"),
+            "skipped": report.get("skipped")
+        }
