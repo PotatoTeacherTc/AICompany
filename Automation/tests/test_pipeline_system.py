@@ -35,6 +35,8 @@ from core.stub_pipelines import StubPipeline
 from core.task import Task
 from core.task_queue import TaskQueue
 from core.worker import TaskWorker
+from core.workspace_repository import FileWorkspaceRepository, InMemoryWorkspaceRepository
+from application.workspace_service import WorkspaceService
 from providers.factory import ProviderFactory
 from providers.mock_provider import MockProvider
 from providers.models import ProviderRequest
@@ -103,6 +105,12 @@ class TaskTests(unittest.TestCase):
 
         self.assertEqual(parent.id, child.parent_task_id)
         self.assertEqual(parent.id, child.to_dict()["parent_task_id"])
+
+    def test_workspace_service_persists_default_and_created_workspaces(self):
+        service = WorkspaceService(InMemoryWorkspaceRepository())
+        created = service.create("Team A")
+        self.assertEqual("default", service.get("default")["workspace_id"])
+        self.assertEqual(created, service.get(created["workspace_id"]))
 
 
 class ApplicationServiceTests(PipelineTestCase):

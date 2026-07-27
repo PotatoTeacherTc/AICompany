@@ -13,6 +13,7 @@ class Task:
         parent_task_id=None,
         max_retries=0,
         timeout_seconds=None,
+        workspace_id=None,
     ):
 
         self.id = str(uuid.uuid4())[:8]
@@ -23,6 +24,7 @@ class Task:
             raise TypeError("parameters must be a dictionary or None")
 
         self.parameters = dict(parameters or {})
+        self.workspace_id = workspace_id or "default"
 
         if parent_task_id is not None and not isinstance(parent_task_id, str):
             raise TypeError("parent_task_id must be a string or None")
@@ -183,6 +185,7 @@ class Task:
             "task": self.task_text,
 
             "parameters": dict(self.parameters),
+            "workspace_id": self.workspace_id,
 
             "parent_task_id": self.parent_task_id,
 
