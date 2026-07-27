@@ -8,15 +8,18 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 30
+## Current baseline: Mission 44
 
 The verified implementation currently provides a Task/Queue/Worker execution
 path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,
 RESEARCH, HISTORY, and intentional FAIL pipelines, structured PipelineResult
 objects, JSON execution history, validated structured child-task planning, and
-automated regression tests. CONTENT and RESEARCH create local starter projects
-only; neither calls an external AI provider nor the web. CONTENT, RESEARCH,
-and MUSIC provider boundaries are currently verified with the offline MockProvider.
+automated regression tests. Execution history supports injected in-memory and
+JSON repositories, filtered queries, and analytics. Queue lifecycle state is
+synchronized into one history record per task. CONTENT and RESEARCH create
+local starter projects only; neither calls an external AI provider nor the
+web. CONTENT, RESEARCH, and MUSIC provider boundaries are currently verified
+with the offline MockProvider.
 
 ## Development stages
 

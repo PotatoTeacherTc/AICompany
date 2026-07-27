@@ -742,6 +742,42 @@ class ManagerTests(PipelineTestCase):
 
 
 class WorkerTests(PipelineTestCase):
+    def test_queue_and_worker_update_one_history_record_through_lifecycle(self):
+        class RecordingManager:
+            def handle(_, task):
+                self.assertEqual(PipelineStatus.RUNNING, self.history.get_all()[0]["status"])
+                task.task_type = "FILE"
+                task.pipeline = "Test Pipeline"
+                return PipelineResult(PipelineStatus.SUCCESS, task.pipeline, task).to_dict()
+
+        task = Task("tracked task")
+        queue = TaskQueue(history=self.history)
+        queue.add(task)
+
+        self.assertEqual(PipelineStatus.QUEUED, task.status)
+        self.assertEqual(PipelineStatus.QUEUED, self.history.get_all()[0]["status"])
+        completed = TaskWorker(queue, RecordingManager(), self.history).run_once()
+        record = self.history.get_all()[0]
+
+        self.assertEqual(PipelineStatus.SUCCESS, completed.status)
+        self.assertEqual(1, self.history.count())
+        self.assertEqual(PipelineStatus.SUCCESS, record["status"])
+        self.assertEqual(completed.result, record["result"])
+        self.assertIsNotNone(record["started_at"])
+        self.assertIsNotNone(record["completed_at"])
+        self.assertGreaterEqual(record["duration_seconds"], 0)
+
+    def test_queue_skip_records_terminal_skipped_state(self):
+        task = Task("skip task")
+        queue = TaskQueue(history=self.history)
+        queue.add(task)
+        queue.skip(task)
+
+        self.assertEqual(PipelineStatus.SKIPPED, task.status)
+        self.assertEqual(0, queue.size())
+        self.assertEqual(1, self.history.count())
+        self.assertEqual(PipelineStatus.SKIPPED, self.history.get_all()[0]["status"])
+
     def test_worker_runs_research_pipeline_and_records_successful_history(self):
         task = Task("Research AI music trends")
         queue = TaskQueue()

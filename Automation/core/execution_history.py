@@ -1,3 +1,4 @@
+from datetime import datetime
 from pathlib import Path
 from core.execution_history_repository import JsonFileExecutionHistoryRepository
 
@@ -104,9 +105,16 @@ class ExecutionHistory:
 
             "created_at": task.created_at,
 
+            "queued_at": getattr(task, "queued_at", None),
+
             "started_at": task.started_at,
 
             "completed_at": task.completed_at,
+
+            "duration_seconds": self._duration_seconds(
+                task.started_at,
+                task.completed_at,
+            ),
 
             "result": task.result,
             "task_type": task.task_type,
@@ -115,14 +123,30 @@ class ExecutionHistory:
         }
 
 
-        self.records.append(
-
-            record
-
-        )
+        for index, existing_record in enumerate(self.records):
+            if existing_record.get("task_id") == task.id:
+                self.records[index] = record
+                break
+        else:
+            self.records.append(record)
 
 
         self.save()
+
+
+    @staticmethod
+    def _duration_seconds(started_at, completed_at):
+
+        if not started_at or not completed_at:
+            return None
+
+        try:
+            return max(
+                0.0,
+                (datetime.fromisoformat(completed_at) - datetime.fromisoformat(started_at)).total_seconds(),
+            )
+        except (TypeError, ValueError):
+            return None
 
 
     # ========================================================

@@ -75,7 +75,7 @@ def run(task_texts=None, history=None, registry=None):
     history = history or ExecutionHistory()
     registry = registry or build_registry(history)
     manager = Manager(registry)
-    task_queue = TaskQueue()
+    task_queue = TaskQueue(history=history)
 
     print("\nRegistered Pipelines:")
     print(registry.list_pipelines())

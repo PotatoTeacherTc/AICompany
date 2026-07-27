@@ -1,5 +1,7 @@
 class PipelineStatus:
 
+    QUEUED = "QUEUED"
+
     SUCCESS = "SUCCESS"
 
     FAILED = "FAILED"
@@ -9,3 +11,5 @@ class PipelineStatus:
     PENDING = "PENDING"
 
     RUNNING = "RUNNING"
+
+    SKIPPED = "SKIPPED"

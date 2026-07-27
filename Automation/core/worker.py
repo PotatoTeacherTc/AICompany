@@ -68,6 +68,10 @@ class TaskWorker:
 
         task.start()
 
+        self.history.record(task)
+
+        self.history.record(task)
+
 
         print(
 

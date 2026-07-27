@@ -1,6 +1,8 @@
 from datetime import datetime
 import uuid
 
+from core.status import PipelineStatus
+
 
 class Task:
 
@@ -20,9 +22,11 @@ class Task:
 
         self.parent_task_id = parent_task_id
 
-        self.status = "PENDING"
+        self.status = PipelineStatus.PENDING
 
         self.created_at = datetime.now().isoformat()
+
+        self.queued_at = None
 
         self.started_at = None
 
@@ -33,16 +37,23 @@ class Task:
         self.pipeline = None
 
 
+    def queue(self):
+
+        self.status = PipelineStatus.QUEUED
+
+        self.queued_at = datetime.now().isoformat()
+
+
     def start(self):
 
-        self.status = "RUNNING"
+        self.status = PipelineStatus.RUNNING
 
         self.started_at = datetime.now().isoformat()
 
 
     def complete(self, result):
 
-        self.status = "SUCCESS"
+        self.status = PipelineStatus.SUCCESS
 
         self.completed_at = datetime.now().isoformat()
 
@@ -51,7 +62,7 @@ class Task:
 
     def fail(self, result):
 
-        self.status = "FAILED"
+        self.status = PipelineStatus.FAILED
 
         self.completed_at = datetime.now().isoformat()
 
@@ -60,7 +71,16 @@ class Task:
 
     def mark_not_implemented(self, result):
 
-        self.status = "NOT_IMPLEMENTED"
+        self.status = PipelineStatus.NOT_IMPLEMENTED
+
+        self.completed_at = datetime.now().isoformat()
+
+        self.result = result
+
+
+    def skip(self, result=None):
+
+        self.status = PipelineStatus.SKIPPED
 
         self.completed_at = datetime.now().isoformat()
 
@@ -82,6 +102,8 @@ class Task:
             "status": self.status,
 
             "created_at": self.created_at,
+
+            "queued_at": self.queued_at,
 
             "started_at": self.started_at,
 
