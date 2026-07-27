@@ -12,6 +12,7 @@ from agent.manager import Manager
 from agent.goal_task_planner import GoalTaskPlanner
 from config.settings import PROJECT_ROOT
 from core.execution_history import ExecutionHistory
+from core.execution_history_repository import InMemoryExecutionHistoryRepository
 from core.base_pipeline import BasePipeline
 from core.content_pipeline import ContentPipeline
 from core.history_analyzer import HistoryAnalyzer
@@ -263,6 +264,21 @@ class MusicPipelineTests(PipelineTestCase):
 
 
 class HistoryPipelineTests(PipelineTestCase):
+    def test_execution_history_supports_in_memory_repository_and_json_reload(self):
+        memory_history = ExecutionHistory(repository=InMemoryExecutionHistoryRepository())
+        task = self.task("memory task", "FILE")
+        task.pipeline = "Test Pipeline"
+        task.start()
+        task.complete(PipelineResult(PipelineStatus.SUCCESS, task.pipeline, task).to_dict())
+        memory_history.record(task)
+        self.assertEqual(1, memory_history.count())
+
+        file_history = ExecutionHistory(self.root / "history.json")
+        file_history.record(task)
+        self.assertEqual(1, ExecutionHistory(self.root / "history.json").count())
+        (self.root / "broken.json").write_text("{", encoding="utf-8")
+        self.assertEqual(0, ExecutionHistory(self.root / "broken.json").count())
+
     def _record(self, task_type, status):
         task = self.task(f"{task_type} task", task_type)
         task.pipeline = f"{task_type} Pipeline"

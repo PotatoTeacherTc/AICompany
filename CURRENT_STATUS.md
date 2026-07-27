@@ -63,6 +63,8 @@ not inferred from a missing historical mission log.
   partial usage metadata, and returns a sanitized FAILED result for provider errors.
 - Provider usage normalization and sanitized provider-error formatting are now
   shared by CONTENT, RESEARCH, and MUSIC without changing their artifacts.
+- Mission 41: ExecutionHistory now supports injected in-memory and JSON-file
+  repositories while preserving its existing record/query contract.
 
 ## Implemented pipelines
 
@@ -77,14 +79,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **39 tests**. Its expected command is:
+The current suite contains **40 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 39 verification result: **39 passed, 0 failed**.
+Mission 41 verification result: **40 passed, 0 failed**.
 
 ## Not implemented
 

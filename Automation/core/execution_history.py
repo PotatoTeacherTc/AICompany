@@ -1,26 +1,17 @@
-import json
-
 from pathlib import Path
+from core.execution_history_repository import JsonFileExecutionHistoryRepository
 
 
 class ExecutionHistory:
 
-    def __init__(self, history_file=None):
+    def __init__(self, history_file=None, repository=None):
 
         self.records = []
 
         self.history_file = Path(history_file) if history_file else (
             Path(__file__).parent.parent / "logs" / "execution_history.json"
         )
-
-
-        self.history_file.parent.mkdir(
-
-            parents=True,
-
-            exist_ok=True
-
-        )
+        self.repository = repository or JsonFileExecutionHistoryRepository(self.history_file)
 
 
         self.load()
@@ -32,31 +23,8 @@ class ExecutionHistory:
 
     def load(self):
 
-        if not self.history_file.exists():
-
-            self.records = []
-
-            return
-
-
         try:
-
-            with open(
-
-                self.history_file,
-
-                "r",
-
-                encoding="utf-8"
-
-            ) as file:
-
-
-                self.records = json.load(
-
-                    file
-
-                )
+            self.records = self.repository.load()
 
 
             print(
@@ -70,13 +38,7 @@ class ExecutionHistory:
             )
 
 
-        except (
-
-            json.JSONDecodeError,
-
-            OSError
-
-        ) as error:
+        except OSError as error:
 
 
             print(
@@ -98,29 +60,7 @@ class ExecutionHistory:
     def save(self):
 
         try:
-
-            with open(
-
-                self.history_file,
-
-                "w",
-
-                encoding="utf-8"
-
-            ) as file:
-
-
-                json.dump(
-
-                    self.records,
-
-                    file,
-
-                    ensure_ascii=False,
-
-                    indent=4
-
-                )
+            self.repository.save(self.records)
 
 
             print(
