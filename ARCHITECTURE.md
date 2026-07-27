@@ -29,7 +29,8 @@ the workflow; `run()` is the explicit entry point.
 
 - FILE: organizes known file types in a configured folder.
 - MUSIC: creates a local music-project scaffold.
-- CONTENT: creates a local YouTube content-project scaffold.
+- CONTENT: creates a local content-project scaffold; content type, title prefix,
+  and tags can be supplied through validated Task parameters.
 - RESEARCH: creates a structured local research-project scaffold; it does not
   perform web search or AI/API calls.
 - HISTORY: reads recent execution records.

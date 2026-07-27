@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 30**.
+Current mission baseline: **Mission 31**.
 
 ## Verified completed capabilities
 
@@ -39,6 +39,8 @@ not inferred from a missing historical mission log.
 - Mission 30: GoalTaskPlanner now converts structured goal steps into
   parent-linked executable Tasks only for registered Pipeline types; Manager
   preserves this validated declared task type during routing.
+- Mission 31: CONTENT project generation now supports validated per-Task
+  content type, title prefix, and tag configuration while preserving defaults.
 
 ## Implemented pipelines
 
@@ -53,14 +55,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **31 tests**. Its expected command is:
+The current suite contains **32 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 30 verification result: **31 passed, 0 failed**.
+Mission 31 verification result: **32 passed, 0 failed**.
 
 ## Not implemented
 

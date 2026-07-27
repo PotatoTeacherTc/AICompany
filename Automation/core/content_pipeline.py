@@ -23,13 +23,15 @@ class ContentPipeline(BasePipeline):
             project_path = self.content_root / project_name
             project_path.mkdir()
 
-            title = f"Getting Started: {task.task_text}"
+            options = self._get_options(task)
+            content_type = options["content_type"]
+            title = f"{options['title_prefix']}: {task.task_text}"
             description = (
                 f"This video explores the request: {task.task_text}.\n\n"
                 "In this episode, we outline the goal, share practical steps, "
                 "and finish with clear next actions for the audience."
             )
-            tags = ["AICompany", "YouTube", "automation", "content creation"]
+            tags = options["tags"]
             content_plan = (
                 f"Content Plan: {title}\n\n"
                 "1. Hook: Explain why this topic matters.\n"
@@ -63,7 +65,7 @@ class ContentPipeline(BasePipeline):
                 "project_name": project_name,
                 "project_path": str(project_path),
                 "task": task.task_text,
-                "content_type": "YouTube video",
+                "content_type": content_type,
                 "title": title,
                 "description": description,
                 "tags": tags,
@@ -95,3 +97,27 @@ class ContentPipeline(BasePipeline):
                 task_type=task.task_type,
                 error=str(error),
             ).to_dict()
+
+    @staticmethod
+    def _get_options(task):
+        parameters = task.parameters
+        content_type = parameters.get("content_type", "YouTube video")
+        title_prefix = parameters.get("title_prefix", "Getting Started")
+        tags = parameters.get(
+            "tags", ["AICompany", "YouTube", "automation", "content creation"]
+        )
+
+        if not isinstance(content_type, str) or not content_type.strip():
+            raise ValueError("content_type must be a non-empty string")
+        if not isinstance(title_prefix, str) or not title_prefix.strip():
+            raise ValueError("title_prefix must be a non-empty string")
+        if not isinstance(tags, list) or not tags:
+            raise ValueError("tags must be a non-empty list")
+        if not all(isinstance(tag, str) and tag.strip() for tag in tags):
+            raise ValueError("tags must contain non-empty strings")
+
+        return {
+            "content_type": content_type,
+            "title_prefix": title_prefix,
+            "tags": list(tags),
+        }

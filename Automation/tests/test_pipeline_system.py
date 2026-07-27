@@ -241,6 +241,31 @@ class HistoryPipelineTests(PipelineTestCase):
 
 
 class ContentPipelineTests(PipelineTestCase):
+    def test_content_pipeline_uses_configurable_task_parameters(self):
+        content_root = self.root / "content"
+        task = Task(
+            "Create a testing video",
+            parameters={
+                "content_type": "Tutorial",
+                "title_prefix": "Practical Guide",
+                "tags": ["testing", "quality"],
+            },
+        )
+        task.task_type = "CONTENT"
+
+        result = ContentPipeline(content_root=content_root).run(task)
+
+        self.assertEqual(PipelineStatus.SUCCESS, result["status"])
+        self.assertEqual("Tutorial", result["data"]["content_type"])
+        self.assertEqual("Practical Guide: Create a testing video", result["data"]["title"])
+        self.assertEqual(["testing", "quality"], result["data"]["tags"])
+        metadata = json.loads(
+            (Path(result["data"]["project_path"]) / "project.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertEqual(result["data"]["content_type"], metadata["content_type"])
+
     def test_content_pipeline_creates_complete_project_in_temp_directory(self):
         content_root = self.root / "content"
         result = ContentPipeline(content_root=content_root).run(
