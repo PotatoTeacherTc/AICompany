@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 39**.
+Current mission baseline: **Mission 42**.
 
 ## Verified completed capabilities
 
@@ -65,6 +65,9 @@ not inferred from a missing historical mission log.
   shared by CONTENT, RESEARCH, and MUSIC without changing their artifacts.
 - Mission 41: ExecutionHistory now supports injected in-memory and JSON-file
   repositories while preserving its existing record/query contract.
+- Mission 42: ExecutionHistory queries now return latest-first records and
+  support status, pipeline, task-type, date-range, and offset/limit filters
+  consistently for in-memory and JSON repositories.
 
 ## Implemented pipelines
 
@@ -79,21 +82,21 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **40 tests**. Its expected command is:
+The current suite contains **41 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 41 verification result: **40 passed, 0 failed**.
+Mission 42 verification result: **41 passed, 0 failed**.
 
 ## Not implemented
 
 - External web search, external AI providers, and source-backed research.
-- Provider abstraction, mock provider, environment-based provider settings,
-  and usage/cost metadata are the next implementation work; no API key is
-  currently required for that offline-first boundary.
+- A real external AI provider integration is not implemented. The
+  provider-neutral boundary, MockProvider, environment-based selection, and
+  usage/cost metadata exist without requiring an API key.
 - Automatic natural-language multi-step planning from a user goal. Structured
   goal-step input can now be validated and represented as executable Tasks.
 - Retry/recovery policy and persistent long-running queue.

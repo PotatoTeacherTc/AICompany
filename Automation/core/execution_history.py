@@ -169,6 +169,43 @@ class ExecutionHistory:
 
         return self.records[-count:]
 
+    def query(
+        self,
+        status=None,
+        pipeline=None,
+        task_type=None,
+        start_at=None,
+        end_at=None,
+        limit=None,
+        offset=0,
+    ):
+        if not isinstance(offset, int) or offset < 0:
+            raise ValueError("offset must be a non-negative integer")
+        if limit is not None and (not isinstance(limit, int) or limit < 0):
+            raise ValueError("limit must be a non-negative integer or None")
+
+        records = sorted(
+            self.records,
+            key=lambda record: record.get("completed_at") or "",
+            reverse=True,
+        )
+        filtered = []
+        for record in records:
+            completed_at = record.get("completed_at") or ""
+            if status is not None and record.get("status") != status:
+                continue
+            if pipeline is not None and record.get("pipeline") != pipeline:
+                continue
+            if task_type is not None and record.get("task_type") != task_type:
+                continue
+            if start_at is not None and completed_at < start_at:
+                continue
+            if end_at is not None and completed_at > end_at:
+                continue
+            filtered.append(record)
+
+        return filtered[offset:] if limit is None else filtered[offset:offset + limit]
+
 
     def search(self, keyword):
 

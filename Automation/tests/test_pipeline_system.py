@@ -264,6 +264,32 @@ class MusicPipelineTests(PipelineTestCase):
 
 
 class HistoryPipelineTests(PipelineTestCase):
+    def test_execution_history_query_filters_sorting_and_pagination(self):
+        records = [
+            {"task_id": "1", "status": "SUCCESS", "pipeline": "Music Pipeline", "task_type": "MUSIC", "completed_at": "2026-01-01T10:00:00"},
+            {"task_id": "2", "status": "FAILED", "pipeline": "Content Pipeline", "task_type": "CONTENT", "completed_at": "2026-01-02T10:00:00"},
+            {"task_id": "3", "status": "SUCCESS", "pipeline": "Music Pipeline", "task_type": "MUSIC", "completed_at": "2026-01-03T10:00:00"},
+        ]
+        history = ExecutionHistory(repository=InMemoryExecutionHistoryRepository(records))
+        self.assertEqual(["3", "2"], [record["task_id"] for record in history.query(limit=2)])
+        self.assertEqual(["3"], [record["task_id"] for record in history.query(status="SUCCESS", pipeline="Music Pipeline", offset=0, limit=1)])
+        self.assertEqual(["2"], [record["task_id"] for record in history.query(task_type="CONTENT", start_at="2026-01-02T00:00:00", end_at="2026-01-02T23:59:59")])
+        self.assertEqual([], history.query(limit=0))
+        self.assertEqual([], ExecutionHistory(repository=InMemoryExecutionHistoryRepository()).query())
+        with self.assertRaises(ValueError):
+            history.query(offset=-1)
+        with self.assertRaises(ValueError):
+            history.query(limit=-1)
+
+        json_history = ExecutionHistory(self.root / "query_history.json")
+        json_history.records = list(records)
+        json_history.save()
+        reloaded_history = ExecutionHistory(self.root / "query_history.json")
+        self.assertEqual(
+            history.query(status="SUCCESS"),
+            reloaded_history.query(status="SUCCESS"),
+        )
+
     def test_execution_history_supports_in_memory_repository_and_json_reload(self):
         memory_history = ExecutionHistory(repository=InMemoryExecutionHistoryRepository())
         task = self.task("memory task", "FILE")
