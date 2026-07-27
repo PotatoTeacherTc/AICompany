@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 36**.
+Current mission baseline: **Mission 37**.
 
 ## Verified completed capabilities
 
@@ -55,6 +55,8 @@ not inferred from a missing historical mission log.
 - Mission 36: Added provider-neutral request, response, usage metadata, an
   offline MockProvider, and environment-based provider selection. `.env` is
   ignored and `.env.example` contains names only.
+- Mission 37: CONTENT accepts an injected provider and records safe MockProvider
+  usage metadata in PipelineResult and ExecutionHistory.
 
 ## Implemented pipelines
 
@@ -69,14 +71,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **36 tests**. Its expected command is:
+The current suite contains **37 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 36 verification result: **36 passed, 0 failed**.
+Mission 37 verification result: **37 passed, 0 failed**.
 
 ## Not implemented
 

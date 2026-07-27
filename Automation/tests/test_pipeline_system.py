@@ -262,6 +262,22 @@ class HistoryPipelineTests(PipelineTestCase):
 
 
 class ContentPipelineTests(PipelineTestCase):
+    def test_content_pipeline_records_mock_provider_usage_in_result_and_history(self):
+        task = self.task("Create a provider-backed video", "CONTENT")
+        result = ContentPipeline(
+            content_root=self.root / "content", provider=MockProvider()
+        ).run(task)
+        task.pipeline = result["pipeline"]
+        task.start()
+        task.complete(result)
+        self.history.record(task)
+
+        usage = result["data"]["provider_usage"]
+        self.assertEqual("mock", usage["provider"])
+        self.assertGreater(usage["total_tokens"], 0)
+        self.assertEqual(0.0, usage["estimated_cost_usd"])
+        self.assertEqual(usage, self.history.get_all()[0]["result"]["data"]["provider_usage"])
+
     def test_content_pipeline_uses_configurable_task_parameters(self):
         content_root = self.root / "content"
         task = Task(

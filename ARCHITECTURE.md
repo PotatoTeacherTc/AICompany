@@ -24,7 +24,7 @@ the workflow; `run()` is the explicit entry point.
 | Persistence and analysis | `core/execution_history.py`, `core/history_analyzer.py` | Stores JSON execution records, including Task parameters, and calculates status/type summaries. |
 | Supporting services | `agent/planner.py`, `executor.py`, `validator.py`, `reporter.py`, `scripts/` | FILE pipeline planning, execution, validation, report generation, and logging. TaskPlanner produces the execution plan; FILE adds its target folder and TaskExecutor consumes that plan rather than an independent folder argument. |
 | Tests | `Automation/tests/test_pipeline_system.py` | Standard-library unittest regression suite using temporary directories. It covers SUCCESS, FAILED, NOT_IMPLEMENTED, exception, registry, and Manager result-contract boundaries. |
-| AI provider boundary | `providers/base.py`, `providers/models.py`, `providers/mock_provider.py`, `providers/factory.py` | Provider-neutral request/response and usage metadata. MockProvider is the offline default; environment selection validates timeout and never serializes API keys. |
+| AI provider boundary | `providers/base.py`, `providers/models.py`, `providers/mock_provider.py`, `providers/factory.py` | Provider-neutral request/response and usage metadata. MockProvider is the offline default; CONTENT can receive an injected provider and persists only provider/model/token/cost metadata through PipelineResult and ExecutionHistory, never API keys. |
 
 ## Current pipeline behavior
 

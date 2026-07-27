@@ -5,14 +5,16 @@ from config.settings import PROJECT_ROOT
 from core.base_pipeline import BasePipeline
 from core.result import PipelineResult
 from core.status import PipelineStatus
+from providers.models import ProviderRequest
 
 
 class ContentPipeline(BasePipeline):
     """Creates a local, API-free starter project for a YouTube video."""
 
-    def __init__(self, content_root=None):
+    def __init__(self, content_root=None, provider=None):
         super().__init__("Content Pipeline")
         self.content_root = content_root or PROJECT_ROOT / "Content"
+        self.provider = provider
         self.content_root.mkdir(parents=True, exist_ok=True)
 
     def run(self, task):
@@ -24,6 +26,7 @@ class ContentPipeline(BasePipeline):
             project_path.mkdir()
 
             options = self._get_options(task)
+            provider_usage = self._generate_provider_usage(task)
             content_type = options["content_type"]
             title = f"{options['title_prefix']}: {task.task_text}"
             description = (
@@ -80,6 +83,8 @@ class ContentPipeline(BasePipeline):
                 "files_created": [str(project_json)] + [str(path) for path in text_files],
                 "created_at": created_at,
             }
+            if provider_usage is not None:
+                metadata["provider_usage"] = provider_usage
             project_json.write_text(
                 json.dumps(metadata, ensure_ascii=False, indent=2),
                 encoding="utf-8",
@@ -127,4 +132,18 @@ class ContentPipeline(BasePipeline):
             "content_type": content_type,
             "title_prefix": title_prefix,
             "tags": list(tags),
+        }
+
+    def _generate_provider_usage(self, task):
+        if self.provider is None:
+            return None
+
+        response = self.provider.generate(ProviderRequest(prompt=task.task_text))
+        return {
+            "provider": response.provider,
+            "model": response.model,
+            "input_tokens": response.usage.input_tokens,
+            "output_tokens": response.usage.output_tokens,
+            "total_tokens": response.usage.total_tokens,
+            "estimated_cost_usd": response.usage.estimated_cost_usd,
         }
