@@ -337,6 +337,23 @@ class ContentPipelineTests(PipelineTestCase):
 
 
 class ResearchPipelineTests(PipelineTestCase):
+    def test_research_pipeline_records_provider_usage_and_returns_provider_failure(self):
+        task = self.task("Research provider safety", "RESEARCH")
+        result = ResearchPipeline(
+            research_root=self.root / "research", provider=MockProvider()
+        ).run(task)
+        self.assertEqual("mock", result["data"]["provider_usage"]["provider"])
+
+        class FailingProvider:
+            def generate(self, request):
+                raise TimeoutError("provider timed out")
+
+        failed = ResearchPipeline(
+            research_root=self.root / "failed_research", provider=FailingProvider()
+        ).run(self.task("Research timeout", "RESEARCH"))
+        self.assertEqual(PipelineStatus.FAILED, failed["status"])
+        self.assertIn("provider timed out", failed["error"])
+
     def test_research_pipeline_uses_configurable_questions_and_type(self):
         task = Task(
             "Research testing",

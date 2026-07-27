@@ -5,14 +5,16 @@ from config.settings import PROJECT_ROOT
 from core.base_pipeline import BasePipeline
 from core.result import PipelineResult
 from core.status import PipelineStatus
+from providers.models import ProviderRequest
 
 
 class ResearchPipeline(BasePipeline):
     """Creates a structured local research project without external services."""
 
-    def __init__(self, research_root=None):
+    def __init__(self, research_root=None, provider=None):
         super().__init__("Research Pipeline")
         self.research_root = research_root or PROJECT_ROOT / "Research"
+        self.provider = provider
         self.research_root.mkdir(parents=True, exist_ok=True)
 
     def run(self, task):
@@ -25,6 +27,7 @@ class ResearchPipeline(BasePipeline):
 
             topic = task.task_text
             options = self._get_options(task, topic)
+            provider_usage = self._generate_provider_usage(task)
             research_questions = options["research_questions"]
             findings = [
                 "This project contains a local research scaffold; no external web or AI API data was collected.",
@@ -79,6 +82,8 @@ class ResearchPipeline(BasePipeline):
                 "files_created": [str(project_json)] + [str(path) for path in text_files],
                 "created_at": created_at,
             }
+            if provider_usage is not None:
+                metadata["provider_usage"] = provider_usage
             project_json.write_text(
                 json.dumps(metadata, ensure_ascii=False, indent=2),
                 encoding="utf-8",
@@ -122,6 +127,20 @@ class ResearchPipeline(BasePipeline):
         if not all(isinstance(question, str) and question.strip() for question in research_questions):
             raise ValueError("research_questions must contain non-empty strings")
         return {"research_type": research_type, "research_questions": list(research_questions)}
+
+    def _generate_provider_usage(self, task):
+        if self.provider is None:
+            return None
+
+        response = self.provider.generate(ProviderRequest(prompt=task.task_text))
+        return {
+            "provider": response.provider,
+            "model": response.model,
+            "input_tokens": response.usage.input_tokens,
+            "output_tokens": response.usage.output_tokens,
+            "total_tokens": response.usage.total_tokens,
+            "estimated_cost_usd": response.usage.estimated_cost_usd,
+        }
 
     @staticmethod
     def _get_source_records(task):

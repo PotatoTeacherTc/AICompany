@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 37**.
+Current mission baseline: **Mission 38**.
 
 ## Verified completed capabilities
 
@@ -57,6 +57,8 @@ not inferred from a missing historical mission log.
   ignored and `.env.example` contains names only.
 - Mission 37: CONTENT accepts an injected provider and records safe MockProvider
   usage metadata in PipelineResult and ExecutionHistory.
+- Mission 38: RESEARCH accepts an injected provider, records safe usage metadata,
+  and returns a FAILED PipelineResult when a provider timeout/error occurs.
 
 ## Implemented pipelines
 
@@ -71,14 +73,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **37 tests**. Its expected command is:
+The current suite contains **38 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 37 verification result: **37 passed, 0 failed**.
+Mission 38 verification result: **38 passed, 0 failed**.
 
 ## Not implemented
 
