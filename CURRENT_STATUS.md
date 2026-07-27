@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 26**.
+Current mission baseline: **Mission 27**.
 
 ## Verified completed capabilities
 
@@ -30,6 +30,8 @@ not inferred from a missing historical mission log.
   Stage 1 execution-contract test boundaries.
 - Mission 26: Task now accepts and serializes optional structured parameters,
   which are also persisted in execution history for future planning work.
+- Mission 27: Task now supports an optional parent Task relationship that is
+  serialized and persisted for future compound-goal execution.
 
 ## Implemented pipelines
 
@@ -44,14 +46,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **25 tests**. Its expected command is:
+The current suite contains **26 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 26 verification result: **25 passed, 0 failed**.
+Mission 27 verification result: **26 passed, 0 failed**.
 
 ## Not implemented
 

@@ -83,6 +83,13 @@ class TaskTests(unittest.TestCase):
         self.assertEqual("high", task.parameters["priority"])
         self.assertEqual(task.parameters, task_data["parameters"])
 
+    def test_task_serializes_optional_parent_task_relationship(self):
+        parent = Task("Plan campaign")
+        child = Task("Research audience", parent_task_id=parent.id)
+
+        self.assertEqual(parent.id, child.parent_task_id)
+        self.assertEqual(parent.id, child.to_dict()["parent_task_id"])
+
 
 class FilePipelineTests(PipelineTestCase):
     def test_file_pipeline_organizes_files_and_returns_common_result(self):

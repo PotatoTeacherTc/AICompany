@@ -158,6 +158,8 @@ class ExecutionHistory:
 
             "parameters": dict(task.parameters),
 
+            "parent_task_id": task.parent_task_id,
+
             "status": task.status,
 
             "created_at": task.created_at,

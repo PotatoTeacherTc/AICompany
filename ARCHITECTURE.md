@@ -16,7 +16,7 @@ the workflow; `run()` is the explicit entry point.
 
 | Layer | Current modules | Responsibility and dependency |
 |---|---|---|
-| Task model | `core/task.py`, `core/status.py`, `core/result.py` | Task owns ID, text, optional structured parameters, lifecycle timestamps, result, task type, and pipeline. PipelineResult serializes the common result fields. |
+| Task model | `core/task.py`, `core/status.py`, `core/result.py` | Task owns ID, text, optional structured parameters, an optional parent Task ID, lifecycle timestamps, result, task type, and pipeline. PipelineResult serializes the common result fields. |
 | Queue and execution | `core/task_queue.py`, `core/worker.py` | FIFO queue and status transitions. Worker records every completed or failed task in history. |
 | Routing | `agent/manager.py`, `agent/classifier.py`, `core/registry.py` | Classifier selects a task type; Manager resolves it through the registry and calls one Pipeline. Registry accepts only non-empty task types and BasePipeline implementations, and rejects duplicate type registrations. Manager accepts only PipelineResult dictionaries with every required key, an allowed PipelineStatus value, and metadata matching the current Task and selected Pipeline. |
 | Pipeline contract | `core/base_pipeline.py` | Each Pipeline receives a Task and returns a PipelineResult dictionary. |
