@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 66**.
+Current mission baseline: **Mission 67**.
 
 ## Verified completed capabilities
 
@@ -152,6 +152,10 @@ not inferred from a missing historical mission log.
 - Mission 66: FastAPI now exposes refresh, logout, session-list, and
   session-revocation endpoints. Refresh-token reuse, expiry, or tampering
   returns a sanitized 401; users can access only their own session records.
+- Mission 67: Security audit events are stored through injected in-memory or
+  JSON-file repositories. Authentication, session, workspace, and task API
+  boundaries record safe metadata; workspace audit queries support filters and
+  pagination and require OWNER or ADMIN when authentication is enabled.
 
 ## Implemented pipelines
 
@@ -166,14 +170,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **80 tests**. Its expected command is:
+The current suite contains **81 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 66 verification result: **80 passed, 0 failed**.
+Mission 67 verification result: **81 passed, 0 failed**.
 
 ## Not implemented
 

@@ -48,6 +48,8 @@ from application.login_service import LoginService
 from core.access_token_provider import SignedAccessTokenProvider
 from application.session_service import SessionService
 from core.session_repository import FileSessionRepository
+from application.audit_service import AuditService
+from core.audit_repository import FileAuditRepository
 from providers.factory import ProviderFactory
 from providers.mock_provider import MockProvider
 from providers.models import ProviderRequest
@@ -100,6 +102,13 @@ class PipelineTestCase(unittest.TestCase):
 
 
 class TaskTests(unittest.TestCase):
+    def test_audit_repository_filters_and_never_records_sensitive_metadata(self):
+        with tempfile.TemporaryDirectory() as directory:
+            service=AuditService(FileAuditRepository(Path(directory)/'audit.json'))
+            service.record('user','one','LOGIN_SUCCESS','session','s1',{'password':'x','token':'y','source':'test'})
+            service.record('user','two','TASK_CREATED','task','t1')
+            self.assertEqual(1,len(service.query('one',action='LOGIN_SUCCESS',limit=1)))
+            self.assertEqual({'source':'test'},service.query('one')[0]['metadata'])
     def test_refresh_sessions_rotate_and_store_only_hashes(self):
         with tempfile.TemporaryDirectory() as directory:
             sessions=SessionService(FileSessionRepository(Path(directory)/'sessions.json'))
