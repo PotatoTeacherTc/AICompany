@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 25**.
+Current mission baseline: **Mission 26**.
 
 ## Verified completed capabilities
 
@@ -28,6 +28,8 @@ not inferred from a missing historical mission log.
 - Mission 25: NOT_IMPLEMENTED PipelineResult and Worker/ExecutionHistory
   status preservation are covered by regression tests, completing the current
   Stage 1 execution-contract test boundaries.
+- Mission 26: Task now accepts and serializes optional structured parameters,
+  which are also persisted in execution history for future planning work.
 
 ## Implemented pipelines
 
@@ -42,14 +44,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **24 tests**. Its expected command is:
+The current suite contains **25 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 25 verification result: **24 passed, 0 failed**.
+Mission 26 verification result: **25 passed, 0 failed**.
 
 ## Not implemented
 

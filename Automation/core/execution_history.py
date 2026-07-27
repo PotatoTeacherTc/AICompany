@@ -156,6 +156,8 @@ class ExecutionHistory:
 
             "task": task.task_text,
 
+            "parameters": dict(task.parameters),
+
             "status": task.status,
 
             "created_at": task.created_at,

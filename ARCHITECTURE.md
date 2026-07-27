@@ -16,12 +16,12 @@ the workflow; `run()` is the explicit entry point.
 
 | Layer | Current modules | Responsibility and dependency |
 |---|---|---|
-| Task model | `core/task.py`, `core/status.py`, `core/result.py` | Task owns ID, text, lifecycle timestamps, result, task type, and pipeline. PipelineResult serializes the common result fields. |
+| Task model | `core/task.py`, `core/status.py`, `core/result.py` | Task owns ID, text, optional structured parameters, lifecycle timestamps, result, task type, and pipeline. PipelineResult serializes the common result fields. |
 | Queue and execution | `core/task_queue.py`, `core/worker.py` | FIFO queue and status transitions. Worker records every completed or failed task in history. |
 | Routing | `agent/manager.py`, `agent/classifier.py`, `core/registry.py` | Classifier selects a task type; Manager resolves it through the registry and calls one Pipeline. Registry accepts only non-empty task types and BasePipeline implementations, and rejects duplicate type registrations. Manager accepts only PipelineResult dictionaries with every required key, an allowed PipelineStatus value, and metadata matching the current Task and selected Pipeline. |
 | Pipeline contract | `core/base_pipeline.py` | Each Pipeline receives a Task and returns a PipelineResult dictionary. |
 | Implemented pipelines | `core/pipeline.py` (FILE), `music_pipeline.py`, `content_pipeline.py`, `research_pipeline.py`, `history_pipeline.py`, `main.py` (intentional FAIL) | Produce files or history data and return common results. FILE, MUSIC, CONTENT, and RESEARCH accept test output path injection. |
-| Persistence and analysis | `core/execution_history.py`, `core/history_analyzer.py` | Stores JSON execution records and calculates status/type summaries. |
+| Persistence and analysis | `core/execution_history.py`, `core/history_analyzer.py` | Stores JSON execution records, including Task parameters, and calculates status/type summaries. |
 | Supporting services | `agent/planner.py`, `executor.py`, `validator.py`, `reporter.py`, `scripts/` | FILE pipeline planning, file organization, report generation, and logging. |
 | Tests | `Automation/tests/test_pipeline_system.py` | Standard-library unittest regression suite using temporary directories. It covers SUCCESS, FAILED, NOT_IMPLEMENTED, exception, registry, and Manager result-contract boundaries. |
 

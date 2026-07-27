@@ -72,6 +72,18 @@ class PipelineTestCase(unittest.TestCase):
         )
 
 
+class TaskTests(unittest.TestCase):
+    def test_task_preserves_structured_parameters_in_serialized_form(self):
+        parameters = {"target_folder": "input", "priority": "high"}
+        task = Task("Organize files", parameters=parameters)
+        parameters["priority"] = "changed"
+
+        task_data = task.to_dict()
+
+        self.assertEqual("high", task.parameters["priority"])
+        self.assertEqual(task.parameters, task_data["parameters"])
+
+
 class FilePipelineTests(PipelineTestCase):
     def test_file_pipeline_organizes_files_and_returns_common_result(self):
         test_files = self.root / "test_files"

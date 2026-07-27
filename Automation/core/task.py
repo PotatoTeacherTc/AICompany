@@ -4,11 +4,16 @@ import uuid
 
 class Task:
 
-    def __init__(self, task_text: str):
+    def __init__(self, task_text: str, parameters=None):
 
         self.id = str(uuid.uuid4())[:8]
 
         self.task_text = task_text
+
+        if parameters is not None and not isinstance(parameters, dict):
+            raise TypeError("parameters must be a dictionary or None")
+
+        self.parameters = dict(parameters or {})
 
         self.status = "PENDING"
 
@@ -64,6 +69,8 @@ class Task:
             "id": self.id,
 
             "task": self.task_text,
+
+            "parameters": dict(self.parameters),
 
             "status": self.status,
 
