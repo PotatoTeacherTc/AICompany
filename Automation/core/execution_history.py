@@ -98,6 +98,7 @@ class ExecutionHistory:
             "task": task.task_text,
 
             "parameters": dict(task.parameters),
+            "workspace_id": getattr(task, "workspace_id", "default"),
 
             "parent_task_id": task.parent_task_id,
 
@@ -210,6 +211,7 @@ class ExecutionHistory:
         end_at=None,
         limit=None,
         offset=0,
+        workspace_id=None,
     ):
         if not isinstance(offset, int) or offset < 0:
             raise ValueError("offset must be a non-negative integer")
@@ -229,6 +231,8 @@ class ExecutionHistory:
             if pipeline is not None and record.get("pipeline") != pipeline:
                 continue
             if task_type is not None and record.get("task_type") != task_type:
+                continue
+            if workspace_id is not None and record.get("workspace_id", "default") != workspace_id:
                 continue
             if start_at is not None and completed_at < start_at:
                 continue

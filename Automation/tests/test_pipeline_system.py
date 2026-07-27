@@ -112,6 +112,17 @@ class TaskTests(unittest.TestCase):
         self.assertEqual("default", service.get("default")["workspace_id"])
         self.assertEqual(created, service.get(created["workspace_id"]))
 
+    def test_history_and_artifacts_are_filtered_by_workspace(self):
+        first = Task("first", workspace_id="one"); second = Task("second", workspace_id="two")
+        history = ExecutionHistory(repository=InMemoryExecutionHistoryRepository())
+        history.record(first); history.record(second)
+        with tempfile.TemporaryDirectory() as directory:
+            artifacts = ArtifactManager(); path = Path(directory) / "a.txt"; path.write_text("a")
+            artifact = artifacts.register_file(path, "TEXT", "Test", workspace_id="one")
+            self.assertEqual([artifact], artifacts.list(workspace_id="one"))
+            self.assertIsNone(artifacts.get(artifact["artifact_id"], workspace_id="two"))
+        self.assertEqual(["first"], [r["task"] for r in history.query(workspace_id="one")])
+
 
 class ApplicationServiceTests(PipelineTestCase):
     def test_service_submits_and_executes_task_with_injected_dependencies(self):
@@ -423,7 +434,7 @@ class ArtifactManagerTests(PipelineTestCase):
         self.assertEqual("output.txt", artifact["filename"])
         self.assertEqual(len("artifact content".encode("utf-8")), artifact["size"])
         self.assertEqual("Test Pipeline", artifact["producer_pipeline"])
-        self.assertIsNone(artifact["workspace_id"])
+        self.assertEqual("default", artifact["workspace_id"])
         self.assertEqual(artifact, manager.get(artifact["artifact_id"]))
         self.assertEqual([artifact], manager.list())
 

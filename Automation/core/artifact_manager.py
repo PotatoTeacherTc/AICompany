@@ -44,17 +44,19 @@ class ArtifactManager:
             "size": path.stat().st_size,
             "created_at": datetime.now().isoformat(),
             "producer_pipeline": producer_pipeline,
-            "workspace_id": workspace_id,
+            "workspace_id": workspace_id or "default",
             "path": str(path),
         }
         self.repository.save(artifact)
         return artifact
 
-    def get(self, artifact_id):
-        return self.repository.get(artifact_id)
+    def get(self, artifact_id, workspace_id=None):
+        artifact = self.repository.get(artifact_id)
+        return artifact if artifact and (workspace_id is None or artifact.get("workspace_id", "default") == workspace_id) else None
 
-    def list(self):
-        return self.repository.list()
+    def list(self, workspace_id=None):
+        artifacts = self.repository.list()
+        return artifacts if workspace_id is None else [artifact for artifact in artifacts if artifact.get("workspace_id", "default") == workspace_id]
 
     def register_files(self, file_paths, artifact_type, producer_pipeline):
         return [
