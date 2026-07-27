@@ -1,3 +1,6 @@
+from core.base_pipeline import BasePipeline
+
+
 class PipelineRegistry:
 
     def __init__(self):
@@ -6,6 +9,15 @@ class PipelineRegistry:
 
 
     def register(self, task_type, pipeline):
+
+        if not isinstance(task_type, str) or not task_type.strip():
+            raise ValueError("task_type must be a non-empty string")
+
+        if not isinstance(pipeline, BasePipeline):
+            raise TypeError("pipeline must inherit from BasePipeline")
+
+        if task_type in self._pipelines:
+            raise ValueError(f"Pipeline already registered for task type: {task_type}")
 
         self._pipelines[task_type] = pipeline
 

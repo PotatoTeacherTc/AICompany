@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 21**.
+Current mission baseline: **Mission 22**.
 
 ## Verified completed capabilities
 
@@ -18,6 +18,8 @@ not inferred from a missing historical mission log.
 - Mission 20: CONTENT became a real local content-project pipeline.
 - Mission 21: RESEARCH became a real local structured-research-project
   pipeline.
+- Mission 22: PipelineRegistry now validates non-empty task types,
+  BasePipeline implementations, and duplicate registrations.
 
 ## Implemented pipelines
 
@@ -32,14 +34,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **16 tests**. Its expected command is:
+The current suite contains **17 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 21 verification result: **16 passed, 0 failed**.
+Mission 22 verification result: **17 passed, 0 failed**.
 
 ## Not implemented
 

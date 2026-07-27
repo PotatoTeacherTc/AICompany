@@ -10,6 +10,7 @@ from unittest.mock import patch
 from agent.manager import Manager
 from config.settings import PROJECT_ROOT
 from core.execution_history import ExecutionHistory
+from core.base_pipeline import BasePipeline
 from core.content_pipeline import ContentPipeline
 from core.history_analyzer import HistoryAnalyzer
 from core.history_pipeline import HistoryPipeline
@@ -26,6 +27,14 @@ from core.worker import TaskWorker
 
 
 RESULT_KEYS = {"status", "pipeline", "task", "task_id", "task_type", "data", "error"}
+
+
+class TestPipeline(BasePipeline):
+    def __init__(self):
+        super().__init__("Test Pipeline")
+
+    def run(self, task):
+        return PipelineResult(PipelineStatus.SUCCESS, self.name, task).to_dict()
 
 
 class PipelineTestCase(unittest.TestCase):
@@ -71,6 +80,22 @@ class FilePipelineTests(PipelineTestCase):
         self.assertTrue((test_files / "Images" / "photo.jpg").exists())
         self.assertTrue((test_files / "notes.txt").exists())
         self.assertCountEqual(["SUCCESS", "SKIPPED"], result["data"]["result"])
+
+
+class PipelineRegistryTests(unittest.TestCase):
+    def test_registry_accepts_base_pipeline_and_rejects_invalid_registrations(self):
+        registry = PipelineRegistry()
+        pipeline = TestPipeline()
+
+        registry.register("TEST", pipeline)
+
+        self.assertIs(pipeline, registry.get("TEST"))
+        with self.assertRaises(ValueError):
+            registry.register("", TestPipeline())
+        with self.assertRaises(TypeError):
+            registry.register("INVALID", object())
+        with self.assertRaises(ValueError):
+            registry.register("TEST", TestPipeline())
 
 
 class MusicPipelineTests(PipelineTestCase):
