@@ -14,6 +14,7 @@ def create_app(
     login_service=None,
     session_service=None,
     audit_service=None,
+    audit_query_service=None,
     auth_required=False,
 ):
     """Create the HTTP application without starting a server."""
@@ -62,6 +63,10 @@ def create_app(
         from application.audit_service import AuditService
         audit_service = AuditService()
     app.state.audit_service = audit_service
+    if audit_query_service is None:
+        from application.audit_query_service import AuditQueryService
+        audit_query_service = AuditQueryService(audit_service)
+    app.state.audit_query_service = audit_query_service
     app.state.auth_required = auth_required
     app.state.task_api = TaskApi(automation_service, task_query_service, workspace_service)
     for exception_type, handler in HANDLED_EXCEPTIONS.items():
@@ -200,10 +205,13 @@ def create_app(
         app.state.audit_service.record(user_id=user['user_id'],action="SESSION_REVOKED",resource_type="session",resource_id=session_id)
 
     @app.get("/workspaces/{workspace_id}/audit-events")
-    def audit_events(workspace_id: str, action: str | None = None, start_at: str | None = None, end_at: str | None = None, limit: int | None = None, offset: int = 0, authorization: str | None = Header(default=None)):
+    def audit_events(workspace_id: str, action: str | None = None, resource_type: str | None = None, resource_id: str | None = None, user_id: str | None = None, start_at: str | None = None, end_at: str | None = None, limit: int = 50, offset: int = 0, cursor: str | None = None, authorization: str | None = Header(default=None)):
         denied=_authorize_workspace(app,workspace_id,authorization,{"OWNER","ADMIN"})
         if denied:return denied
-        return {"items":app.state.audit_service.query(workspace_id,action=action,start_at=start_at,end_at=end_at,limit=limit,offset=offset)}
+        try:return app.state.audit_query_service.query(workspace_id,action=action.split(',') if action and ',' in action else action,resource_type=resource_type,resource_id=resource_id,user_id=user_id,start_at=start_at,end_at=end_at,limit=limit,offset=offset,cursor=cursor)
+        except ValueError:
+            from api.errors import error_response
+            return error_response(400,'invalid_cursor','Invalid audit query')
 
     @app.post("/workspaces/{workspace_id}/members", status_code=201)
     def add_member(workspace_id: str, payload: dict, authorization: str | None = Header(default=None)):

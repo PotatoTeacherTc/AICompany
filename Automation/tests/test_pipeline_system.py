@@ -50,6 +50,7 @@ from application.session_service import SessionService
 from core.session_repository import FileSessionRepository
 from application.audit_service import AuditService
 from core.audit_repository import FileAuditRepository
+from application.audit_query_service import AuditQueryService
 from providers.factory import ProviderFactory
 from providers.mock_provider import MockProvider
 from providers.models import ProviderRequest
@@ -109,6 +110,13 @@ class TaskTests(unittest.TestCase):
             service.record('user','two','TASK_CREATED','task','t1')
             self.assertEqual(1,len(service.query('one',action='LOGIN_SUCCESS',limit=1)))
             self.assertEqual({'source':'test'},service.query('one')[0]['metadata'])
+
+    def test_audit_query_cursor_filters_and_pagination(self):
+        service=AuditService()
+        for item in [('u1','LOGIN_SUCCESS','session','a'),('u2','TASK_CREATED','task','b'),('u1','TASK_CREATED','task','c')]: service.record(item[0],'one',item[1],item[2],item[3])
+        query=AuditQueryService(service); first=query.query('one',limit=1,action=['TASK_CREATED'],user_id='u1')
+        self.assertEqual(1,first['total']); self.assertIsNone(first['next_cursor'])
+        with self.assertRaises(ValueError):query.query('one',cursor='bad')
     def test_refresh_sessions_rotate_and_store_only_hashes(self):
         with tempfile.TemporaryDirectory() as directory:
             sessions=SessionService(FileSessionRepository(Path(directory)/'sessions.json'))

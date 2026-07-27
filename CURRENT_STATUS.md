@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 67**.
+Current mission baseline: **Mission 68**.
 
 ## Verified completed capabilities
 
@@ -156,6 +156,8 @@ not inferred from a missing historical mission log.
   JSON-file repositories. Authentication, session, workspace, and task API
   boundaries record safe metadata; workspace audit queries support filters and
   pagination and require OWNER or ADMIN when authentication is enabled.
+- Mission 68: AuditQueryService provides created-at-descending, filtered audit
+  queries with compatible offset/limit and opaque cursor pagination.
 
 ## Implemented pipelines
 
@@ -170,14 +172,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **81 tests**. Its expected command is:
+The current suite contains **82 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 67 verification result: **81 passed, 0 failed**.
+Mission 68 verification result: **82 passed, 0 failed**.
 
 ## Not implemented
 

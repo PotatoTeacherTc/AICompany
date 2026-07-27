@@ -8,7 +8,7 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 67
+## Current baseline: Mission 68
 
 The verified implementation currently provides a Task/Queue/Worker execution
 path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,
@@ -62,6 +62,8 @@ responses disclose neither stored hashes nor credentials.
 Security audit logging now records safe lifecycle metadata through an
 injectable repository boundary; sensitive credentials, token values, hashes,
 and prompts are excluded.
+Audit-log operations now support cursor pagination and resource/user/action
+filters while retaining offset/limit compatibility.
 
 ## Development stages
 
