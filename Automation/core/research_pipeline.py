@@ -39,9 +39,10 @@ class ResearchPipeline(BasePipeline):
                 "It captures research questions, initial findings, and a clear handoff "
                 "for future source-backed research."
             )
+            source_records = self._get_source_records(task)
             sources = [
-                "No external sources were accessed in this local-only research run.",
-                "Future sources should be recorded here with URL, publication date, and relevance notes.",
+                self._format_source_record(source_record)
+                for source_record in source_records
             ]
 
             file_contents = {
@@ -70,6 +71,7 @@ class ResearchPipeline(BasePipeline):
                 "findings": findings,
                 "summary": summary,
                 "sources": sources,
+                "source_records": source_records,
                 "files_created": [str(project_json)] + [str(path) for path in text_files],
                 "created_at": created_at,
             }
@@ -97,3 +99,51 @@ class ResearchPipeline(BasePipeline):
                 task_type=task.task_type,
                 error=str(error),
             ).to_dict()
+
+    @staticmethod
+    def _get_source_records(task):
+        source_records = task.parameters.get("source_records")
+        if source_records is None:
+            return [
+                {
+                    "title": "Local-only research run",
+                    "url": None,
+                    "relevance": "No external sources were accessed in this run.",
+                },
+                {
+                    "title": "Future source guidance",
+                    "url": None,
+                    "relevance": "Record URL, publication date, and relevance notes when sources are approved.",
+                },
+            ]
+
+        if not isinstance(source_records, list):
+            raise ValueError("source_records must be a list")
+
+        validated_records = []
+        for source_record in source_records:
+            if not isinstance(source_record, dict):
+                raise ValueError("source_records must contain dictionaries")
+
+            title = source_record.get("title")
+            url = source_record.get("url")
+            relevance = source_record.get("relevance")
+            if not isinstance(title, str) or not title.strip():
+                raise ValueError("source record title must be a non-empty string")
+            if url is not None and (not isinstance(url, str) or not url.strip()):
+                raise ValueError("source record url must be a non-empty string or None")
+            if not isinstance(relevance, str) or not relevance.strip():
+                raise ValueError("source record relevance must be a non-empty string")
+
+            validated_records.append(
+                {"title": title, "url": url, "relevance": relevance}
+            )
+        return validated_records
+
+    @staticmethod
+    def _format_source_record(source_record):
+        url = source_record["url"] or "No URL (local record)"
+        return (
+            f"{source_record['title']} | URL: {url} | "
+            f"Relevance: {source_record['relevance']}"
+        )

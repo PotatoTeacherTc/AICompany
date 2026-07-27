@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 31**.
+Current mission baseline: **Mission 32**.
 
 ## Verified completed capabilities
 
@@ -41,6 +41,9 @@ not inferred from a missing historical mission log.
   preserves this validated declared task type during routing.
 - Mission 31: CONTENT project generation now supports validated per-Task
   content type, title prefix, and tag configuration while preserving defaults.
+- Mission 32: RESEARCH project generation now validates and stores structured
+  local source records in metadata and reviewable artifacts without fetching
+  external data.
 
 ## Implemented pipelines
 
@@ -55,14 +58,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **32 tests**. Its expected command is:
+The current suite contains **33 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 31 verification result: **32 passed, 0 failed**.
+Mission 32 verification result: **33 passed, 0 failed**.
 
 ## Not implemented
 

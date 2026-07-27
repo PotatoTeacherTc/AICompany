@@ -295,6 +295,32 @@ class ContentPipelineTests(PipelineTestCase):
 
 
 class ResearchPipelineTests(PipelineTestCase):
+    def test_research_pipeline_records_structured_local_sources(self):
+        research_root = self.root / "research"
+        task = Task(
+            "Research test strategy",
+            parameters={
+                "source_records": [
+                    {
+                        "title": "Internal test brief",
+                        "url": "https://example.test/brief",
+                        "relevance": "Defines the initial test scope.",
+                    }
+                ]
+            },
+        )
+        task.task_type = "RESEARCH"
+
+        result = ResearchPipeline(research_root=research_root).run(task)
+
+        self.assertEqual(PipelineStatus.SUCCESS, result["status"])
+        self.assertEqual(task.parameters["source_records"], result["data"]["source_records"])
+        sources_text = (Path(result["data"]["project_path"]) / "sources.txt").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("Internal test brief", sources_text)
+        self.assertIn("https://example.test/brief", sources_text)
+
     def test_research_pipeline_creates_complete_project_in_temp_directory(self):
         research_root = self.root / "research"
         result = ResearchPipeline(research_root=research_root).run(
