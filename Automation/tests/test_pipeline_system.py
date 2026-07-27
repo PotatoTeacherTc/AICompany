@@ -1,4 +1,5 @@
 import importlib
+import json
 import subprocess
 import sys
 import tempfile
@@ -7,13 +8,16 @@ from pathlib import Path
 from unittest.mock import patch
 
 from agent.manager import Manager
+from config.settings import PROJECT_ROOT
 from core.execution_history import ExecutionHistory
+from core.content_pipeline import ContentPipeline
 from core.history_analyzer import HistoryAnalyzer
 from core.history_pipeline import HistoryPipeline
 from core.music_pipeline import MusicPipeline
 from core.pipeline import AIPipeline
 from core.registry import PipelineRegistry
 from core.result import PipelineResult
+from core.research_pipeline import ResearchPipeline
 from core.status import PipelineStatus
 from core.stub_pipelines import StubPipeline
 from core.task import Task
@@ -45,6 +49,8 @@ class PipelineTestCase(unittest.TestCase):
             self.history,
             base_folder=self.root / "test_files",
             music_root=self.root / "music",
+            content_root=self.root / "content",
+            research_root=self.root / "research",
         )
 
 
@@ -111,16 +117,64 @@ class HistoryPipelineTests(PipelineTestCase):
         self.assertEqual(1, analysis["analysis"]["task_type_distribution"]["FAIL"])
 
 
-class StubAndFailurePipelineTests(PipelineTestCase):
-    def test_content_pipeline_returns_not_implemented_without_exception(self):
-        result = StubPipeline("Content Pipeline").run(self.task("Create video", "CONTENT"))
-        self.assertEqual(PipelineStatus.NOT_IMPLEMENTED, result["status"])
-        self.assertTrue(RESULT_KEYS.issubset(result))
+class ContentPipelineTests(PipelineTestCase):
+    def test_content_pipeline_creates_complete_project_in_temp_directory(self):
+        content_root = self.root / "content"
+        result = ContentPipeline(content_root=content_root).run(
+            self.task("Create a YouTube video", "CONTENT")
+        )
 
-    def test_research_pipeline_returns_not_implemented_without_exception(self):
-        result = StubPipeline("Research Pipeline").run(self.task("Research trends", "RESEARCH"))
-        self.assertEqual(PipelineStatus.NOT_IMPLEMENTED, result["status"])
+        project_path = Path(result["data"]["project_path"])
+        expected_files = {
+            "project.json",
+            "content_plan.txt",
+            "script.txt",
+            "title.txt",
+            "description.txt",
+            "tags.txt",
+        }
+        self.assertEqual(PipelineStatus.SUCCESS, result["status"])
         self.assertTrue(RESULT_KEYS.issubset(result))
+        self.assertEqual(content_root, project_path.parent)
+        self.assertFalse((PROJECT_ROOT / "Content" / project_path.name).exists())
+        self.assertEqual(expected_files, {path.name for path in project_path.iterdir()})
+        for filename in expected_files:
+            self.assertGreater((project_path / filename).stat().st_size, 0)
+        metadata = json.loads((project_path / "project.json").read_text(encoding="utf-8"))
+        self.assertEqual("Create a YouTube video", metadata["task"])
+        self.assertEqual("YouTube video", metadata["content_type"])
+        self.assertEqual(metadata["title"], result["data"]["title"])
+
+
+class ResearchPipelineTests(PipelineTestCase):
+    def test_research_pipeline_creates_complete_project_in_temp_directory(self):
+        research_root = self.root / "research"
+        result = ResearchPipeline(research_root=research_root).run(
+            self.task("Research AI music trends", "RESEARCH")
+        )
+
+        project_path = Path(result["data"]["project_path"])
+        expected_files = {
+            "project.json",
+            "research_plan.txt",
+            "findings.txt",
+            "summary.txt",
+            "sources.txt",
+        }
+        self.assertEqual(PipelineStatus.SUCCESS, result["status"])
+        self.assertTrue(RESULT_KEYS.issubset(result))
+        self.assertEqual(research_root, project_path.parent)
+        self.assertFalse((PROJECT_ROOT / "Research" / project_path.name).exists())
+        self.assertEqual(expected_files, {path.name for path in project_path.iterdir()})
+        for filename in expected_files:
+            self.assertGreater((project_path / filename).stat().st_size, 0)
+        metadata = json.loads((project_path / "project.json").read_text(encoding="utf-8"))
+        self.assertEqual("Research AI music trends", metadata["task"])
+        self.assertEqual("Structured local research", metadata["research_type"])
+        self.assertEqual(metadata["summary"], result["data"]["summary"])
+
+
+class FailurePipelineTests(PipelineTestCase):
 
     def test_failing_pipeline_returns_intentional_failed_result(self):
         main = importlib.import_module("main")
@@ -163,9 +217,37 @@ class ManagerTests(PipelineTestCase):
                 self.assertEqual(task_type, result["task_type"])
                 self.assertEqual(pipeline_name, result["pipeline"])
                 self.assertTrue(RESULT_KEYS.issubset(result))
+                if task_type == "CONTENT":
+                    self.assertEqual(PipelineStatus.SUCCESS, result["status"])
+                if task_type == "RESEARCH":
+                    self.assertEqual(PipelineStatus.SUCCESS, result["status"])
 
 
 class WorkerTests(PipelineTestCase):
+    def test_worker_runs_research_pipeline_and_records_successful_history(self):
+        task = Task("Research AI music trends")
+        queue = TaskQueue()
+        queue.add(task)
+        completed = TaskWorker(queue, Manager(self.registry()), self.history).run_once()
+
+        self.assertEqual(PipelineStatus.SUCCESS, completed.status)
+        self.assertEqual("Research Pipeline", completed.pipeline)
+        self.assertEqual("RESEARCH", self.history.get_all()[0]["task_type"])
+        self.assertEqual("Research Pipeline", self.history.get_all()[0]["pipeline"])
+        self.assertTrue(Path(completed.result["data"]["project_path"]).is_dir())
+
+    def test_worker_runs_content_pipeline_and_records_successful_history(self):
+        task = Task("Create a YouTube video")
+        queue = TaskQueue()
+        queue.add(task)
+        completed = TaskWorker(queue, Manager(self.registry()), self.history).run_once()
+
+        self.assertEqual(PipelineStatus.SUCCESS, completed.status)
+        self.assertEqual("Content Pipeline", completed.pipeline)
+        self.assertEqual("CONTENT", self.history.get_all()[0]["task_type"])
+        self.assertEqual("Content Pipeline", self.history.get_all()[0]["pipeline"])
+        self.assertTrue(Path(completed.result["data"]["project_path"]).is_dir())
+
     def test_worker_transitions_pending_to_running_to_success_and_records_history(self):
         observed_statuses = []
 
@@ -235,7 +317,8 @@ class MainAndSyntaxTests(PipelineTestCase):
         )
         self.assertTrue(callable(main.run))
         self.assertEqual(1, len(completed))
-        self.assertEqual(PipelineStatus.NOT_IMPLEMENTED, completed[0].status)
+        self.assertEqual(PipelineStatus.SUCCESS, completed[0].status)
+        self.assertEqual("Content Pipeline", completed[0].pipeline)
         self.assertEqual(1, self.history.count())
 
     def test_all_project_python_sources_compile(self):

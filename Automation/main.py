@@ -1,11 +1,13 @@
 from agent.manager import Manager
 from core.base_pipeline import BasePipeline
 from core.execution_history import ExecutionHistory
+from core.content_pipeline import ContentPipeline
 from core.history_pipeline import HistoryPipeline
 from core.music_pipeline import MusicPipeline
 from core.pipeline import AIPipeline
 from core.registry import PipelineRegistry
 from core.result import PipelineResult
+from core.research_pipeline import ResearchPipeline
 from core.status import PipelineStatus
 from core.stub_pipelines import StubPipeline
 from core.task import Task
@@ -29,12 +31,18 @@ class FailingPipeline(BasePipeline):
         ).to_dict()
 
 
-def build_registry(history, base_folder=None, music_root=None):
+def build_registry(
+    history,
+    base_folder=None,
+    music_root=None,
+    content_root=None,
+    research_root=None,
+):
     registry = PipelineRegistry()
     registry.register("FILE", AIPipeline(base_folder=base_folder))
     registry.register("MUSIC", MusicPipeline(music_root=music_root))
-    registry.register("CONTENT", StubPipeline("Content Pipeline"))
-    registry.register("RESEARCH", StubPipeline("Research Pipeline"))
+    registry.register("CONTENT", ContentPipeline(content_root=content_root))
+    registry.register("RESEARCH", ResearchPipeline(research_root=research_root))
     registry.register("HISTORY", HistoryPipeline(history))
     registry.register("FAIL", FailingPipeline())
     return registry
