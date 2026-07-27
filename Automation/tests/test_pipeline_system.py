@@ -129,6 +129,9 @@ class ArtifactManagerTests(PipelineTestCase):
             producer_pipeline="Test Pipeline",
         )
 
+        self.assertTrue(
+            set(ArtifactManager.METADATA_FIELDS).issubset(artifact)
+        )
         self.assertTrue(artifact["artifact_id"])
         self.assertEqual("TEXT", artifact["artifact_type"])
         self.assertEqual("output.txt", artifact["filename"])
@@ -145,6 +148,32 @@ class ArtifactManagerTests(PipelineTestCase):
             artifacts=[artifact],
         ).to_dict()
         self.assertEqual([artifact], result["artifacts"])
+
+    def test_artifact_metadata_is_preserved_in_execution_history(self):
+        artifact_file = self.root / "history_output.txt"
+        artifact_file.write_text("history artifact", encoding="utf-8")
+        artifact = ArtifactManager().register_file(
+            artifact_file, "TEXT", "Test Pipeline"
+        )
+
+        class ArtifactManagerBackedManager:
+            def handle(_, task):
+                task.task_type = "FILE"
+                task.pipeline = "Test Pipeline"
+                return PipelineResult(
+                    PipelineStatus.SUCCESS,
+                    task.pipeline,
+                    task,
+                    artifacts=[artifact],
+                ).to_dict()
+
+        queue = TaskQueue(history=self.history)
+        queue.add(self.task("artifact history", "FILE"))
+        TaskWorker(queue, ArtifactManagerBackedManager(), self.history).run_once()
+
+        self.assertEqual(
+            [artifact], self.history.get_all()[0]["result"]["artifacts"]
+        )
 
     def test_file_artifact_repository_reloads_records_and_handles_missing_data(self):
         repository_file = self.root / "artifacts.json"

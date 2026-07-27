@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 47**.
+Current mission baseline: **Mission 48**.
 
 ## Verified completed capabilities
 
@@ -83,6 +83,9 @@ not inferred from a missing historical mission log.
 - Mission 47: ArtifactManager now creates artifact IDs and stores file metadata
   through injectable in-memory and file repositories; PipelineResult can carry
   linked artifact records.
+- Mission 48: Artifact metadata is standardized (including a reserved
+  workspace_id) and PipelineResult artifact records are preserved in
+  ExecutionHistory.
 
 ## Implemented pipelines
 
@@ -97,14 +100,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **51 tests**. Its expected command is:
+The current suite contains **52 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 47 verification result: **51 passed, 0 failed**.
+Mission 48 verification result: **52 passed, 0 failed**.
 
 ## Not implemented
 

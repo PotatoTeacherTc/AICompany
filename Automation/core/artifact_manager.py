@@ -7,6 +7,17 @@ from core.artifact_repository import InMemoryArtifactRepository
 
 
 class ArtifactManager:
+    METADATA_FIELDS = (
+        "artifact_id",
+        "artifact_type",
+        "mime_type",
+        "filename",
+        "size",
+        "created_at",
+        "producer_pipeline",
+        "workspace_id",
+    )
+
     def __init__(self, repository=None):
         self.repository = repository or InMemoryArtifactRepository()
 
