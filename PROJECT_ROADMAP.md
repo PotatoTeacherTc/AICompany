@@ -8,7 +8,7 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 59
+## Current baseline: Mission 60
 
 The verified implementation currently provides a Task/Queue/Worker execution
 path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,
@@ -41,6 +41,9 @@ Workspace records and workspace-aware task creation are available through the
 API. The new User domain persists only normalized email identity metadata
 through injectable in-memory or JSON-file repositories; authentication and
 credentials are intentionally outside this boundary.
+Workspace membership records now establish OWNER, ADMIN, and MEMBER roles and
+protect the final OWNER from removal or demotion. These roles are a domain
+contract only; no authentication or request authorization is implemented yet.
 
 ## Development stages
 

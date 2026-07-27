@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 59**.
+Current mission baseline: **Mission 60**.
 
 ## Verified completed capabilities
 
@@ -121,6 +121,11 @@ not inferred from a missing historical mission log.
 - Mission 59: A credential-free User domain now stores only generated user ID,
   normalized email, and creation time through injected in-memory or JSON-file
   repositories. Duplicate normalized emails are rejected.
+- Mission 60: Workspace memberships now connect users to workspaces using
+  OWNER, ADMIN, and MEMBER roles through injected in-memory or JSON-file
+  repositories. Memberships are unique, workspace creation through the
+  membership service assigns its creator OWNER, and the last OWNER cannot be
+  removed or demoted.
 
 ## Implemented pipelines
 
@@ -135,14 +140,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **69 tests**. Its expected command is:
+The current suite contains **71 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 59 verification result: **69 passed, 0 failed**.
+Mission 60 verification result: **71 passed, 0 failed**.
 
 ## Not implemented
 

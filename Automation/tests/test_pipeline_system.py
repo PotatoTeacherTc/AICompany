@@ -37,8 +37,11 @@ from core.task_queue import TaskQueue
 from core.worker import TaskWorker
 from core.workspace_repository import FileWorkspaceRepository, InMemoryWorkspaceRepository
 from core.user_repository import FileUserRepository
+from core.workspace_membership import ADMIN, MEMBER, OWNER
+from core.workspace_membership_repository import FileWorkspaceMembershipRepository
 from application.workspace_service import WorkspaceService
 from application.user_service import UserService
+from application.workspace_membership_service import WorkspaceMembershipService
 from providers.factory import ProviderFactory
 from providers.mock_provider import MockProvider
 from providers.models import ProviderRequest
@@ -105,6 +108,46 @@ class TaskTests(unittest.TestCase):
 
         self.assertEqual(created, reloaded)
         self.assertEqual({"user_id", "email", "created_at"}, set(reloaded))
+
+    def test_workspace_membership_roles_and_last_owner_protection(self):
+        users = UserService()
+        owner = users.create("owner@example.com")
+        member = users.create("member@example.com")
+        service = WorkspaceMembershipService(WorkspaceService(), users)
+        workspace = service.create_workspace("Team", owner["user_id"])
+        workspace_id = workspace["workspace_id"]
+
+        added = service.add(workspace_id, member["user_id"], MEMBER)
+        self.assertEqual(MEMBER, added["role"])
+        self.assertEqual(OWNER, service.list(workspace_id)[0]["role"])
+        with self.assertRaises(ValueError):
+            service.add(workspace_id, member["user_id"], MEMBER)
+        with self.assertRaises(ValueError):
+            service.change_role(workspace_id, owner["user_id"], ADMIN)
+        with self.assertRaises(ValueError):
+            service.remove(workspace_id, owner["user_id"])
+        service.change_role(workspace_id, member["user_id"], OWNER)
+        service.remove(workspace_id, owner["user_id"])
+        self.assertEqual([member["user_id"]], [item["user_id"] for item in service.list(workspace_id)])
+
+    def test_file_membership_repository_reloads_records(self):
+        with tempfile.TemporaryDirectory() as directory:
+            users = UserService()
+            owner = users.create("owner@example.com")
+            workspace_service = WorkspaceService()
+            membership_file = Path(directory) / "memberships.json"
+            created = WorkspaceMembershipService(
+                workspace_service,
+                users,
+                FileWorkspaceMembershipRepository(membership_file),
+            ).create_workspace("Persisted", owner["user_id"])
+            reloaded = WorkspaceMembershipService(
+                workspace_service,
+                users,
+                FileWorkspaceMembershipRepository(membership_file),
+            ).list(created["workspace_id"])
+
+        self.assertEqual(OWNER, reloaded[0]["role"])
     def test_task_preserves_structured_parameters_in_serialized_form(self):
         parameters = {"target_folder": "input", "priority": "high"}
         task = Task("Organize files", parameters=parameters)
