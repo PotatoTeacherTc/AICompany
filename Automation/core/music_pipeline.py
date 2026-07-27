@@ -7,9 +7,9 @@ from core.status import PipelineStatus
 
 
 class MusicPipeline(BasePipeline):
-    def __init__(self):
+    def __init__(self, music_root=None):
         super().__init__("Music Pipeline")
-        self.music_root = PROJECT_ROOT / "Music"
+        self.music_root = music_root or PROJECT_ROOT / "Music"
         self.music_root.mkdir(parents=True, exist_ok=True)
 
     def run(self, task):

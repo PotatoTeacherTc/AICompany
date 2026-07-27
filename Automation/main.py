@@ -29,10 +29,10 @@ class FailingPipeline(BasePipeline):
         ).to_dict()
 
 
-def build_registry(history):
+def build_registry(history, base_folder=None, music_root=None):
     registry = PipelineRegistry()
-    registry.register("FILE", AIPipeline())
-    registry.register("MUSIC", MusicPipeline())
+    registry.register("FILE", AIPipeline(base_folder=base_folder))
+    registry.register("MUSIC", MusicPipeline(music_root=music_root))
     registry.register("CONTENT", StubPipeline("Content Pipeline"))
     registry.register("RESEARCH", StubPipeline("Research Pipeline"))
     registry.register("HISTORY", HistoryPipeline(history))
@@ -40,24 +40,25 @@ def build_registry(history):
     return registry
 
 
-def run(task_texts=None):
+def run(task_texts=None, history=None, registry=None):
     print("AICompany Automation")
-    history = ExecutionHistory()
-    registry = build_registry(history)
+    history = history or ExecutionHistory()
+    registry = registry or build_registry(history)
     manager = Manager(registry)
     task_queue = TaskQueue()
 
     print("\nRegistered Pipelines:")
     print(registry.list_pipelines())
 
-    task_texts = task_texts or [
-        "Organize TestFiles",
-        "Create a new music song",
-        "Create a YouTube video",
-        "Research AI music trends",
-        "Run failure test",
-        "Analyze execution history",
-    ]
+    if task_texts is None:
+        task_texts = [
+            "Organize TestFiles",
+            "Create a new music song",
+            "Create a YouTube video",
+            "Research AI music trends",
+            "Run failure test",
+            "Analyze execution history",
+        ]
     for task_text in task_texts:
         task_queue.add(Task(task_text))
 

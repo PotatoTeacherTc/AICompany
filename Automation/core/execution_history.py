@@ -5,18 +5,12 @@ from pathlib import Path
 
 class ExecutionHistory:
 
-    def __init__(self):
+    def __init__(self, history_file=None):
 
         self.records = []
 
-        self.history_file = (
-
-            Path(__file__).parent.parent
-
-            / "logs"
-
-            / "execution_history.json"
-
+        self.history_file = Path(history_file) if history_file else (
+            Path(__file__).parent.parent / "logs" / "execution_history.json"
         )
 
 

@@ -64,3 +64,17 @@ AI 기반 웹 제작 자동화
 ## 👤 Author
 
 PotatoTeacherTc
+
+## Automated tests
+
+The Automation test suite uses only Python's standard-library `unittest`.
+It creates files, music projects, and execution history in temporary
+directories, so it does not alter `Automation/TestFiles`, `Automation/Music`,
+or production execution history.
+
+Run it from the Automation directory:
+
+```powershell
+cd Automation
+python -m unittest discover -s tests -v
+```
