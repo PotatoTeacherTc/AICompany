@@ -1,5 +1,6 @@
 from core.base_pipeline import BasePipeline
 from core.result import PipelineResult
+from core.status import PipelineStatus
 
 from agent.planner import TaskPlanner
 from agent.executor import TaskExecutor
@@ -86,13 +87,21 @@ class AIPipeline(BasePipeline):
             }
 
 
+            status = (
+                PipelineStatus.SUCCESS
+                if valid and report["failed"] == 0
+                else PipelineStatus.FAILED
+            )
+
             return PipelineResult(
 
-                status="SUCCESS",
+                status=status,
 
                 pipeline=self.name,
 
                 task=task,
+
+                task_type=task.task_type,
 
                 data=data
 
@@ -104,11 +113,13 @@ class AIPipeline(BasePipeline):
 
             return PipelineResult(
 
-                status="FAILED",
+                status=PipelineStatus.FAILED,
 
                 pipeline=self.name,
 
                 task=task,
+
+                task_type=task.task_type,
 
                 error=str(e)
 

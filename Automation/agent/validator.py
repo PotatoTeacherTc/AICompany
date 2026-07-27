@@ -2,7 +2,4 @@ class TaskValidator:
 
     def validate(self, result):
 
-        if not result:
-            return False
-
-        return True
+        return isinstance(result, list) and "FAILED" not in result

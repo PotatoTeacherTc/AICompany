@@ -84,22 +84,14 @@ class TaskWorker:
             # 2. Manager에게 작업 전달
             # ------------------------------------------------
 
-            result = self.manager.handle(
-
-                task.task_text
-
-            )
+            result = self.manager.handle(task)
 
 
             # ------------------------------------------------
             # 3. 결과에 따른 상태 변경
             # ------------------------------------------------
 
-            if result.get(
-
-                "status"
-
-            ) == "SUCCESS":
+            if result.get("status") == "SUCCESS":
 
 
                 task.complete(
@@ -108,6 +100,10 @@ class TaskWorker:
 
                 )
 
+
+            elif result.get("status") == "NOT_IMPLEMENTED":
+
+                task.mark_not_implemented(result)
 
             else:
 

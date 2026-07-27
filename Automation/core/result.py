@@ -8,6 +8,7 @@ class PipelineResult:
         status,
         pipeline,
         task,
+        task_type=None,
         data=None,
         error=None
     ):
@@ -17,6 +18,7 @@ class PipelineResult:
         self.pipeline = pipeline
 
         self.task = task
+        self.task_type = task_type
 
         self.data = data or {}
 
@@ -46,13 +48,18 @@ class PipelineResult:
 
     def to_dict(self):
 
+        task_text = getattr(self.task, "task_text", self.task)
+        task_id = getattr(self.task, "id", None)
+
         return {
 
             "status": self.status,
 
             "pipeline": self.pipeline,
 
-            "task": self.task,
+            "task": task_text,
+            "task_id": task_id,
+            "task_type": self.task_type,
 
             "data": self.data,
 

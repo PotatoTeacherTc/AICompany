@@ -19,6 +19,8 @@ class Task:
         self.completed_at = None
 
         self.result = None
+        self.task_type = None
+        self.pipeline = None
 
 
     def start(self):
@@ -46,6 +48,15 @@ class Task:
         self.result = result
 
 
+    def mark_not_implemented(self, result):
+
+        self.status = "NOT_IMPLEMENTED"
+
+        self.completed_at = datetime.now().isoformat()
+
+        self.result = result
+
+
     def to_dict(self):
 
         return {
@@ -63,5 +74,7 @@ class Task:
             "completed_at": self.completed_at,
 
             "result": self.result,
+            "task_type": self.task_type,
+            "pipeline": self.pipeline,
 
         }

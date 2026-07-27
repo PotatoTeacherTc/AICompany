@@ -1,65 +1,22 @@
-class HistoryPipeline:
+from core.base_pipeline import BasePipeline
+from core.result import PipelineResult
+from core.status import PipelineStatus
 
-    name = "Execution History Pipeline"
 
-
+class HistoryPipeline(BasePipeline):
     def __init__(self, history):
-
+        super().__init__("Execution History Pipeline")
         self.history = history
 
-
     def run(self, task):
-
-        print("\n")
-
-        print("=" * 60)
-
-        print("RECENT EXECUTION HISTORY")
-
-        print("=" * 60)
-
-
-        # Task 객체 또는 문자열 모두 처리
-
-        if hasattr(task, "task_text"):
-
-            task_text = task.task_text
-
-        else:
-
-            task_text = str(task)
-
-
-        # 최근 실행 기록 5개 가져오기
-
+        print("\n" + "=" * 60 + "\nRECENT EXECUTION HISTORY\n" + "=" * 60)
         records = self.history.get_recent(5)
-
-
         for record in records:
-
-            print(
-
-                f"[{record['task_id']}] "
-
-                f"{record['status']} - "
-
-                f"{record['task']}"
-
-            )
-
-
-        return {
-
-            "status": "SUCCESS",
-
-            "pipeline": self.name,
-
-            "task": task_text,
-
-            "query": "RECENT",
-
-            "count": len(records),
-
-            "records": records
-
-        }
+            print(f"[{record['task_id']}] {record['status']} - {record['task']}")
+        return PipelineResult(
+            status=PipelineStatus.SUCCESS,
+            pipeline=self.name,
+            task=task,
+            task_type=task.task_type,
+            data={"query": "RECENT", "count": len(records), "records": records},
+        ).to_dict()

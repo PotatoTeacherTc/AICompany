@@ -36,9 +36,7 @@ class HistoryAnalyzer:
         task_types = []
 
         for record in records:
-            result = record.get("result", {})
-
-            task_type = result.get("task_type")
+            task_type = record.get("task_type") or record.get("result", {}).get("task_type")
 
             if task_type:
                 task_types.append(task_type)
@@ -58,9 +56,7 @@ class HistoryAnalyzer:
             if record.get("status") != "FAILED":
                 continue
 
-            result = record.get("result", {})
-
-            task_type = result.get("task_type")
+            task_type = record.get("task_type") or record.get("result", {}).get("task_type")
 
             if task_type:
                 failed_types.append(task_type)
@@ -77,12 +73,11 @@ class HistoryAnalyzer:
 
         for record in recent_records:
 
-            result = record.get("result", {})
-
             recent_trend.append({
                 "task": record.get("task"),
-                "task_type": result.get("task_type"),
-                "status": record.get("status")
+                "task_type": record.get("task_type") or record.get("result", {}).get("task_type"),
+                "pipeline": record.get("pipeline") or record.get("result", {}).get("pipeline"),
+                "status": record.get("status"),
             })
 
         insight = self.generate_insight(

@@ -171,6 +171,8 @@ class ExecutionHistory:
             "completed_at": task.completed_at,
 
             "result": task.result,
+            "task_type": task.task_type,
+            "pipeline": task.pipeline,
 
         }
 
@@ -192,6 +194,11 @@ class ExecutionHistory:
     def get_all(self):
 
         return self.records
+
+
+    def get_all_records(self):
+        """Compatibility-friendly explicit name used by HistoryAnalyzer."""
+        return self.get_all()
 
 
     def get_successful(self):
@@ -491,20 +498,7 @@ class ExecutionHistory:
         for record in self.records:
 
 
-            result = record.get(
-
-                "result",
-
-                {}
-
-            )
-
-
-            task_type = result.get(
-
-                "task_type"
-
-            )
+            task_type = record.get("task_type") or record.get("result", {}).get("task_type")
 
 
             if task_type:

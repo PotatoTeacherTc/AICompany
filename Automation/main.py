@@ -1,229 +1,74 @@
 from agent.manager import Manager
-
+from core.base_pipeline import BasePipeline
+from core.execution_history import ExecutionHistory
+from core.history_pipeline import HistoryPipeline
+from core.music_pipeline import MusicPipeline
 from core.pipeline import AIPipeline
 from core.registry import PipelineRegistry
-from core.music_pipeline import MusicPipeline
+from core.result import PipelineResult
+from core.status import PipelineStatus
 from core.stub_pipelines import StubPipeline
-from core.history_pipeline import HistoryPipeline
 from core.task import Task
 from core.task_queue import TaskQueue
 from core.worker import TaskWorker
-from core.execution_history import ExecutionHistory
 
 
-print("AICompany Automation")
+class FailingPipeline(BasePipeline):
+    """Deliberate failure path retained for end-to-end error handling tests."""
 
-
-# ============================================================
-# 1. EXECUTION HISTORY 생성
-# ============================================================
-
-history = ExecutionHistory()
-
-
-# ============================================================
-# 2. PIPELINE 생성
-# ============================================================
-
-automation_pipeline = AIPipeline()
-
-music_pipeline = MusicPipeline()
-
-content_pipeline = StubPipeline(
-    "Content Pipeline"
-)
-
-research_pipeline = StubPipeline(
-    "Research Pipeline"
-)
-
-history_pipeline = HistoryPipeline(
-    history
-)
-
-
-# ============================================================
-# 3. FAIL TEST PIPELINE
-# ============================================================
-
-class FailingPipeline:
-
-    name = "Failing Test Pipeline"
+    def __init__(self):
+        super().__init__("Failing Test Pipeline")
 
     def run(self, task):
-
-        raise RuntimeError(
-            "Intentional test failure"
-        )
-
-
-fail_pipeline = FailingPipeline()
-
-
-# ============================================================
-# 4. REGISTRY 생성
-# ============================================================
-
-registry = PipelineRegistry()
-
-
-# ============================================================
-# 5. PIPELINE 등록
-# ============================================================
-
-registry.register(
-    "FILE",
-    automation_pipeline
-)
-
-registry.register(
-    "MUSIC",
-    music_pipeline
-)
-
-registry.register(
-    "CONTENT",
-    content_pipeline
-)
-
-registry.register(
-    "RESEARCH",
-    research_pipeline
-)
-
-registry.register(
-    "HISTORY",
-    history_pipeline
-)
-
-registry.register(
-    "FAIL",
-    fail_pipeline
-)
-
-
-# ============================================================
-# 6. MANAGER 생성
-# ============================================================
-
-manager = Manager(
-    registry
-)
-
-
-# ============================================================
-# 7. 등록된 PIPELINE 확인
-# ============================================================
-
-print("\nRegistered Pipelines:")
-
-print(
-    registry.list_pipelines()
-)
-
-
-# ============================================================
-# 8. TASK QUEUE 생성
-# ============================================================
-
-task_queue = TaskQueue()
-
-
-# ============================================================
-# 9. TASK 등록
-# ============================================================
-
-tasks = [
-
-    "Organize TestFiles",
-
-    "Create a new music song",
-
-    "Create a YouTube video",
-
-    "Research AI music trends",
-
-    "Run failure test",
-
-    "Analyze execution history",
-
-]
-
-
-for task_text in tasks:
-
-    task = Task(
-        task_text
-    )
-
-    task_queue.add(
-        task
-    )
-
-
-# ============================================================
-# 10. WORKER 생성
-# ============================================================
-
-worker = TaskWorker(
-
-    task_queue,
-
-    manager,
-
-    history
-
-)
-
-
-# ============================================================
-# 11. QUEUE 전체 실행
-# ============================================================
-
-completed_tasks = worker.run_all()
-
-
-# ============================================================
-# 12. FINAL TASK SUMMARY
-# ============================================================
-
-print("\n")
-
-print("=" * 60)
-
-print("FINAL TASK SUMMARY")
-
-print("=" * 60)
-
-
-for task in completed_tasks:
-
-    print(
-
-        f"[{task.id}] "
-
-        f"{task.status} - "
-
-        f"{task.task_text}"
-
-    )
-
-
-# ============================================================
-# 13. EXECUTION HISTORY SUMMARY
-# ============================================================
-
-history.print_summary()
-
-
-# ============================================================
-# 14. FINISH
-# ============================================================
-
-print("\n")
-
-print("=" * 60)
-
-print("AICompany Automation Finished")
-
-print("=" * 60)
+        return PipelineResult(
+            status=PipelineStatus.FAILED,
+            pipeline=self.name,
+            task=task,
+            task_type=task.task_type,
+            error="Intentional test failure",
+        ).to_dict()
+
+
+def build_registry(history):
+    registry = PipelineRegistry()
+    registry.register("FILE", AIPipeline())
+    registry.register("MUSIC", MusicPipeline())
+    registry.register("CONTENT", StubPipeline("Content Pipeline"))
+    registry.register("RESEARCH", StubPipeline("Research Pipeline"))
+    registry.register("HISTORY", HistoryPipeline(history))
+    registry.register("FAIL", FailingPipeline())
+    return registry
+
+
+def run(task_texts=None):
+    print("AICompany Automation")
+    history = ExecutionHistory()
+    registry = build_registry(history)
+    manager = Manager(registry)
+    task_queue = TaskQueue()
+
+    print("\nRegistered Pipelines:")
+    print(registry.list_pipelines())
+
+    task_texts = task_texts or [
+        "Organize TestFiles",
+        "Create a new music song",
+        "Create a YouTube video",
+        "Research AI music trends",
+        "Run failure test",
+        "Analyze execution history",
+    ]
+    for task_text in task_texts:
+        task_queue.add(Task(task_text))
+
+    completed_tasks = TaskWorker(task_queue, manager, history).run_all()
+    print("\n" + "=" * 60 + "\nFINAL TASK SUMMARY\n" + "=" * 60)
+    for task in completed_tasks:
+        print(f"[{task.id}] {task.status} - {task.task_text}")
+    history.print_summary()
+    print("\n" + "=" * 60 + "\nAICompany Automation Finished\n" + "=" * 60)
+    return completed_tasks
+
+
+if __name__ == "__main__":
+    run()
