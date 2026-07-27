@@ -54,6 +54,13 @@ class ResearchPipeline(BasePipeline):
                 "findings.txt": "\n".join(f"- {finding}" for finding in findings) + "\n",
                 "summary.txt": summary + "\n",
                 "sources.txt": "\n".join(f"- {source}" for source in sources) + "\n",
+                "review_checklist.txt": (
+                    "Research Review Checklist\n\n"
+                    "- Confirm the research questions match the requested topic.\n"
+                    "- Review findings and distinguish local scaffolding from evidence.\n"
+                    "- Verify every source record has an appropriate relevance note.\n"
+                    "- Approve sources before making source-backed conclusions.\n"
+                ),
             }
             text_files = []
             for filename, content in file_contents.items():

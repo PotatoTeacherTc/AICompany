@@ -280,6 +280,7 @@ class ContentPipelineTests(PipelineTestCase):
             "title.txt",
             "description.txt",
             "tags.txt",
+            "review_checklist.txt",
         }
         self.assertEqual(PipelineStatus.SUCCESS, result["status"])
         self.assertTrue(RESULT_KEYS.issubset(result))
@@ -292,6 +293,10 @@ class ContentPipelineTests(PipelineTestCase):
         self.assertEqual("Create a YouTube video", metadata["task"])
         self.assertEqual("YouTube video", metadata["content_type"])
         self.assertEqual(metadata["title"], result["data"]["title"])
+        self.assertIn(
+            "Review Checklist",
+            (project_path / "review_checklist.txt").read_text(encoding="utf-8"),
+        )
 
 
 class ResearchPipelineTests(PipelineTestCase):
@@ -334,6 +339,7 @@ class ResearchPipelineTests(PipelineTestCase):
             "findings.txt",
             "summary.txt",
             "sources.txt",
+            "review_checklist.txt",
         }
         self.assertEqual(PipelineStatus.SUCCESS, result["status"])
         self.assertTrue(RESULT_KEYS.issubset(result))
@@ -346,6 +352,10 @@ class ResearchPipelineTests(PipelineTestCase):
         self.assertEqual("Research AI music trends", metadata["task"])
         self.assertEqual("Structured local research", metadata["research_type"])
         self.assertEqual(metadata["summary"], result["data"]["summary"])
+        self.assertIn(
+            "Review Checklist",
+            (project_path / "review_checklist.txt").read_text(encoding="utf-8"),
+        )
 
 
 class FailurePipelineTests(PipelineTestCase):

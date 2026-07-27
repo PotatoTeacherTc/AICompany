@@ -53,6 +53,13 @@ class ContentPipeline(BasePipeline):
                 "title.txt": title + "\n",
                 "description.txt": description + "\n",
                 "tags.txt": "\n".join(tags) + "\n",
+                "review_checklist.txt": (
+                    "Content Review Checklist\n\n"
+                    "- Confirm the title accurately represents the task.\n"
+                    "- Review the script for clarity and completeness.\n"
+                    "- Verify description and tags match the intended audience.\n"
+                    "- Approve the project before publishing or external generation.\n"
+                ),
             }
             text_files = []
             for filename, content in file_contents.items():

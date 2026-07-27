@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 32**.
+Current mission baseline: **Mission 33**.
 
 ## Verified completed capabilities
 
@@ -44,6 +44,9 @@ not inferred from a missing historical mission log.
 - Mission 32: RESEARCH project generation now validates and stores structured
   local source records in metadata and reviewable artifacts without fetching
   external data.
+- Mission 33: CONTENT and RESEARCH projects now generate and validate explicit
+  review-checklist artifacts before any future external publishing or research
+  integration.
 
 ## Implemented pipelines
 
@@ -65,7 +68,7 @@ cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 32 verification result: **33 passed, 0 failed**.
+Mission 33 verification result: **33 passed, 0 failed**.
 
 ## Not implemented
 

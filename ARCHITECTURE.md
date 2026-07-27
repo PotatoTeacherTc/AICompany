@@ -29,10 +29,12 @@ the workflow; `run()` is the explicit entry point.
 
 - FILE: organizes known file types in a configured folder.
 - MUSIC: creates a local music-project scaffold.
-- CONTENT: creates a local content-project scaffold; content type, title prefix,
-  and tags can be supplied through validated Task parameters.
-- RESEARCH: creates a structured local research-project scaffold and preserves
-  validated local source records; it does not perform web search or AI/API calls.
+- CONTENT: creates a local content-project scaffold with a review checklist;
+  content type, title prefix, and tags can be supplied through validated Task
+  parameters.
+- RESEARCH: creates a structured local research-project scaffold with a review
+  checklist and preserves validated local source records; it does not perform
+  web search or AI/API calls.
 - HISTORY: reads recent execution records.
 - FAIL: deliberately returns `FAILED` to validate failure handling.
 
