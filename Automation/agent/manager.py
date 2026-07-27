@@ -6,6 +6,24 @@ from core.status import PipelineStatus
 class Manager:
     """Classifies Tasks and delegates them to registered pipelines."""
 
+    REQUIRED_RESULT_KEYS = {
+        "status",
+        "pipeline",
+        "task",
+        "task_id",
+        "task_type",
+        "data",
+        "error",
+    }
+
+    ALLOWED_RESULT_STATUSES = {
+        PipelineStatus.SUCCESS,
+        PipelineStatus.FAILED,
+        PipelineStatus.NOT_IMPLEMENTED,
+        PipelineStatus.PENDING,
+        PipelineStatus.RUNNING,
+    }
+
     def __init__(self, registry, classifier=None):
         self.registry = registry
         self.classifier = classifier or TaskClassifier()
@@ -33,12 +51,7 @@ class Manager:
         print(f"Manager: Routing task to {pipeline.name}...")
         try:
             result = pipeline.run(task)
-            if not isinstance(result, dict):
-                raise TypeError("Pipeline must return a PipelineResult dictionary")
-            result.setdefault("task_type", task_type)
-            result.setdefault("pipeline", pipeline.name)
-            result.setdefault("task", task.task_text)
-            result.setdefault("task_id", task.id)
+            self._validate_pipeline_result(result)
             print(f"Manager: Task completed with status: {result.get('status')}")
             return result
         except Exception as error:
@@ -50,3 +63,17 @@ class Manager:
                 task_type=task_type,
                 error=str(error),
             ).to_dict()
+
+    def _validate_pipeline_result(self, result):
+        if not isinstance(result, dict):
+            raise TypeError("Pipeline must return a PipelineResult dictionary")
+
+        missing_keys = self.REQUIRED_RESULT_KEYS - result.keys()
+        if missing_keys:
+            raise ValueError(
+                "PipelineResult missing required keys: "
+                + ", ".join(sorted(missing_keys))
+            )
+
+        if result["status"] not in self.ALLOWED_RESULT_STATUSES:
+            raise ValueError(f"PipelineResult has invalid status: {result['status']}")

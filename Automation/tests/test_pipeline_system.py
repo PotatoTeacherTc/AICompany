@@ -37,6 +37,15 @@ class TestPipeline(BasePipeline):
         return PipelineResult(PipelineStatus.SUCCESS, self.name, task).to_dict()
 
 
+class FixedResultPipeline(BasePipeline):
+    def __init__(self, result):
+        super().__init__("Fixed Result Pipeline")
+        self.result = result
+
+    def run(self, task):
+        return self.result
+
+
 class PipelineTestCase(unittest.TestCase):
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()
@@ -210,6 +219,64 @@ class FailurePipelineTests(PipelineTestCase):
 
 
 class ManagerTests(PipelineTestCase):
+    def _manager_for_result(self, result):
+        registry = PipelineRegistry()
+        registry.register("CONTENT", FixedResultPipeline(result))
+        return Manager(registry)
+
+    def test_manager_accepts_valid_pipeline_result(self):
+        task = Task("Create a video")
+        result = PipelineResult(
+            PipelineStatus.SUCCESS,
+            "Fixed Result Pipeline",
+            task,
+            task_type="CONTENT",
+        ).to_dict()
+
+        handled = self._manager_for_result(result).handle(task)
+
+        self.assertEqual(PipelineStatus.SUCCESS, handled["status"])
+        self.assertEqual(result, handled)
+
+    def test_manager_converts_missing_required_result_key_to_failed_result(self):
+        result = {
+            "status": PipelineStatus.SUCCESS,
+            "pipeline": "Fixed Result Pipeline",
+            "task": "Create a video",
+            "task_id": "test-id",
+            "task_type": "CONTENT",
+            "error": None,
+        }
+
+        handled = self._manager_for_result(result).handle(Task("Create a video"))
+
+        self.assertEqual(PipelineStatus.FAILED, handled["status"])
+        self.assertIn("missing required keys", handled["error"])
+
+    def test_manager_converts_invalid_result_status_to_failed_result(self):
+        result = {
+            "status": "INVALID_STATUS",
+            "pipeline": "Fixed Result Pipeline",
+            "task": "Create a video",
+            "task_id": "test-id",
+            "task_type": "CONTENT",
+            "data": {},
+            "error": None,
+        }
+
+        handled = self._manager_for_result(result).handle(Task("Create a video"))
+
+        self.assertEqual(PipelineStatus.FAILED, handled["status"])
+        self.assertIn("invalid status", handled["error"])
+
+    def test_manager_converts_non_dictionary_result_to_failed_result(self):
+        handled = self._manager_for_result(["not", "a", "result"]).handle(
+            Task("Create a video")
+        )
+
+        self.assertEqual(PipelineStatus.FAILED, handled["status"])
+        self.assertIn("PipelineResult dictionary", handled["error"])
+
     def test_classifier_identifies_all_registered_task_types(self):
         manager = Manager(self.registry())
         cases = {
