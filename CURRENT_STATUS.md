@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 63**.
+Current mission baseline: **Mission 64**.
 
 ## Verified completed capabilities
 
@@ -140,6 +140,12 @@ not inferred from a missing historical mission log.
   issues no-storage signed access tokens containing only user ID and expiry.
   Expired or modified tokens and every invalid credential combination are
   rejected without exposing credential details.
+- Mission 64: FastAPI exposes login and current-user endpoints. Applications
+  can enable Bearer authentication with `auth_required=True`; then workspace
+  members can read/submit work while OWNER/ADMIN are required for membership
+  changes. Authentication failure, denied role, and missing workspace return
+  sanitized 401, 403, and 404 responses. The default remains unauthenticated
+  for existing API compatibility; refresh tokens are not implemented.
 
 ## Implemented pipelines
 
@@ -154,14 +160,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **77 tests**. Its expected command is:
+The current suite contains **78 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 63 verification result: **77 passed, 0 failed**.
+Mission 64 verification result: **78 passed, 0 failed**.
 
 ## Not implemented
 

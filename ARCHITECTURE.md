@@ -85,6 +85,9 @@ AI provider layer: provider adapters used by pipelines, never directly by UI
 - Supplying `workspace_id` when reading a Task provides data-scope mismatch
   protection at the current API boundary. It is not a substitute for future
   authenticated membership authorization.
+- `create_app(auth_required=True)` enables Bearer checks for workspace/task
+  access. MEMBER may access workspace work; OWNER and ADMIN may change
+  membership. The default remains false solely for legacy API compatibility.
 - Backend API and web dashboard layers will access workspace-scoped services,
   never filesystem Pipelines or provider credentials directly.
 - Authentication, subscription, credit, and payment components belong outside

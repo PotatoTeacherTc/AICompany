@@ -8,7 +8,7 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 63
+## Current baseline: Mission 64
 
 The verified implementation currently provides a Task/Queue/Worker execution
 path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,
@@ -52,6 +52,10 @@ password-hashing abstraction. Login, bearer tokens, and request authorization
 are now available as application services using an injected, signed,
 expiry-checked token provider. HTTP authentication and authorization remain
 incomplete.
+The FastAPI factory now supports opt-in Bearer authentication and role-based
+workspace boundaries while preserving its prior unauthenticated default for
+backward compatibility. Refresh tokens and production secret configuration are
+not implemented.
 
 ## Development stages
 

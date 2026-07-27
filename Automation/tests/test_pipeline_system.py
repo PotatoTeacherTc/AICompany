@@ -163,6 +163,7 @@ class TaskTests(unittest.TestCase):
         users = UserService()
         owner = users.create("owner@example.com")
         member = users.create("member@example.com")
+        third = users.create("third@example.com")
         service = WorkspaceMembershipService(WorkspaceService(), users)
         workspace = service.create_workspace("Team", owner["user_id"])
         workspace_id = workspace["workspace_id"]
@@ -489,6 +490,35 @@ class TaskApiEndpointTests(PipelineTestCase):
         self.assertEqual(409, last_owner.status_code)
         self.assertEqual(404, unknown_user.status_code)
         self.assertEqual(404, unknown_workspace.status_code)
+
+    def test_authenticated_api_enforces_bearer_and_workspace_roles(self):
+        users = UserService()
+        owner = users.create("owner@example.com")
+        member = users.create("member@example.com")
+        third = users.create("third@example.com")
+        credentials = CredentialService(users)
+        credentials.set_password(owner["user_id"], "safe-passphrase")
+        credentials.set_password(member["user_id"], "safe-passphrase")
+        workspaces = WorkspaceService()
+        memberships = WorkspaceMembershipService(workspaces, users)
+        workspace = memberships.create_workspace("Secure", owner["user_id"])
+        memberships.add(workspace["workspace_id"], member["user_id"], MEMBER)
+        app = create_app(
+            automation_service=self._client()[1], workspace_service=workspaces,
+            user_service=users, membership_service=memberships,
+            credential_service=credentials, auth_required=True,
+        )
+        client = TestClient(app)
+        owner_token = client.post("/auth/login", json={"email": "owner@example.com", "password": "safe-passphrase"}).json()["access_token"]
+        member_token = client.post("/auth/login", json={"email": "member@example.com", "password": "safe-passphrase"}).json()["access_token"]
+        headers = {"Authorization": f"Bearer {member_token}"}
+        workspace_id = workspace["workspace_id"]
+
+        self.assertEqual(401, client.get("/users/me").status_code)
+        self.assertEqual(member["user_id"], client.get("/users/me", headers=headers).json()["user_id"])
+        self.assertEqual(403, client.post(f"/workspaces/{workspace_id}/members", headers=headers, json={"user_id": owner["user_id"], "role": "MEMBER"}).status_code)
+        self.assertEqual(200, client.get(f"/workspaces/{workspace_id}", headers=headers).status_code)
+        self.assertEqual(201, client.post(f"/workspaces/{workspace_id}/members", headers={"Authorization": f"Bearer {owner_token}"}, json={"user_id": third["user_id"], "role": "MEMBER"}).status_code)
 
 
 class TaskControlApiEndpointTests(PipelineTestCase):
