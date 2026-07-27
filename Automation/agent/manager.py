@@ -51,7 +51,7 @@ class Manager:
         print(f"Manager: Routing task to {pipeline.name}...")
         try:
             result = pipeline.run(task)
-            self._validate_pipeline_result(result)
+            self._validate_pipeline_result(result, task, task_type, pipeline)
             print(f"Manager: Task completed with status: {result.get('status')}")
             return result
         except Exception as error:
@@ -64,7 +64,7 @@ class Manager:
                 error=str(error),
             ).to_dict()
 
-    def _validate_pipeline_result(self, result):
+    def _validate_pipeline_result(self, result, task, task_type, pipeline):
         if not isinstance(result, dict):
             raise TypeError("Pipeline must return a PipelineResult dictionary")
 
@@ -77,3 +77,19 @@ class Manager:
 
         if result["status"] not in self.ALLOWED_RESULT_STATUSES:
             raise ValueError(f"PipelineResult has invalid status: {result['status']}")
+
+        expected_values = {
+            "pipeline": pipeline.name,
+            "task": task.task_text,
+            "task_id": task.id,
+            "task_type": task_type,
+        }
+        for key, expected_value in expected_values.items():
+            if result[key] != expected_value:
+                raise ValueError(f"PipelineResult {key} does not match the current execution")
+
+        if not isinstance(result["data"], dict):
+            raise ValueError("PipelineResult data must be a dictionary")
+
+        if result["error"] is not None and not isinstance(result["error"], str):
+            raise ValueError("PipelineResult error must be a string or None")

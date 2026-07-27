@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 23**.
+Current mission baseline: **Mission 24**.
 
 ## Verified completed capabilities
 
@@ -22,6 +22,9 @@ not inferred from a missing historical mission log.
   BasePipeline implementations, and duplicate registrations.
 - Mission 23: Manager now validates PipelineResult dictionary type, required
   keys, and allowed status values before returning a pipeline result.
+- Mission 24: Manager now verifies that PipelineResult execution metadata
+  matches the active Task and selected Pipeline, and validates data/error
+  value types.
 
 ## Implemented pipelines
 
@@ -36,14 +39,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **21 tests**. Its expected command is:
+The current suite contains **22 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 23 verification result: **21 passed, 0 failed**.
+Mission 24 verification result: **22 passed, 0 failed**.
 
 ## Not implemented
 

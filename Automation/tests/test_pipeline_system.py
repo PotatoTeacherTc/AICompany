@@ -277,6 +277,21 @@ class ManagerTests(PipelineTestCase):
         self.assertEqual(PipelineStatus.FAILED, handled["status"])
         self.assertIn("PipelineResult dictionary", handled["error"])
 
+    def test_manager_converts_result_with_mismatched_execution_metadata_to_failed_result(self):
+        task = Task("Create a video")
+        result = PipelineResult(
+            PipelineStatus.SUCCESS,
+            "Fixed Result Pipeline",
+            task,
+            task_type="CONTENT",
+        ).to_dict()
+        result["task_id"] = "different-task-id"
+
+        handled = self._manager_for_result(result).handle(task)
+
+        self.assertEqual(PipelineStatus.FAILED, handled["status"])
+        self.assertIn("task_id", handled["error"])
+
     def test_classifier_identifies_all_registered_task_types(self):
         manager = Manager(self.registry())
         cases = {
