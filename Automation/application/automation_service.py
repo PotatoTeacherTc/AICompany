@@ -45,6 +45,7 @@ class AutomationService:
         parent_task_id=None,
         max_retries=0,
         timeout_seconds=None,
+        workspace_id=None,
     ):
         return Task(
             task_text,
@@ -52,6 +53,7 @@ class AutomationService:
             parent_task_id=parent_task_id,
             max_retries=max_retries,
             timeout_seconds=timeout_seconds,
+            workspace_id=workspace_id,
         )
 
     def submit(self, task):

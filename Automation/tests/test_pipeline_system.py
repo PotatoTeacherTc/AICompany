@@ -332,6 +332,18 @@ class TaskApiEndpointTests(PipelineTestCase):
         self.assertEqual(404, missing.status_code)
         self.assertEqual({"error": {"code": "task_not_found", "message": "Task not found"}}, missing.json())
 
+    def test_workspace_api_and_workspace_task_creation(self):
+        client, _ = self._client()
+        created = client.post("/workspaces", json={"name": "API Workspace"})
+        workspace_id = created.json()["workspace_id"]
+        task = client.post("/tasks", json={"task_text": "workspace task", "workspace_id": workspace_id})
+        missing = client.post("/tasks", json={"task_text": "bad", "workspace_id": "missing"})
+        self.assertEqual(201, created.status_code)
+        self.assertTrue(any(item["workspace_id"] == workspace_id for item in client.get("/workspaces").json()["items"]))
+        self.assertEqual(workspace_id, client.get(f"/workspaces/{workspace_id}").json()["workspace_id"])
+        self.assertEqual(workspace_id, task.json()["task"]["workspace_id"])
+        self.assertEqual(404, missing.status_code)
+
 
 class TaskControlApiEndpointTests(PipelineTestCase):
     def _client_and_service(self):

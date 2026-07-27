@@ -4,7 +4,7 @@ from api.errors import HANDLED_EXCEPTIONS
 from api.task_api import TaskApi
 
 
-def create_app(automation_service=None, task_query_service=None):
+def create_app(automation_service=None, task_query_service=None, workspace_service=None):
     """Create the HTTP application without starting a server."""
     if automation_service is None:
         automation_service, task_query_service = _build_default_services()
@@ -20,7 +20,11 @@ def create_app(automation_service=None, task_query_service=None):
     app = FastAPI(title="AICompany API", version="0.1.0")
     app.state.automation_service = automation_service
     app.state.task_query_service = task_query_service
-    app.state.task_api = TaskApi(automation_service, task_query_service)
+    if workspace_service is None:
+        from application.workspace_service import WorkspaceService
+        workspace_service = WorkspaceService()
+    app.state.workspace_service = workspace_service
+    app.state.task_api = TaskApi(automation_service, task_query_service, workspace_service)
     for exception_type, handler in HANDLED_EXCEPTIONS.items():
         app.add_exception_handler(exception_type, handler)
 
@@ -31,7 +35,11 @@ def create_app(automation_service=None, task_query_service=None):
     @app.post("/tasks", status_code=201)
     def create_task(payload: dict):
         try:
-            return app.state.task_api.create_task(payload)
+            response = app.state.task_api.create_task(payload)
+            if response.get("workspace") == "not_found":
+                from api.errors import error_response
+                return error_response(404, "workspace_not_found", "Workspace not found")
+            return response
         except (TypeError, ValueError):
             from api.errors import error_response
 
@@ -45,6 +53,24 @@ def create_app(automation_service=None, task_query_service=None):
 
             return error_response(404, "task_not_found", "Task not found")
         return response
+
+    @app.post("/workspaces", status_code=201)
+    def create_workspace(payload: dict):
+        try: return app.state.workspace_service.create(payload.get("name"))
+        except (TypeError, ValueError):
+            from api.errors import error_response
+            return error_response(400, "invalid_request", "Invalid workspace request")
+
+    @app.get("/workspaces")
+    def list_workspaces(): return {"items": app.state.workspace_service.list()}
+
+    @app.get("/workspaces/{workspace_id}")
+    def get_workspace(workspace_id: str):
+        workspace = app.state.workspace_service.get(workspace_id)
+        if workspace is None:
+            from api.errors import error_response
+            return error_response(404, "workspace_not_found", "Workspace not found")
+        return workspace
 
     @app.get("/tasks")
     def list_tasks(

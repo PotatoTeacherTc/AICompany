@@ -8,6 +8,7 @@ class CreateTaskRequest:
     parent_task_id: str | None = None
     max_retries: int = 0
     timeout_seconds: float | None = None
+    workspace_id: str | None = None
 
     @classmethod
     def from_dict(cls, payload):
@@ -25,6 +26,7 @@ class CreateTaskRequest:
             parent_task_id=payload.get("parent_task_id"),
             max_retries=payload.get("max_retries", 0),
             timeout_seconds=payload.get("timeout_seconds"),
+            workspace_id=payload.get("workspace_id"),
         )
 
 

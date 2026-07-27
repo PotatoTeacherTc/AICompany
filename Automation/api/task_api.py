@@ -9,18 +9,22 @@ from api.contracts import (
 class TaskApi:
     """Transport-neutral task endpoints backed only by application services."""
 
-    def __init__(self, automation_service, task_query_service):
+    def __init__(self, automation_service, task_query_service, workspace_service=None):
         self.automation_service = automation_service
         self.task_query_service = task_query_service
+        self.workspace_service = workspace_service
 
     def create_task(self, request):
         request = self._create_request(request)
+        if self.workspace_service and request.workspace_id and not self.workspace_service.get(request.workspace_id):
+            return {"workspace": "not_found"}
         task = self.automation_service.submit_text(
             request.task_text,
             parameters=request.parameters,
             parent_task_id=request.parent_task_id,
             max_retries=request.max_retries,
             timeout_seconds=request.timeout_seconds,
+            workspace_id=request.workspace_id,
         )
         return TaskResponse(self.task_query_service.get(task.id)).to_dict()
 

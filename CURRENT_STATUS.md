@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 57**.
+Current mission baseline: **Mission 58**.
 
 ## Verified completed capabilities
 
@@ -133,7 +133,7 @@ cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 57 verification result: **66 passed, 0 failed**.
+Mission 58 verification result: **67 passed, 0 failed**.
 
 ## Not implemented
 
