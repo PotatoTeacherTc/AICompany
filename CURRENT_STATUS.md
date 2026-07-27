@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 49**.
+Current mission baseline: **Mission 50**.
 
 ## Verified completed capabilities
 
@@ -90,6 +90,10 @@ not inferred from a missing historical mission log.
   result files through an injectable ArtifactManager. Their existing public
   result fields are retained, while queryable artifact records are included in
   PipelineResult and execution history.
+- Mission 50: AutomationService now provides a framework-independent,
+  dependency-injected application boundary for TaskQueue, TaskWorker,
+  ExecutionHistory, ArtifactManager, and Manager; `main.run()` uses it without
+  breaking its existing public entry point.
 
 ## Implemented pipelines
 
@@ -104,14 +108,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **53 tests**. Its expected command is:
+The current suite contains **54 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 49 verification result: **53 passed, 0 failed**.
+Mission 50 verification result: **54 passed, 0 failed**.
 
 ## Not implemented
 

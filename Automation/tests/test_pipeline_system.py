@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 from agent.manager import Manager
 from agent.goal_task_planner import GoalTaskPlanner
+from application.automation_service import AutomationService
 from config.settings import PROJECT_ROOT
 from core.execution_history import ExecutionHistory
 from core.execution_history_repository import InMemoryExecutionHistoryRepository
@@ -97,6 +98,39 @@ class TaskTests(unittest.TestCase):
 
         self.assertEqual(parent.id, child.parent_task_id)
         self.assertEqual(parent.id, child.to_dict()["parent_task_id"])
+
+
+class ApplicationServiceTests(PipelineTestCase):
+    def test_service_submits_and_executes_task_with_injected_dependencies(self):
+        class SuccessfulManager:
+            def handle(_, task):
+                task.task_type = "FILE"
+                task.pipeline = "Test Pipeline"
+                return PipelineResult(
+                    PipelineStatus.SUCCESS,
+                    task.pipeline,
+                    task,
+                    task.task_type,
+                ).to_dict()
+
+        artifacts = ArtifactManager(InMemoryArtifactRepository())
+        service = AutomationService(
+            SuccessfulManager(),
+            history=self.history,
+            artifact_manager=artifacts,
+        )
+        task = service.submit_text(
+            "service task",
+            parameters={"source": "test"},
+            max_retries=1,
+        )
+        completed = service.run_all()
+
+        self.assertEqual([task], completed)
+        self.assertEqual(PipelineStatus.SUCCESS, task.status)
+        self.assertIs(self.history, service.task_queue.history)
+        self.assertIs(artifacts, service.artifact_manager)
+        self.assertEqual(task.id, self.history.get_all()[0]["task_id"])
 
 
 class ProviderTests(unittest.TestCase):

@@ -8,7 +8,7 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 49
+## Current baseline: Mission 50
 
 The verified implementation currently provides a Task/Queue/Worker execution
 path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,
@@ -24,6 +24,8 @@ with the offline MockProvider. Artifact metadata can now be stored through an
 in-memory or file-backed repository boundary, follows a standard artifact
 metadata contract, and is registered by the FILE, MUSIC, CONTENT, and RESEARCH
 pipelines for result and history queries.
+The framework-independent AutomationService now provides the application
+boundary for task submission and execution.
 
 ## Development stages
 

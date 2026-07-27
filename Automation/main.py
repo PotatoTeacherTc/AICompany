@@ -1,4 +1,6 @@
 from agent.manager import Manager
+from application.automation_service import AutomationService
+from core.artifact_manager import ArtifactManager
 from core.base_pipeline import BasePipeline
 from core.execution_history import ExecutionHistory
 from core.content_pipeline import ContentPipeline
@@ -11,8 +13,6 @@ from core.research_pipeline import ResearchPipeline
 from core.status import PipelineStatus
 from core.stub_pipelines import StubPipeline
 from core.task import Task
-from core.task_queue import TaskQueue
-from core.worker import TaskWorker
 
 
 class FailingPipeline(BasePipeline):
@@ -37,26 +37,28 @@ def build_registry(
     music_root=None,
     content_root=None,
     research_root=None,
+    artifact_manager=None,
 ):
     registry = PipelineRegistry()
+    artifact_manager = artifact_manager or ArtifactManager()
     registry.register(
         "FILE",
-        AIPipeline(base_folder=base_folder),
+        AIPipeline(base_folder=base_folder, artifact_manager=artifact_manager),
         capabilities=("file_organization",),
     )
     registry.register(
         "MUSIC",
-        MusicPipeline(music_root=music_root),
+        MusicPipeline(music_root=music_root, artifact_manager=artifact_manager),
         capabilities=("music_project_creation",),
     )
     registry.register(
         "CONTENT",
-        ContentPipeline(content_root=content_root),
+        ContentPipeline(content_root=content_root, artifact_manager=artifact_manager),
         capabilities=("content_project_creation",),
     )
     registry.register(
         "RESEARCH",
-        ResearchPipeline(research_root=research_root),
+        ResearchPipeline(research_root=research_root, artifact_manager=artifact_manager),
         capabilities=("research_project_creation",),
     )
     registry.register(
@@ -70,12 +72,16 @@ def build_registry(
     return registry
 
 
-def run(task_texts=None, history=None, registry=None):
+def run(task_texts=None, history=None, registry=None, artifact_manager=None):
     print("AICompany Automation")
     history = history or ExecutionHistory()
-    registry = registry or build_registry(history)
+    registry = registry or build_registry(history, artifact_manager=artifact_manager)
     manager = Manager(registry)
-    task_queue = TaskQueue(history=history)
+    service = AutomationService(
+        manager,
+        history=history,
+        artifact_manager=artifact_manager,
+    )
 
     print("\nRegistered Pipelines:")
     print(registry.list_pipelines())
@@ -90,9 +96,9 @@ def run(task_texts=None, history=None, registry=None):
             "Analyze execution history",
         ]
     for task_text in task_texts:
-        task_queue.add(Task(task_text))
+        service.submit(Task(task_text))
 
-    completed_tasks = TaskWorker(task_queue, manager, history).run_all()
+    completed_tasks = service.run_all()
     print("\n" + "=" * 60 + "\nFINAL TASK SUMMARY\n" + "=" * 60)
     for task in completed_tasks:
         print(f"[{task.id}] {task.status} - {task.task_text}")
