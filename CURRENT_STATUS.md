@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 52**.
+Current mission baseline: **Mission 53**.
 
 ## Verified completed capabilities
 
@@ -101,6 +101,9 @@ not inferred from a missing historical mission log.
 - Mission 52: A transport-neutral API contract layer now defines validated task
   creation and single/list query DTOs. TaskApi depends only on application
   services; it does not start an HTTP server or implement authentication.
+- Mission 53: FastAPI application factory now provides injected application
+  services, a `/health` endpoint, and sanitized global validation/internal
+  error responses. It remains separate from the existing automation runner.
 
 ## Implemented pipelines
 
@@ -115,14 +118,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **58 tests**. Its expected command is:
+The current suite contains **60 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 52 verification result: **58 passed, 0 failed**.
+Mission 53 verification result: **60 passed, 0 failed**.
 
 ## Not implemented
 
@@ -133,7 +136,7 @@ Mission 52 verification result: **58 passed, 0 failed**.
 - Automatic natural-language multi-step planning from a user goal. Structured
   goal-step input can now be validated and represented as executable Tasks.
 - Retry/recovery policy and persistent long-running queue.
-- HTTP server, UI, authentication, and interactive goal-submission layer.
+- Task HTTP routes, UI, authentication, and interactive goal-submission layer.
 - A default registered NOT_IMPLEMENTED pipeline is not present; `StubPipeline`
   remains available for future unavailable capabilities.
 

@@ -13,7 +13,9 @@ from agent.goal_task_planner import GoalTaskPlanner
 from application.automation_service import AutomationService
 from application.task_query_service import TaskQueryService
 from api.contracts import CreateTaskRequest, ListTasksRequest
+from api.app import create_app
 from api.task_api import TaskApi
+from fastapi.testclient import TestClient
 from config.settings import PROJECT_ROOT
 from core.execution_history import ExecutionHistory
 from core.execution_history_repository import InMemoryExecutionHistoryRepository
@@ -225,6 +227,39 @@ class ApiContractTests(PipelineTestCase):
             CreateTaskRequest.from_dict({"task_text": ""})
         with self.assertRaises(TypeError):
             CreateTaskRequest.from_dict("invalid")
+
+
+class FastApiFoundationTests(PipelineTestCase):
+    def test_application_factory_exposes_health_with_injected_services(self):
+        class UnusedManager:
+            def handle(_, task):
+                raise AssertionError("health check must not execute tasks")
+
+        service = AutomationService(UnusedManager(), history=self.history)
+        app = create_app(automation_service=service)
+
+        response = TestClient(app).get("/health")
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual({"status": "ok"}, response.json())
+        self.assertIs(service, app.state.automation_service)
+
+    def test_application_factory_returns_safe_global_error_response(self):
+        service = AutomationService(object(), history=self.history)
+        app = create_app(automation_service=service)
+
+        @app.get("/test-error")
+        def test_error():
+            raise RuntimeError("sensitive internal detail")
+
+        response = TestClient(app, raise_server_exceptions=False).get("/test-error")
+
+        self.assertEqual(500, response.status_code)
+        self.assertEqual(
+            {"error": {"code": "internal_error", "message": "Internal server error"}},
+            response.json(),
+        )
+        self.assertNotIn("sensitive internal detail", response.text)
 
 
 class ProviderTests(unittest.TestCase):

@@ -1,0 +1,3 @@
+# FastAPI application factory and its in-process test client.
+fastapi>=0.115,<1
+httpx>=0.27,<1

@@ -8,7 +8,7 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 52
+## Current baseline: Mission 53
 
 The verified implementation currently provides a Task/Queue/Worker execution
 path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,
@@ -30,6 +30,8 @@ Task query responses now combine task state, execution history, provider usage,
 and artifact metadata through repository-neutral DTOs.
 The transport-neutral API contract layer now defines task creation and task
 lookup/list requests and responses without selecting a web framework.
+A FastAPI application factory now supplies an HTTP foundation with dependency
+injection, health checking, and sanitized global error responses.
 
 ## Development stages
 
