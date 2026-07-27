@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 53**.
+Current mission baseline: **Mission 54**.
 
 ## Verified completed capabilities
 
@@ -104,6 +104,10 @@ not inferred from a missing historical mission log.
 - Mission 53: FastAPI application factory now provides injected application
   services, a `/health` endpoint, and sanitized global validation/internal
   error responses. It remains separate from the existing automation runner.
+- Mission 54: FastAPI now exposes task create, single-query, and filtered-list
+  endpoints through TaskApi and application services only. Responses include
+  task state, pipeline, usage, and artifacts; invalid requests and missing
+  tasks return sanitized 4xx responses.
 
 ## Implemented pipelines
 
@@ -118,14 +122,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **60 tests**. Its expected command is:
+The current suite contains **62 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 53 verification result: **60 passed, 0 failed**.
+Mission 54 verification result: **62 passed, 0 failed**.
 
 ## Not implemented
 
@@ -136,7 +140,7 @@ Mission 53 verification result: **60 passed, 0 failed**.
 - Automatic natural-language multi-step planning from a user goal. Structured
   goal-step input can now be validated and represented as executable Tasks.
 - Retry/recovery policy and persistent long-running queue.
-- Task HTTP routes, UI, authentication, and interactive goal-submission layer.
+- Task control routes, UI, authentication, and interactive goal-submission layer.
 - A default registered NOT_IMPLEMENTED pipeline is not present; `StubPipeline`
   remains available for future unavailable capabilities.
 

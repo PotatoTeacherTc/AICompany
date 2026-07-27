@@ -262,6 +262,58 @@ class FastApiFoundationTests(PipelineTestCase):
         self.assertNotIn("sensitive internal detail", response.text)
 
 
+class TaskApiEndpointTests(PipelineTestCase):
+    def _client(self):
+        artifact_file = self.root / "api-output.txt"
+        artifact_file.write_text("result", encoding="utf-8")
+        artifacts = ArtifactManager()
+        artifact = artifacts.register_file(artifact_file, "TEXT", "API Test Pipeline")
+
+        class SuccessfulManager:
+            def handle(_, task):
+                task.task_type = "CONTENT"
+                task.pipeline = "API Test Pipeline"
+                return PipelineResult(
+                    PipelineStatus.SUCCESS,
+                    task.pipeline,
+                    task,
+                    task.task_type,
+                    data={"provider_usage": {"provider": "mock", "total_tokens": 4}},
+                    artifacts=[artifact],
+                ).to_dict()
+
+        service = AutomationService(SuccessfulManager(), history=self.history, artifact_manager=artifacts)
+        return TestClient(create_app(automation_service=service)), service
+
+    def test_task_endpoints_create_get_and_list_result_metadata(self):
+        client, service = self._client()
+
+        created = client.post("/tasks", json={"task_text": "Create API task"})
+        task_id = created.json()["task_id"]
+        service.run_all()
+        fetched = client.get(f"/tasks/{task_id}")
+        listed = client.get("/tasks", params={"status": "SUCCESS", "pipeline": "API Test Pipeline"})
+
+        self.assertEqual(201, created.status_code)
+        self.assertEqual(PipelineStatus.QUEUED, created.json()["status"])
+        self.assertEqual(200, fetched.status_code)
+        self.assertEqual(PipelineStatus.SUCCESS, fetched.json()["status"])
+        self.assertEqual("mock", fetched.json()["usage"]["provider"])
+        self.assertEqual(1, len(fetched.json()["artifacts"]))
+        self.assertEqual([task_id], [item["task_id"] for item in listed.json()["items"]])
+
+    def test_task_endpoints_return_safe_4xx_errors(self):
+        client, _ = self._client()
+
+        invalid = client.post("/tasks", json={"task_text": ""})
+        missing = client.get("/tasks/missing-task")
+
+        self.assertEqual(400, invalid.status_code)
+        self.assertEqual({"error": {"code": "invalid_request", "message": "Invalid task request"}}, invalid.json())
+        self.assertEqual(404, missing.status_code)
+        self.assertEqual({"error": {"code": "task_not_found", "message": "Task not found"}}, missing.json())
+
+
 class ProviderTests(unittest.TestCase):
     def test_mock_provider_returns_standard_response_with_usage(self):
         response = MockProvider().generate(
