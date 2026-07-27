@@ -8,7 +8,7 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 58
+## Current baseline: Mission 59
 
 The verified implementation currently provides a Task/Queue/Worker execution
 path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,
@@ -37,6 +37,10 @@ FastAPI boundary while continuing to use only application services.
 Task cancellation and retry controls now use the existing queue/history state
 contract and return conflict responses for terminal or otherwise invalid state
 transitions.
+Workspace records and workspace-aware task creation are available through the
+API. The new User domain persists only normalized email identity metadata
+through injectable in-memory or JSON-file repositories; authentication and
+credentials are intentionally outside this boundary.
 
 ## Development stages
 

@@ -36,7 +36,9 @@ from core.task import Task
 from core.task_queue import TaskQueue
 from core.worker import TaskWorker
 from core.workspace_repository import FileWorkspaceRepository, InMemoryWorkspaceRepository
+from core.user_repository import FileUserRepository
 from application.workspace_service import WorkspaceService
+from application.user_service import UserService
 from providers.factory import ProviderFactory
 from providers.mock_provider import MockProvider
 from providers.models import ProviderRequest
@@ -89,6 +91,20 @@ class PipelineTestCase(unittest.TestCase):
 
 
 class TaskTests(unittest.TestCase):
+    def test_user_email_normalization_and_duplicate_protection(self):
+        service = UserService()
+        user = service.create(" A@Example.COM ")
+        self.assertEqual("a@example.com", user["email"])
+        with self.assertRaises(ValueError): service.create("a@example.com")
+
+    def test_file_user_repository_reloads_user_without_sensitive_fields(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repository_file = Path(directory) / "users.json"
+            created = UserService(FileUserRepository(repository_file)).create("user@example.com")
+            reloaded = UserService(FileUserRepository(repository_file)).get(created["user_id"])
+
+        self.assertEqual(created, reloaded)
+        self.assertEqual({"user_id", "email", "created_at"}, set(reloaded))
     def test_task_preserves_structured_parameters_in_serialized_form(self):
         parameters = {"target_folder": "input", "priority": "high"}
         task = Task("Organize files", parameters=parameters)

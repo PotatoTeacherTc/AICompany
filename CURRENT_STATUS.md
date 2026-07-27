@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 58**.
+Current mission baseline: **Mission 59**.
 
 ## Verified completed capabilities
 
@@ -112,6 +112,15 @@ not inferred from a missing historical mission log.
   ExecutionHistory's single-record lifecycle contract. Terminal or invalid
   controls return sanitized 409 responses; an in-process lock minimizes
   duplicate concurrent control changes.
+- Mission 56: Workspace models and in-memory/file repositories establish a
+  default workspace while retaining single-workspace compatibility.
+- Mission 57: Task, history, and artifact records carry workspace IDs and
+  support workspace-scoped repository queries.
+- Mission 58: FastAPI workspace create/list/detail endpoints and
+  workspace-aware task creation are available through application services.
+- Mission 59: A credential-free User domain now stores only generated user ID,
+  normalized email, and creation time through injected in-memory or JSON-file
+  repositories. Duplicate normalized emails are rejected.
 
 ## Implemented pipelines
 
@@ -126,14 +135,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **64 tests**. Its expected command is:
+The current suite contains **69 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 58 verification result: **67 passed, 0 failed**.
+Mission 59 verification result: **69 passed, 0 failed**.
 
 ## Not implemented
 
@@ -144,7 +153,9 @@ Mission 58 verification result: **67 passed, 0 failed**.
 - Automatic natural-language multi-step planning from a user goal. Structured
   goal-step input can now be validated and represented as executable Tasks.
 - Retry/recovery policy and persistent long-running queue.
-- UI, authentication, and interactive goal-submission layer.
+- Passwords, authentication tokens, login, and authorization. The User domain
+  deliberately contains no credential or secret fields.
+- UI and interactive goal-submission layer.
 - A default registered NOT_IMPLEMENTED pipeline is not present; `StubPipeline`
   remains available for future unavailable capabilities.
 
