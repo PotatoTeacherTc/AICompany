@@ -22,7 +22,7 @@ the workflow; `run()` is the explicit entry point.
 | Pipeline contract | `core/base_pipeline.py` | Each Pipeline receives a Task and returns a PipelineResult dictionary. |
 | Implemented pipelines | `core/pipeline.py` (FILE), `music_pipeline.py`, `content_pipeline.py`, `research_pipeline.py`, `history_pipeline.py`, `main.py` (intentional FAIL) | Produce files or history data and return common results. FILE, MUSIC, CONTENT, and RESEARCH accept test output path injection. |
 | Persistence and analysis | `core/execution_history.py`, `core/history_analyzer.py` | Stores JSON execution records, including Task parameters, and calculates status/type summaries. |
-| Supporting services | `agent/planner.py`, `executor.py`, `validator.py`, `reporter.py`, `scripts/` | FILE pipeline planning, file organization, report generation, and logging. |
+| Supporting services | `agent/planner.py`, `executor.py`, `validator.py`, `reporter.py`, `scripts/` | FILE pipeline planning, execution, validation, report generation, and logging. TaskPlanner produces the execution plan; FILE adds its target folder and TaskExecutor consumes that plan rather than an independent folder argument. |
 | Tests | `Automation/tests/test_pipeline_system.py` | Standard-library unittest regression suite using temporary directories. It covers SUCCESS, FAILED, NOT_IMPLEMENTED, exception, registry, and Manager result-contract boundaries. |
 
 ## Current pipeline behavior

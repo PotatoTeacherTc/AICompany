@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 27**.
+Current mission baseline: **Mission 28**.
 
 ## Verified completed capabilities
 
@@ -32,6 +32,8 @@ not inferred from a missing historical mission log.
   which are also persisted in execution history for future planning work.
 - Mission 27: Task now supports an optional parent Task relationship that is
   serialized and persisted for future compound-goal execution.
+- Mission 28: FILE planning now produces an execution plan whose target-folder
+  field is consumed by TaskExecutor, with a regression test at that boundary.
 
 ## Implemented pipelines
 
@@ -46,14 +48,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **26 tests**. Its expected command is:
+The current suite contains **27 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 27 verification result: **26 passed, 0 failed**.
+Mission 28 verification result: **27 passed, 0 failed**.
 
 ## Not implemented
 

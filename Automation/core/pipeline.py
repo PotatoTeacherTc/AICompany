@@ -13,7 +13,7 @@ from config.settings import BASE_FOLDER
 
 class AIPipeline(BasePipeline):
 
-    def __init__(self, base_folder=None):
+    def __init__(self, base_folder=None, executor=None):
 
         super().__init__(
             "Automation Pipeline"
@@ -21,7 +21,7 @@ class AIPipeline(BasePipeline):
 
         self.planner = TaskPlanner()
 
-        self.executor = TaskExecutor()
+        self.executor = executor or TaskExecutor()
 
         self.validator = TaskValidator()
 
@@ -39,6 +39,8 @@ class AIPipeline(BasePipeline):
 
             plan = self.planner.create_plan(task)
 
+            plan["target_folder"] = str(self.base_folder)
+
 
             print("Plan:")
 
@@ -48,9 +50,7 @@ class AIPipeline(BasePipeline):
             print("Executing task...")
 
 
-            result = self.executor.execute(
-                self.base_folder
-            )
+            result = self.executor.execute(plan)
 
 
             print("Validating result...")

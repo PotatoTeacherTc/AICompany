@@ -109,6 +109,28 @@ class FilePipelineTests(PipelineTestCase):
         self.assertTrue((test_files / "notes.txt").exists())
         self.assertCountEqual(["SUCCESS", "SKIPPED"], result["data"]["result"])
 
+    def test_file_pipeline_passes_planner_output_to_executor(self):
+        test_files = self.root / "planned_files"
+        test_files.mkdir()
+
+        class RecordingExecutor:
+            def __init__(self):
+                self.plan = None
+
+            def execute(self, plan):
+                self.plan = plan
+                return []
+
+        executor = RecordingExecutor()
+        with patch("scripts.report_generator.log"):
+            result = AIPipeline(base_folder=test_files, executor=executor).run(
+                self.task("Organize files", "FILE")
+            )
+
+        self.assertEqual(PipelineStatus.SUCCESS, result["status"])
+        self.assertEqual(str(test_files), executor.plan["target_folder"])
+        self.assertEqual(executor.plan, result["data"]["plan"])
+
 
 class PipelineRegistryTests(unittest.TestCase):
     def test_registry_accepts_base_pipeline_and_rejects_invalid_registrations(self):
