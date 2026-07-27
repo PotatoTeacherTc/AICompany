@@ -381,7 +381,8 @@ class ResearchPipelineTests(PipelineTestCase):
             research_root=self.root / "failed_research", provider=FailingProvider()
         ).run(self.task("Research timeout", "RESEARCH"))
         self.assertEqual(PipelineStatus.FAILED, failed["status"])
-        self.assertIn("provider timed out", failed["error"])
+        self.assertEqual("ProviderError: TimeoutError", failed["error"])
+        self.assertNotIn("provider timed out", failed["error"])
 
     def test_research_pipeline_uses_configurable_questions_and_type(self):
         task = Task(

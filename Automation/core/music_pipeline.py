@@ -4,7 +4,7 @@ from config.settings import PROJECT_ROOT
 from core.base_pipeline import BasePipeline
 from core.result import PipelineResult
 from core.status import PipelineStatus
-from providers.models import ProviderRequest
+from providers.pipeline_utils import get_provider_usage, provider_error
 
 
 class MusicPipeline(BasePipeline):
@@ -60,20 +60,7 @@ class MusicPipeline(BasePipeline):
                 data={"project_name": project_name, "project_path": str(project_path), "files_created": [str(path) for path in files_created], "metadata": metadata, "provider_usage": provider_usage},
             ).to_dict()
         except Exception as error:
-            return PipelineResult(PipelineStatus.FAILED, self.name, task, task.task_type, error=f"ProviderError: {type(error).__name__}").to_dict()
+            return PipelineResult(PipelineStatus.FAILED, self.name, task, task.task_type, error=provider_error(error)).to_dict()
 
     def _generate_provider_usage(self, task):
-        if self.provider is None:
-            return None
-        response = self.provider.generate(ProviderRequest(prompt=task.task_text))
-        usage = getattr(response, "usage", None)
-        input_tokens = getattr(usage, "input_tokens", 0) or 0
-        output_tokens = getattr(usage, "output_tokens", 0) or 0
-        return {
-            "provider": getattr(response, "provider", self.provider.__class__.__name__),
-            "model": getattr(response, "model", None),
-            "input_tokens": input_tokens,
-            "output_tokens": output_tokens,
-            "total_tokens": getattr(usage, "total_tokens", input_tokens + output_tokens) or 0,
-            "estimated_cost_usd": getattr(usage, "estimated_cost_usd", 0.0) or 0.0,
-        }
+        return get_provider_usage(self.provider, task.task_text)

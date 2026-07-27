@@ -5,7 +5,7 @@ from config.settings import PROJECT_ROOT
 from core.base_pipeline import BasePipeline
 from core.result import PipelineResult
 from core.status import PipelineStatus
-from providers.models import ProviderRequest
+from providers.pipeline_utils import get_provider_usage, provider_error
 
 
 class ResearchPipeline(BasePipeline):
@@ -106,7 +106,7 @@ class ResearchPipeline(BasePipeline):
                 pipeline=self.name,
                 task=task,
                 task_type=task.task_type,
-                error=str(error),
+                error=provider_error(error) if self.provider is not None else str(error),
             ).to_dict()
 
     @staticmethod
@@ -129,18 +129,7 @@ class ResearchPipeline(BasePipeline):
         return {"research_type": research_type, "research_questions": list(research_questions)}
 
     def _generate_provider_usage(self, task):
-        if self.provider is None:
-            return None
-
-        response = self.provider.generate(ProviderRequest(prompt=task.task_text))
-        return {
-            "provider": response.provider,
-            "model": response.model,
-            "input_tokens": response.usage.input_tokens,
-            "output_tokens": response.usage.output_tokens,
-            "total_tokens": response.usage.total_tokens,
-            "estimated_cost_usd": response.usage.estimated_cost_usd,
-        }
+        return get_provider_usage(self.provider, task.task_text)
 
     @staticmethod
     def _get_source_records(task):

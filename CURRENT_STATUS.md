@@ -61,6 +61,8 @@ not inferred from a missing historical mission log.
   and returns a FAILED PipelineResult when a provider timeout/error occurs.
 - Mission 39: MUSIC accepts an injected provider, safely records complete or
   partial usage metadata, and returns a sanitized FAILED result for provider errors.
+- Provider usage normalization and sanitized provider-error formatting are now
+  shared by CONTENT, RESEARCH, and MUSIC without changing their artifacts.
 
 ## Implemented pipelines
 
