@@ -34,6 +34,7 @@ class AutomationService:
             self.manager,
             self.history,
         )
+        self._tasks = {}
 
     def create_task(
         self,
@@ -54,6 +55,7 @@ class AutomationService:
     def submit(self, task):
         if not isinstance(task, Task):
             raise TypeError("task must be a Task")
+        self._tasks[task.id] = task
         self.task_queue.add(task)
         return task
 
@@ -68,3 +70,6 @@ class AutomationService:
 
     def cancel(self, task):
         return self.task_queue.cancel(task)
+
+    def _get_task_for_query(self, task_id):
+        return self._tasks.get(task_id)

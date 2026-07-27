@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 50**.
+Current mission baseline: **Mission 51**.
 
 ## Verified completed capabilities
 
@@ -94,6 +94,10 @@ not inferred from a missing historical mission log.
   dependency-injected application boundary for TaskQueue, TaskWorker,
   ExecutionHistory, ArtifactManager, and Manager; `main.run()` uses it without
   breaking its existing public entry point.
+- Mission 51: TaskQueryService now returns repository-neutral, serializable
+  task-detail and filtered-list DTOs that combine task state, execution history,
+  provider usage metadata, and artifact metadata. Unknown task IDs return a
+  safe empty response.
 
 ## Implemented pipelines
 
@@ -108,14 +112,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **54 tests**. Its expected command is:
+The current suite contains **56 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 50 verification result: **54 passed, 0 failed**.
+Mission 51 verification result: **56 passed, 0 failed**.
 
 ## Not implemented
 

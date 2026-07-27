@@ -11,6 +11,7 @@ from unittest.mock import patch
 from agent.manager import Manager
 from agent.goal_task_planner import GoalTaskPlanner
 from application.automation_service import AutomationService
+from application.task_query_service import TaskQueryService
 from config.settings import PROJECT_ROOT
 from core.execution_history import ExecutionHistory
 from core.execution_history_repository import InMemoryExecutionHistoryRepository
@@ -131,6 +132,61 @@ class ApplicationServiceTests(PipelineTestCase):
         self.assertIs(self.history, service.task_queue.history)
         self.assertIs(artifacts, service.artifact_manager)
         self.assertEqual(task.id, self.history.get_all()[0]["task_id"])
+
+
+class TaskQueryServiceTests(PipelineTestCase):
+    def test_task_query_returns_serializable_task_history_usage_and_artifacts(self):
+        artifact_file = self.root / "output.txt"
+        artifact_file.write_text("artifact", encoding="utf-8")
+        artifacts = ArtifactManager(InMemoryArtifactRepository())
+        artifact = artifacts.register_file(artifact_file, "TEXT", "Test Pipeline")
+        task = self.task("query task", "CONTENT")
+        task.pipeline = "Test Pipeline"
+        task.complete(
+            PipelineResult(
+                PipelineStatus.SUCCESS,
+                task.pipeline,
+                task,
+                task.task_type,
+                data={
+                    "provider_usage": {
+                        "provider": "mock",
+                        "total_tokens": 3,
+                        "estimated_cost": 0.0,
+                    }
+                },
+                artifacts=[artifact],
+            ).to_dict()
+        )
+        self.history.record(task)
+        service = TaskQueryService(self.history, artifacts, {task.id: task}.get)
+
+        response = service.get(task.id)
+
+        self.assertTrue(response["found"])
+        self.assertIsInstance(response["task"], dict)
+        self.assertIsNot(task, response["task"])
+        self.assertEqual(task.id, response["history"]["task_id"])
+        self.assertEqual("mock", response["usage"]["provider"])
+        self.assertEqual([artifact], response["artifacts"])
+        self.assertEqual([task.id], [item["task_id"] for item in service.list(status="SUCCESS", pipeline="Test Pipeline")])
+
+    def test_task_query_is_safe_for_missing_task_and_repository_implementations(self):
+        task = self.task("persisted query", "FILE")
+        task.pipeline = "Test Pipeline"
+        task.complete(PipelineResult(PipelineStatus.SUCCESS, task.pipeline, task, task.task_type).to_dict())
+        histories = [
+            ExecutionHistory(repository=InMemoryExecutionHistoryRepository()),
+            ExecutionHistory(self.root / "query-history.json"),
+        ]
+        responses = []
+        for history in histories:
+            history.record(task)
+            service = TaskQueryService(history, ArtifactManager())
+            responses.append(service.get(task.id))
+            self.assertFalse(service.get("missing-task")["found"])
+
+        self.assertEqual(responses[0], responses[1])
 
 
 class ProviderTests(unittest.TestCase):
