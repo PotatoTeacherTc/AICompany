@@ -314,6 +314,69 @@ class TaskApiEndpointTests(PipelineTestCase):
         self.assertEqual({"error": {"code": "task_not_found", "message": "Task not found"}}, missing.json())
 
 
+class TaskControlApiEndpointTests(PipelineTestCase):
+    def _client_and_service(self):
+        class SuccessfulManager:
+            def handle(_, task):
+                task.task_type = "FILE"
+                task.pipeline = "Control Test Pipeline"
+                return PipelineResult(PipelineStatus.SUCCESS, task.pipeline, task, task.task_type).to_dict()
+
+        service = AutomationService(SuccessfulManager(), history=self.history)
+        return TestClient(create_app(automation_service=service)), service
+
+    def test_cancel_endpoint_updates_single_history_record_and_rejects_terminal_control(self):
+        client, service = self._client_and_service()
+        created = client.post("/tasks", json={"task_text": "cancel through API"})
+        task_id = created.json()["task_id"]
+
+        cancelled = client.post(f"/tasks/{task_id}/cancel")
+        repeated = client.post(f"/tasks/{task_id}/cancel")
+        completed_task_id = client.post("/tasks", json={"task_text": "complete through API"}).json()["task_id"]
+        service.run_all()
+        completed_cancel = client.post(f"/tasks/{completed_task_id}/cancel")
+
+        self.assertEqual(200, cancelled.status_code)
+        self.assertEqual(PipelineStatus.CANCELLED, cancelled.json()["status"])
+        self.assertEqual(
+            1,
+            len([record for record in self.history.get_all() if record["task_id"] == task_id]),
+        )
+        self.assertEqual(PipelineStatus.CANCELLED, self.history.get_all()[0]["status"])
+        self.assertEqual(409, repeated.status_code)
+        self.assertEqual(409, completed_cancel.status_code)
+        self.assertNotIn("cancel through API", repeated.text)
+
+    def test_retry_endpoint_requeues_retryable_failure_once_and_rejects_timeout_cancellation(self):
+        client, service = self._client_and_service()
+        created = client.post("/tasks", json={"task_text": "retry through API", "max_retries": 1})
+        task_id = created.json()["task_id"]
+        task = service._get_task_for_query(task_id)
+        task.task_type = "FILE"
+        task.pipeline = "Control Test Pipeline"
+        task.fail(PipelineResult(PipelineStatus.FAILED, task.pipeline, task, task.task_type, error="TaskError: TimeoutError").to_dict())
+        task.set_error_type("TimeoutError")
+        self.history.record(task)
+
+        retried = client.post(f"/tasks/{task_id}/retry")
+        duplicate_retry = client.post(f"/tasks/{task_id}/retry")
+        service.task_queue.skip(task)
+        timed_out_task = client.post("/tasks", json={"task_text": "timeout task"}).json()["task_id"]
+        timeout_task = service._get_task_for_query(timed_out_task)
+        timeout_task.timeout()
+        self.history.record(timeout_task)
+        timed_out_cancel = client.post(f"/tasks/{timed_out_task}/cancel")
+
+        self.assertEqual(200, retried.status_code)
+        self.assertEqual(PipelineStatus.QUEUED, retried.json()["status"])
+        self.assertEqual(
+            1,
+            len([record for record in self.history.get_all() if record["task_id"] == task_id]),
+        )
+        self.assertEqual(409, duplicate_retry.status_code)
+        self.assertEqual(409, timed_out_cancel.status_code)
+
+
 class ProviderTests(unittest.TestCase):
     def test_mock_provider_returns_standard_response_with_usage(self):
         response = MockProvider().generate(

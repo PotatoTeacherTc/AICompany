@@ -3,6 +3,7 @@ from core.execution_history import ExecutionHistory
 from core.task import Task
 from core.task_queue import TaskQueue
 from core.worker import TaskWorker
+from threading import Lock
 
 
 class AutomationService:
@@ -35,6 +36,7 @@ class AutomationService:
             self.history,
         )
         self._tasks = {}
+        self._control_lock = Lock()
 
     def create_task(
         self,
@@ -73,3 +75,22 @@ class AutomationService:
 
     def _get_task_for_query(self, task_id):
         return self._tasks.get(task_id)
+
+    def cancel_task(self, task_id):
+        with self._control_lock:
+            task = self._tasks.get(task_id)
+            if task is None:
+                return "not_found"
+            return "cancelled" if self.task_queue.cancel(task) else "conflict"
+
+    def retry_task(self, task_id):
+        with self._control_lock:
+            task = self._tasks.get(task_id)
+            if task is None:
+                return "not_found"
+            if task.status not in {"FAILED", "TIMED_OUT"}:
+                return "conflict"
+            error_type = task.last_error_type
+            if not error_type or not self.task_queue.retry(task, error_type):
+                return "conflict"
+            return "retried"

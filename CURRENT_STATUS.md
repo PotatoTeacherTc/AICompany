@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 54**.
+Current mission baseline: **Mission 55**.
 
 ## Verified completed capabilities
 
@@ -108,6 +108,10 @@ not inferred from a missing historical mission log.
   endpoints through TaskApi and application services only. Responses include
   task state, pipeline, usage, and artifacts; invalid requests and missing
   tasks return sanitized 4xx responses.
+- Mission 55: FastAPI task cancel/retry endpoints now preserve Queue and
+  ExecutionHistory's single-record lifecycle contract. Terminal or invalid
+  controls return sanitized 409 responses; an in-process lock minimizes
+  duplicate concurrent control changes.
 
 ## Implemented pipelines
 
@@ -122,14 +126,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **62 tests**. Its expected command is:
+The current suite contains **64 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 54 verification result: **62 passed, 0 failed**.
+Mission 55 verification result: **64 passed, 0 failed**.
 
 ## Not implemented
 
@@ -140,7 +144,7 @@ Mission 54 verification result: **62 passed, 0 failed**.
 - Automatic natural-language multi-step planning from a user goal. Structured
   goal-step input can now be validated and represented as executable Tasks.
 - Retry/recovery policy and persistent long-running queue.
-- Task control routes, UI, authentication, and interactive goal-submission layer.
+- UI, authentication, and interactive goal-submission layer.
 - A default registered NOT_IMPLEMENTED pipeline is not present; `StubPipeline`
   remains available for future unavailable capabilities.
 

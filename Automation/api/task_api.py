@@ -33,6 +33,18 @@ class TaskApi:
             self.task_query_service.list(**request.to_filters())
         ).to_dict()
 
+    def cancel_task(self, task_id):
+        return self._control_response(
+            self.automation_service.cancel_task(task_id),
+            task_id,
+        )
+
+    def retry_task(self, task_id):
+        return self._control_response(
+            self.automation_service.retry_task(task_id),
+            task_id,
+        )
+
     @staticmethod
     def _create_request(request):
         return request if isinstance(request, CreateTaskRequest) else CreateTaskRequest.from_dict(request)
@@ -40,3 +52,8 @@ class TaskApi:
     @staticmethod
     def _list_request(request):
         return request if isinstance(request, ListTasksRequest) else ListTasksRequest.from_dict(request)
+
+    def _control_response(self, outcome, task_id):
+        if outcome in {"cancelled", "retried"}:
+            return self.task_query_service.get(task_id)
+        return {"control": outcome}

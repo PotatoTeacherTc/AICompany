@@ -73,6 +73,14 @@ def create_app(automation_service=None, task_query_service=None):
 
             return error_response(400, "invalid_request", "Invalid task query")
 
+    @app.post("/tasks/{task_id}/cancel")
+    def cancel_task(task_id: str):
+        return _control_endpoint(app.state.task_api.cancel_task(task_id))
+
+    @app.post("/tasks/{task_id}/retry")
+    def retry_task(task_id: str):
+        return _control_endpoint(app.state.task_api.retry_task(task_id))
+
     return app
 
 
@@ -96,3 +104,15 @@ def _build_default_services():
         artifact_manager,
         service._get_task_for_query,
     )
+
+
+def _control_endpoint(response):
+    if response.get("control") == "not_found":
+        from api.errors import error_response
+
+        return error_response(404, "task_not_found", "Task not found")
+    if response.get("control") == "conflict":
+        from api.errors import error_response
+
+        return error_response(409, "task_state_conflict", "Task cannot be controlled in its current state")
+    return response

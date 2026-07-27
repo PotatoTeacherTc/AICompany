@@ -8,7 +8,7 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 54
+## Current baseline: Mission 55
 
 The verified implementation currently provides a Task/Queue/Worker execution
 path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,
@@ -34,6 +34,9 @@ A FastAPI application factory now supplies an HTTP foundation with dependency
 injection, health checking, and sanitized global error responses.
 Task creation and task single/list retrieval are now available through the
 FastAPI boundary while continuing to use only application services.
+Task cancellation and retry controls now use the existing queue/history state
+contract and return conflict responses for terminal or otherwise invalid state
+transitions.
 
 ## Development stages
 
