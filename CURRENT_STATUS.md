@@ -1,0 +1,66 @@
+# Current Status
+
+## Mission
+
+Current mission baseline: **Mission 21**.
+
+## Verified completed capabilities
+
+The following status is based on the current source tree and automated tests,
+not inferred from a missing historical mission log.
+
+- Mission 1–17: individual mission outcomes cannot be verified from the
+  current codebase alone; this document does not invent them.
+- Mission 18 baseline: the project contains the original automation workspace
+  and the FILE/MUSIC/HISTORY-oriented execution foundation visible in source.
+- Mission 19: Task/Manager/PipelineResult/History contracts were unified and a
+  standard-library automated test suite was introduced.
+- Mission 20: CONTENT became a real local content-project pipeline.
+- Mission 21: RESEARCH became a real local structured-research-project
+  pipeline.
+
+## Implemented pipelines
+
+| Type | Pipeline | Current result |
+|---|---|---|
+| FILE | Automation Pipeline | Organizes supported files and returns SUCCESS/FAILED. |
+| MUSIC | Music Pipeline | Creates local music project artifacts. |
+| CONTENT | Content Pipeline | Creates local YouTube-content project artifacts. |
+| RESEARCH | Research Pipeline | Creates local structured research artifacts without external sources. |
+| HISTORY | Execution History Pipeline | Returns recent records. |
+| FAIL | Failing Test Pipeline | Intentionally returns FAILED for verification. |
+
+## Test status
+
+The current suite contains **16 tests**. Its expected command is:
+
+```powershell
+cd Automation
+python -m unittest discover -s tests -v
+```
+
+Mission 21 verification result: **16 passed, 0 failed**.
+
+## Not implemented
+
+- External web search, external AI providers, and source-backed research.
+- Automatic multi-step planning from a user goal.
+- Retry/recovery policy and persistent long-running queue.
+- UI, API, authentication, and interactive goal-submission layer.
+- A default registered NOT_IMPLEMENTED pipeline is not present; `StubPipeline`
+  remains available for future unavailable capabilities.
+
+## Known technical debt and improvement areas
+
+- Classification is keyword-based and defaults unmatched input to CONTENT.
+- Task and PipelineResult use dictionaries/strings rather than runtime schema
+  validation or static types.
+- Console `print()` calls are widespread; structured logging is incomplete.
+- JSON history is process-local and does not provide durable queue semantics,
+  locking, or recovery.
+- FILE pipeline still relies on a simple local file-type mapping.
+- CONTENT and RESEARCH generate local scaffolds, not source-backed or
+  AI-generated results.
+
+Use this document together with `PROJECT_ROADMAP.md` and the source/tests when
+choosing the next mission; do not infer unfinished functionality as complete.
