@@ -147,6 +147,23 @@ class PipelineRegistryTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             registry.register("TEST", TestPipeline())
 
+    def test_registry_exposes_registered_pipeline_capabilities(self):
+        registry = PipelineRegistry()
+        registry.register(
+            "CONTENT",
+            TestPipeline(),
+            capabilities=("project_creation", "artifact_generation"),
+        )
+
+        capability = registry.get_capability("CONTENT")
+
+        self.assertEqual("CONTENT", capability["task_type"])
+        self.assertEqual("Test Pipeline", capability["pipeline"])
+        self.assertEqual(
+            ["project_creation", "artifact_generation"], capability["capabilities"]
+        )
+        self.assertEqual([capability], registry.list_capabilities())
+
 
 class MusicPipelineTests(PipelineTestCase):
     def test_music_pipeline_creates_complete_project_in_temp_directory(self):

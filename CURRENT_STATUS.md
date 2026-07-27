@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 28**.
+Current mission baseline: **Mission 29**.
 
 ## Verified completed capabilities
 
@@ -34,6 +34,8 @@ not inferred from a missing historical mission log.
   serialized and persisted for future compound-goal execution.
 - Mission 28: FILE planning now produces an execution plan whose target-folder
   field is consumed by TaskExecutor, with a regression test at that boundary.
+- Mission 29: PipelineRegistry now stores validated capability metadata and
+  exposes it for planning without changing existing Pipeline routing.
 
 ## Implemented pipelines
 
@@ -48,14 +50,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **27 tests**. Its expected command is:
+The current suite contains **28 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 28 verification result: **27 passed, 0 failed**.
+Mission 29 verification result: **28 passed, 0 failed**.
 
 ## Not implemented
 

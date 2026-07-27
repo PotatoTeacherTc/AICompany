@@ -39,12 +39,34 @@ def build_registry(
     research_root=None,
 ):
     registry = PipelineRegistry()
-    registry.register("FILE", AIPipeline(base_folder=base_folder))
-    registry.register("MUSIC", MusicPipeline(music_root=music_root))
-    registry.register("CONTENT", ContentPipeline(content_root=content_root))
-    registry.register("RESEARCH", ResearchPipeline(research_root=research_root))
-    registry.register("HISTORY", HistoryPipeline(history))
-    registry.register("FAIL", FailingPipeline())
+    registry.register(
+        "FILE",
+        AIPipeline(base_folder=base_folder),
+        capabilities=("file_organization",),
+    )
+    registry.register(
+        "MUSIC",
+        MusicPipeline(music_root=music_root),
+        capabilities=("music_project_creation",),
+    )
+    registry.register(
+        "CONTENT",
+        ContentPipeline(content_root=content_root),
+        capabilities=("content_project_creation",),
+    )
+    registry.register(
+        "RESEARCH",
+        ResearchPipeline(research_root=research_root),
+        capabilities=("research_project_creation",),
+    )
+    registry.register(
+        "HISTORY",
+        HistoryPipeline(history),
+        capabilities=("execution_history_analysis",),
+    )
+    registry.register(
+        "FAIL", FailingPipeline(), capabilities=("failure_path_testing",)
+    )
     return registry
 
 
