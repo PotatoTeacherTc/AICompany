@@ -2,10 +2,11 @@
 
 ## Final goal
 
-AICompany is intended to become an AI-assisted automation platform where a user
-submits a natural-language goal and the system analyzes it, breaks it into
-work, selects and runs pipelines, validates results, records execution, and
-eventually presents the outcome through a UI.
+AICompany is intended to become a multi-user SaaS automation platform. Users
+will submit natural-language goals through a website; AICompany will plan,
+execute, validate, and present the work while recording per-user work,
+artifacts, usage, and costs. The product will ultimately support accounts,
+workspaces, subscriptions, and credit-based billing.
 
 ## Current baseline: Mission 30
 
@@ -23,13 +24,13 @@ only; neither calls an AI provider nor the web.
 | 1. Core architecture stabilization | Keep the execution contract dependable. | Typed/documented Task and PipelineResult schemas, registry validation, deterministic status handling, test coverage for success/failure/not-implemented paths. | Every registered pipeline follows the same contract and regression tests cover its boundary behavior. |
 | 2. Task, agent, and pipeline expansion | Support richer work decomposition. | Structured task parameters, subtask relationships, planner output consumed by executors, pipeline capability metadata. | A compound user goal can be represented as validated executable tasks. |
 | 3. CONTENT and RESEARCH enrichment | Make local project scaffolds useful production workflows. | Templates, configurable research/content formats, source records, review checkpoints, artifact validation. | Generated projects are configurable and have complete reviewable artifacts. |
-| 4. External AI and API integration | Add providers only behind stable interfaces. | AI provider adapter, credential handling, rate/error policy, source attribution, offline fallback. | A configured provider can be used without changing Pipeline/Task contracts. |
-| 5. Automatic planning and execution | Turn goals into executable plans. | Goal parser, planner, task dependency graph, execution policy, approval points. | A natural-language goal produces an inspectable plan and runs approved tasks. |
-| 6. Failure analysis and recovery | Recover safely from expected operational errors. | Failure classification, retry policy, compensating actions, idempotency rules, recovery history. | Recoverable failures are retried or surfaced with a clear final cause and audit trail. |
-| 7. Long-running jobs and queues | Run work reliably beyond one process. | Persistent queue, job states, scheduling, cancellation, concurrency controls, resumability. | Jobs survive process restart and expose durable progress/status. |
-| 8. UI and API layer | Present and control the system safely. | API service, authentication/authorization, project/job views, logs/artifact browsing, user controls. | Users can submit, inspect, and control jobs without invoking Python directly. |
-| 9. User goal input system | Make goal intake usable for real users. | Goal form/chat interface, validation, plan preview, consent for external/destructive work. | A user can submit a goal, approve a plan, and understand the returned result. |
-| 10. Production-ready application | Operate AICompany as a complete application. | Deployment, configuration management, monitoring, backup/restore, security review, user documentation. | A documented, monitored deployment supports real workloads safely. |
+| 4. AI Provider integration | Add real providers only behind stable interfaces. | Provider request/response schema, provider selection, credential loading, timeout/error policy, usage metadata, offline fallback. | A configured provider can be used without changing Pipeline/Task contracts or exposing credentials. |
+| 5. Persistent work and execution history | Persist jobs, artifacts, and audit history. | Durable storage, migrations, artifact records, execution/usage records. | Work and results survive process restart and can be queried safely. |
+| 6. Users and workspaces | Isolate customer data and ownership. | User/workspace models, ownership fields, tenant isolation, workspace-scoped storage. | Every job, artifact, usage record, and cost is attributable to one workspace. |
+| 7. Backend API | Provide a safe application boundary. | Versioned API, request validation, job/artifact queries, asynchronous execution interface. | Clients can create and inspect workspace-scoped work without importing Python modules. |
+| 8. Web dashboard | Make work inspectable in a browser. | Goal submission, plan/result views, history, artifact browsing, controls. | A user can submit, inspect, and control authorized work from the web. |
+| 9. Authentication and authorization | Control SaaS access. | Signup/sign-in, sessions, role/workspace authorization, audit events. | Only authorized users can access their workspace data and actions. |
+| 10. Usage, cost, billing, deployment, and operations | Operate the SaaS safely. | Provider usage/cost accounting, credit ledger, subscriptions/payment integration, deployment, monitoring, backups, security review. | A monitored deployment can bill usage accurately and support real customer workloads. |
 
 No stage beyond the current baseline is considered complete merely because a
 placeholder module or roadmap item exists.

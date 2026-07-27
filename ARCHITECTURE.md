@@ -60,3 +60,17 @@ AI provider layer: provider adapters used by pipelines, never directly by UI
   offline/local behavior stays testable.
 - Storage should replace or extend JSON history with durable job, artifact, and
   queue records without changing Task/PipelineResult semantics.
+
+## SaaS extension boundaries
+
+- AI providers are injected adapters. They receive a standard request and
+  return a standard response with usage metadata; Pipelines must not contain a
+  provider name, model name, or credential.
+- Persistent storage will attach workspace ownership to Tasks, artifacts,
+  execution history, provider usage, and costs before any web-facing API is
+  introduced.
+- Backend API and web dashboard layers will access workspace-scoped services,
+  never filesystem Pipelines or provider credentials directly.
+- Authentication, subscription, credit, and payment components belong outside
+  the current Pipeline contract and will be added only after storage and API
+  boundaries exist.

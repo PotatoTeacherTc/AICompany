@@ -49,6 +49,9 @@ not inferred from a missing historical mission log.
   integration.
 - Mission 34: RESEARCH project generation now supports validated per-Task
   research type and question configuration while preserving local defaults.
+- Mission 35: The roadmap and architecture now define the target as a
+  multi-user SaaS and sequence provider integration, persistence, workspace
+  isolation, API/dashboard, authorization, usage/cost, and billing operations.
 
 ## Implemented pipelines
 
@@ -75,6 +78,9 @@ Mission 34 verification result: **34 passed, 0 failed**.
 ## Not implemented
 
 - External web search, external AI providers, and source-backed research.
+- Provider abstraction, mock provider, environment-based provider settings,
+  and usage/cost metadata are the next implementation work; no API key is
+  currently required for that offline-first boundary.
 - Automatic natural-language multi-step planning from a user goal. Structured
   goal-step input can now be validated and represented as executable Tasks.
 - Retry/recovery policy and persistent long-running queue.
