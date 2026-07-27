@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 45**.
+Current mission baseline: **Mission 46**.
 
 ## Verified completed capabilities
 
@@ -77,6 +77,9 @@ not inferred from a missing historical mission log.
 - Mission 45: Task retries now track retry count, limit, and safe error type.
   Timeout, connection, and OS errors can be retried within the configured
   limit; other errors fail without retaining their raw exception messages.
+- Mission 46: CANCELLED and TIMED_OUT are terminal Task/PipelineResult states.
+  Queued work can be cancelled once, while an elapsed per-task deadline safely
+  produces a TIMED_OUT result and matching execution-history record.
 
 ## Implemented pipelines
 
@@ -91,14 +94,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **47 tests**. Its expected command is:
+The current suite contains **49 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 45 verification result: **47 passed, 0 failed**.
+Mission 46 verification result: **49 passed, 0 failed**.
 
 ## Not implemented
 

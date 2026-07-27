@@ -53,6 +53,23 @@ class TaskQueue:
         self._record(task)
 
 
+    def cancel(self, task, result=None):
+
+        if task.is_terminal():
+            return False
+
+        try:
+            self.queue.remove(task)
+        except ValueError:
+            return False
+
+        task.cancel(result)
+
+        self._record(task)
+
+        return True
+
+
     def retry(self, task, error_type):
 
         if not task.can_retry(error_type):

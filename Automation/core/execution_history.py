@@ -105,6 +105,8 @@ class ExecutionHistory:
 
             "max_retries": getattr(task, "max_retries", 0),
 
+            "timeout_seconds": getattr(task, "timeout_seconds", None),
+
             "last_error_type": getattr(task, "last_error_type", None),
 
             "status": task.status,

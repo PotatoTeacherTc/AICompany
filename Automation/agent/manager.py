@@ -22,6 +22,8 @@ class Manager:
         PipelineStatus.NOT_IMPLEMENTED,
         PipelineStatus.PENDING,
         PipelineStatus.RUNNING,
+        PipelineStatus.CANCELLED,
+        PipelineStatus.TIMED_OUT,
     }
 
     def __init__(self, registry, classifier=None):

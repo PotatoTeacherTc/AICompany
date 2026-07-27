@@ -13,3 +13,7 @@ class PipelineStatus:
     RUNNING = "RUNNING"
 
     SKIPPED = "SKIPPED"
+
+    CANCELLED = "CANCELLED"
+
+    TIMED_OUT = "TIMED_OUT"

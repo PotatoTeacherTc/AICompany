@@ -1,3 +1,9 @@
+import time
+
+from core.result import PipelineResult
+from core.status import PipelineStatus
+
+
 class TaskWorker:
 
     def __init__(
@@ -86,6 +92,8 @@ class TaskWorker:
             # 2. Manager에게 작업 전달
             # ------------------------------------------------
 
+            execution_started = time.monotonic()
+
             result = self.manager.handle(task)
 
 
@@ -93,7 +101,19 @@ class TaskWorker:
             # 3. 결과에 따른 상태 변경
             # ------------------------------------------------
 
-            if result.get("status") == "SUCCESS":
+            if self._has_timed_out(task, execution_started):
+
+                task.timeout(
+                    PipelineResult(
+                        PipelineStatus.TIMED_OUT,
+                        task.pipeline,
+                        task,
+                        task_type=task.task_type,
+                        error="TaskError: TimeoutError",
+                    ).to_dict()
+                )
+
+            elif result.get("status") == "SUCCESS":
 
 
                 task.complete(
@@ -106,6 +126,14 @@ class TaskWorker:
             elif result.get("status") == "NOT_IMPLEMENTED":
 
                 task.mark_not_implemented(result)
+
+            elif result.get("status") == PipelineStatus.CANCELLED:
+
+                task.cancel(result)
+
+            elif result.get("status") == PipelineStatus.TIMED_OUT:
+
+                task.timeout(result)
 
             else:
 
@@ -219,6 +247,17 @@ class TaskWorker:
     def _retry(self, task, error_type):
 
         return bool(error_type and self.task_queue.retry(task, error_type))
+
+
+    @staticmethod
+    def _has_timed_out(task, execution_started):
+
+        timeout_seconds = getattr(task, "timeout_seconds", None)
+
+        return (
+            timeout_seconds is not None
+            and time.monotonic() - execution_started > timeout_seconds
+        )
 
 
     @staticmethod

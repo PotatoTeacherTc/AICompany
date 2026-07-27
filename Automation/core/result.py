@@ -32,7 +32,13 @@ class PipelineResult:
 
     def is_failed(self):
 
-        return self.status == PipelineStatus.FAILED
+        return self.status in [
+
+            PipelineStatus.FAILED,
+
+            PipelineStatus.TIMED_OUT,
+
+        ]
 
 
     def is_pending(self):
@@ -40,6 +46,10 @@ class PipelineResult:
         return self.status in [
 
             PipelineStatus.PENDING,
+
+            PipelineStatus.QUEUED,
+
+            PipelineStatus.RUNNING,
 
             PipelineStatus.NOT_IMPLEMENTED
 

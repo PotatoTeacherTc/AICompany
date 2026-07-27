@@ -742,6 +742,38 @@ class ManagerTests(PipelineTestCase):
 
 
 class WorkerTests(PipelineTestCase):
+    def test_queue_cancellation_updates_history_and_does_not_recancel_terminal_task(self):
+        task = Task("cancel task")
+        queue = TaskQueue(history=self.history)
+        queue.add(task)
+
+        self.assertTrue(queue.cancel(task))
+        self.assertEqual(PipelineStatus.CANCELLED, task.status)
+        self.assertEqual(PipelineStatus.CANCELLED, self.history.get_all()[0]["status"])
+        self.assertFalse(queue.cancel(task))
+        self.assertEqual(1, self.history.count())
+
+    def test_worker_marks_elapsed_task_timed_out_with_safe_result(self):
+        class SuccessfulManager:
+            def handle(_, task):
+                task.task_type = "FILE"
+                task.pipeline = "Test Pipeline"
+                return PipelineResult(PipelineStatus.SUCCESS, task.pipeline, task).to_dict()
+
+        task = Task("timeout task", timeout_seconds=1)
+        queue = TaskQueue(history=self.history)
+        queue.add(task)
+
+        with patch("core.worker.time.monotonic", side_effect=[0.0, 2.0]):
+            completed = TaskWorker(queue, SuccessfulManager(), self.history).run_once()
+
+        record = self.history.get_all()[0]
+        self.assertEqual(PipelineStatus.TIMED_OUT, completed.status)
+        self.assertEqual(PipelineStatus.TIMED_OUT, completed.result["status"])
+        self.assertEqual("TaskError: TimeoutError", completed.result["error"])
+        self.assertEqual(PipelineStatus.TIMED_OUT, record["status"])
+        self.assertEqual("TimeoutError", record["last_error_type"])
+
     def test_worker_retries_retryable_error_and_updates_single_history_record(self):
         attempts = []
 

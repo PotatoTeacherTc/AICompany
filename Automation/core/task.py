@@ -12,6 +12,7 @@ class Task:
         parameters=None,
         parent_task_id=None,
         max_retries=0,
+        timeout_seconds=None,
     ):
 
         self.id = str(uuid.uuid4())[:8]
@@ -34,6 +35,15 @@ class Task:
         self.retry_count = 0
 
         self.max_retries = max_retries
+
+        if timeout_seconds is not None and (
+            not isinstance(timeout_seconds, (int, float))
+            or isinstance(timeout_seconds, bool)
+            or timeout_seconds <= 0
+        ):
+            raise ValueError("timeout_seconds must be a positive number or None")
+
+        self.timeout_seconds = timeout_seconds
 
         self.last_error_type = None
 
@@ -102,6 +112,26 @@ class Task:
         self.result = result
 
 
+    def cancel(self, result=None):
+
+        self.status = PipelineStatus.CANCELLED
+
+        self.completed_at = datetime.now().isoformat()
+
+        self.result = result
+
+
+    def timeout(self, result=None):
+
+        self.status = PipelineStatus.TIMED_OUT
+
+        self.completed_at = datetime.now().isoformat()
+
+        self.result = result
+
+        self.last_error_type = "TimeoutError"
+
+
     def can_retry(self, error_type):
 
         return (
@@ -139,6 +169,8 @@ class Task:
             PipelineStatus.FAILED,
             PipelineStatus.NOT_IMPLEMENTED,
             PipelineStatus.SKIPPED,
+            PipelineStatus.CANCELLED,
+            PipelineStatus.TIMED_OUT,
         }
 
 
@@ -157,6 +189,8 @@ class Task:
             "retry_count": self.retry_count,
 
             "max_retries": self.max_retries,
+
+            "timeout_seconds": self.timeout_seconds,
 
             "last_error_type": self.last_error_type,
 
