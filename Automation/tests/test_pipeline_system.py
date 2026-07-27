@@ -25,6 +25,9 @@ from core.stub_pipelines import StubPipeline
 from core.task import Task
 from core.task_queue import TaskQueue
 from core.worker import TaskWorker
+from providers.factory import ProviderFactory
+from providers.mock_provider import MockProvider
+from providers.models import ProviderRequest
 
 
 RESULT_KEYS = {"status", "pipeline", "task", "task_id", "task_type", "data", "error"}
@@ -90,6 +93,24 @@ class TaskTests(unittest.TestCase):
 
         self.assertEqual(parent.id, child.parent_task_id)
         self.assertEqual(parent.id, child.to_dict()["parent_task_id"])
+
+
+class ProviderTests(unittest.TestCase):
+    def test_mock_provider_returns_standard_response_with_usage(self):
+        response = MockProvider().generate(
+            ProviderRequest(prompt="Create a concise outline", model="mock-small")
+        )
+
+        self.assertEqual("mock", response.provider)
+        self.assertEqual("mock-small", response.model)
+        self.assertTrue(response.output_text)
+        self.assertEqual(0, response.usage.estimated_cost_usd)
+        self.assertGreater(response.usage.total_tokens, 0)
+
+    def test_provider_factory_uses_mock_by_default_and_rejects_unknown_provider(self):
+        self.assertIsInstance(ProviderFactory.from_environment({}).provider, MockProvider)
+        with self.assertRaisesRegex(ValueError, "Unsupported AI provider"):
+            ProviderFactory.from_environment({"AICOMPANY_PROVIDER": "unknown"})
 
 
 class GoalTaskPlannerTests(unittest.TestCase):

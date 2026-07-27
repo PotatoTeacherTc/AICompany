@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 34**.
+Current mission baseline: **Mission 36**.
 
 ## Verified completed capabilities
 
@@ -52,6 +52,9 @@ not inferred from a missing historical mission log.
 - Mission 35: The roadmap and architecture now define the target as a
   multi-user SaaS and sequence provider integration, persistence, workspace
   isolation, API/dashboard, authorization, usage/cost, and billing operations.
+- Mission 36: Added provider-neutral request, response, usage metadata, an
+  offline MockProvider, and environment-based provider selection. `.env` is
+  ignored and `.env.example` contains names only.
 
 ## Implemented pipelines
 
@@ -66,14 +69,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **34 tests**. Its expected command is:
+The current suite contains **36 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 34 verification result: **34 passed, 0 failed**.
+Mission 36 verification result: **36 passed, 0 failed**.
 
 ## Not implemented
 
