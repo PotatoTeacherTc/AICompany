@@ -8,7 +8,7 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 51
+## Current baseline: Mission 52
 
 The verified implementation currently provides a Task/Queue/Worker execution
 path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,
@@ -28,6 +28,8 @@ The framework-independent AutomationService now provides the application
 boundary for task submission and execution.
 Task query responses now combine task state, execution history, provider usage,
 and artifact metadata through repository-neutral DTOs.
+The transport-neutral API contract layer now defines task creation and task
+lookup/list requests and responses without selecting a web framework.
 
 ## Development stages
 

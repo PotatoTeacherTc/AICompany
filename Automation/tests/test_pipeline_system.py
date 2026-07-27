@@ -12,6 +12,8 @@ from agent.manager import Manager
 from agent.goal_task_planner import GoalTaskPlanner
 from application.automation_service import AutomationService
 from application.task_query_service import TaskQueryService
+from api.contracts import CreateTaskRequest, ListTasksRequest
+from api.task_api import TaskApi
 from config.settings import PROJECT_ROOT
 from core.execution_history import ExecutionHistory
 from core.execution_history_repository import InMemoryExecutionHistoryRepository
@@ -187,6 +189,42 @@ class TaskQueryServiceTests(PipelineTestCase):
             self.assertFalse(service.get("missing-task")["found"])
 
         self.assertEqual(responses[0], responses[1])
+
+
+class ApiContractTests(PipelineTestCase):
+    def test_task_api_creates_and_queries_serializable_tasks_through_services(self):
+        class SuccessfulManager:
+            def handle(_, task):
+                task.task_type = "CONTENT"
+                task.pipeline = "Test Pipeline"
+                return PipelineResult(PipelineStatus.SUCCESS, task.pipeline, task, task.task_type).to_dict()
+
+        artifacts = ArtifactManager()
+        automation = AutomationService(SuccessfulManager(), history=self.history, artifact_manager=artifacts)
+        queries = TaskQueryService(self.history, artifacts, automation._get_task_for_query)
+        api = TaskApi(automation, queries)
+
+        created = api.create_task({"task_text": "Create through API", "parameters": {"format": "text"}})
+        automation.run_all()
+        fetched = api.get_task(created["task_id"])
+        listed = api.list_tasks({"status": "SUCCESS", "pipeline": "Test Pipeline"})
+
+        self.assertTrue(created["found"])
+        self.assertEqual(PipelineStatus.QUEUED, created["status"])
+        self.assertEqual(PipelineStatus.SUCCESS, fetched["status"])
+        self.assertEqual([created["task_id"]], [item["task_id"] for item in listed["items"]])
+        self.assertFalse(api.get_task("unknown-task")["found"])
+
+    def test_api_contracts_validate_payloads_and_preserve_query_options(self):
+        request = CreateTaskRequest.from_dict({"task_text": "  Plan work  ", "max_retries": 1})
+        filters = ListTasksRequest.from_dict({"status": "SUCCESS", "limit": 3, "offset": 1}).to_filters()
+
+        self.assertEqual("Plan work", request.task_text)
+        self.assertEqual({"status": "SUCCESS", "limit": 3, "offset": 1}, filters)
+        with self.assertRaises(ValueError):
+            CreateTaskRequest.from_dict({"task_text": ""})
+        with self.assertRaises(TypeError):
+            CreateTaskRequest.from_dict("invalid")
 
 
 class ProviderTests(unittest.TestCase):

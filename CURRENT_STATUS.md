@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 51**.
+Current mission baseline: **Mission 52**.
 
 ## Verified completed capabilities
 
@@ -98,6 +98,9 @@ not inferred from a missing historical mission log.
   task-detail and filtered-list DTOs that combine task state, execution history,
   provider usage metadata, and artifact metadata. Unknown task IDs return a
   safe empty response.
+- Mission 52: A transport-neutral API contract layer now defines validated task
+  creation and single/list query DTOs. TaskApi depends only on application
+  services; it does not start an HTTP server or implement authentication.
 
 ## Implemented pipelines
 
@@ -112,14 +115,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **56 tests**. Its expected command is:
+The current suite contains **58 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 51 verification result: **56 passed, 0 failed**.
+Mission 52 verification result: **58 passed, 0 failed**.
 
 ## Not implemented
 
@@ -130,7 +133,7 @@ Mission 51 verification result: **56 passed, 0 failed**.
 - Automatic natural-language multi-step planning from a user goal. Structured
   goal-step input can now be validated and represented as executable Tasks.
 - Retry/recovery policy and persistent long-running queue.
-- UI, API, authentication, and interactive goal-submission layer.
+- HTTP server, UI, authentication, and interactive goal-submission layer.
 - A default registered NOT_IMPLEMENTED pipeline is not present; `StubPipeline`
   remains available for future unavailable capabilities.
 
