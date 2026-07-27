@@ -742,6 +742,55 @@ class ManagerTests(PipelineTestCase):
 
 
 class WorkerTests(PipelineTestCase):
+    def test_worker_retries_retryable_error_and_updates_single_history_record(self):
+        attempts = []
+
+        class RetryManager:
+            def handle(_, task):
+                attempts.append(task.retry_count)
+                if len(attempts) == 1:
+                    raise TimeoutError("provider key should not be recorded")
+                task.task_type = "FILE"
+                task.pipeline = "Test Pipeline"
+                return PipelineResult(PipelineStatus.SUCCESS, task.pipeline, task).to_dict()
+
+        task = Task("retry task", max_retries=1)
+        queue = TaskQueue(history=self.history)
+        queue.add(task)
+        completed = TaskWorker(queue, RetryManager(), self.history).run_all()
+        record = self.history.get_all()[0]
+
+        self.assertEqual([0, 1], attempts)
+        self.assertEqual([task], completed)
+        self.assertEqual(PipelineStatus.SUCCESS, task.status)
+        self.assertEqual(1, task.retry_count)
+        self.assertEqual("TimeoutError", task.last_error_type)
+        self.assertEqual(1, self.history.count())
+        self.assertEqual(1, record["retry_count"])
+        self.assertNotIn("provider key", str(record))
+
+    def test_worker_does_not_retry_non_retryable_error_or_store_message(self):
+        attempts = []
+
+        class NonRetryManager:
+            def handle(_, task):
+                attempts.append(task.retry_count)
+                raise ValueError("sensitive failure details")
+
+        task = Task("non retry task", max_retries=2)
+        queue = TaskQueue(history=self.history)
+        queue.add(task)
+        completed = TaskWorker(queue, NonRetryManager(), self.history).run_all()
+        record = self.history.get_all()[0]
+
+        self.assertEqual([0], attempts)
+        self.assertEqual([task], completed)
+        self.assertEqual(PipelineStatus.FAILED, task.status)
+        self.assertEqual(0, task.retry_count)
+        self.assertEqual("ValueError", task.last_error_type)
+        self.assertEqual("TaskError: ValueError", task.result["error"])
+        self.assertNotIn("sensitive failure details", str(record))
+
     def test_queue_and_worker_update_one_history_record_through_lifecycle(self):
         class RecordingManager:
             def handle(_, task):
@@ -845,7 +894,7 @@ class WorkerTests(PipelineTestCase):
         completed = TaskWorker(queue, ExplodingManager(), self.history).run_once()
 
         self.assertEqual(PipelineStatus.FAILED, completed.status)
-        self.assertEqual("test exception", completed.result["error"])
+        self.assertEqual("TaskError: RuntimeError", completed.result["error"])
         self.assertEqual(1, self.history.count())
 
 

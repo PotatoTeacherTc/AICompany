@@ -70,8 +70,6 @@ class TaskWorker:
 
         self.history.record(task)
 
-        self.history.record(task)
-
 
         print(
 
@@ -111,6 +109,14 @@ class TaskWorker:
 
             else:
 
+                error_type = self._result_error_type(result)
+
+                if self._retry(task, error_type):
+                    return task
+
+                if error_type:
+                    task.set_error_type(error_type)
+
 
                 task.fail(
 
@@ -121,12 +127,18 @@ class TaskWorker:
 
         except Exception as error:
 
+            error_type = type(error).__name__
+
+            if self._retry(task, error_type):
+                return task
+
+            task.set_error_type(error_type)
 
             task.fail({
 
                 "status": "FAILED",
 
-                "error": str(error)
+                "error": f"TaskError: {error_type}"
 
             })
 
@@ -183,7 +195,7 @@ class TaskWorker:
             task = self.run_once()
 
 
-            if task is not None:
+            if task is not None and task.is_terminal():
 
                 completed_tasks.append(
 
@@ -202,3 +214,24 @@ class TaskWorker:
 
 
         return completed_tasks
+
+
+    def _retry(self, task, error_type):
+
+        return bool(error_type and self.task_queue.retry(task, error_type))
+
+
+    @staticmethod
+    def _result_error_type(result):
+
+        error = result.get("error") if isinstance(result, dict) else None
+
+        if not isinstance(error, str) or ":" not in error:
+            return None
+
+        prefix, error_type = error.split(":", 1)
+
+        if prefix in {"ProviderError", "TaskError"}:
+            return error_type.strip() or None
+
+        return None

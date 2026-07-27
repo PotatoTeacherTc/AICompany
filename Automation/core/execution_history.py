@@ -101,6 +101,12 @@ class ExecutionHistory:
 
             "parent_task_id": task.parent_task_id,
 
+            "retry_count": getattr(task, "retry_count", 0),
+
+            "max_retries": getattr(task, "max_retries", 0),
+
+            "last_error_type": getattr(task, "last_error_type", None),
+
             "status": task.status,
 
             "created_at": task.created_at,

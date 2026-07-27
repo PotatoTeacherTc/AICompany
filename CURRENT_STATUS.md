@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 44**.
+Current mission baseline: **Mission 45**.
 
 ## Verified completed capabilities
 
@@ -74,6 +74,9 @@ not inferred from a missing historical mission log.
 - Mission 44: TaskQueue and TaskWorker now synchronize QUEUED, RUNNING, and
   terminal task state into a single upserted ExecutionHistory record with
   timestamps, duration, and PipelineResult data.
+- Mission 45: Task retries now track retry count, limit, and safe error type.
+  Timeout, connection, and OS errors can be retried within the configured
+  limit; other errors fail without retaining their raw exception messages.
 
 ## Implemented pipelines
 
@@ -88,14 +91,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **45 tests**. Its expected command is:
+The current suite contains **47 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 44 verification result: **45 passed, 0 failed**.
+Mission 45 verification result: **47 passed, 0 failed**.
 
 ## Not implemented
 

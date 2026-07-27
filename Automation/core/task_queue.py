@@ -3,14 +3,22 @@ from collections import deque
 
 class TaskQueue:
 
-    def __init__(self, history=None):
+    def __init__(self, history=None, max_retries=0):
 
         self.queue = deque()
 
         self.history = history
 
+        if not isinstance(max_retries, int) or isinstance(max_retries, bool) or max_retries < 0:
+            raise ValueError("max_retries must be a non-negative integer")
+
+        self.max_retries = max_retries
+
 
     def add(self, task):
+
+        if task.max_retries == 0:
+            task.max_retries = self.max_retries
 
         task.queue()
 
@@ -43,6 +51,20 @@ class TaskQueue:
         task.skip(result)
 
         self._record(task)
+
+
+    def retry(self, task, error_type):
+
+        if not task.can_retry(error_type):
+            return False
+
+        task.schedule_retry(error_type)
+
+        self.queue.append(task)
+
+        self._record(task)
+
+        return True
 
 
     def _record(self, task):
