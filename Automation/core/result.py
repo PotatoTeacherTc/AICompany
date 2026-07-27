@@ -18,7 +18,7 @@ class PipelineResult:
         self.pipeline = pipeline
 
         self.task = task
-        self.task_type = task_type
+        self.task_type = task_type if task_type is not None else getattr(task, "task_type", None)
 
         self.data = data or {}
 

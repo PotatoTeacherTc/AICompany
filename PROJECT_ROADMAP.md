@@ -7,14 +7,14 @@ submits a natural-language goal and the system analyzes it, breaks it into
 work, selects and runs pipelines, validates results, records execution, and
 eventually presents the outcome through a UI.
 
-## Current baseline: Mission 21
+## Current baseline: Mission 30
 
 The verified implementation currently provides a Task/Queue/Worker execution
 path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,
 RESEARCH, HISTORY, and intentional FAIL pipelines, structured PipelineResult
-objects, JSON execution history, and automated regression tests. CONTENT and
-RESEARCH create local starter projects only; neither calls an AI provider nor
-the web.
+objects, JSON execution history, validated structured child-task planning, and
+automated regression tests. CONTENT and RESEARCH create local starter projects
+only; neither calls an AI provider nor the web.
 
 ## Development stages
 

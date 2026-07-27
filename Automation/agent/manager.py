@@ -33,7 +33,7 @@ class Manager:
             raise TypeError("Manager.handle expects a Task object")
 
         print("Manager: Analyzing task...")
-        task_type = self.classifier.classify(task)
+        task_type = task.task_type or self.classifier.classify(task)
         task.task_type = task_type
         print(f"Manager: Task type = {task_type}")
 

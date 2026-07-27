@@ -8,6 +8,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from agent.manager import Manager
+from agent.goal_task_planner import GoalTaskPlanner
 from config.settings import PROJECT_ROOT
 from core.execution_history import ExecutionHistory
 from core.base_pipeline import BasePipeline
@@ -89,6 +90,36 @@ class TaskTests(unittest.TestCase):
 
         self.assertEqual(parent.id, child.parent_task_id)
         self.assertEqual(parent.id, child.to_dict()["parent_task_id"])
+
+
+class GoalTaskPlannerTests(unittest.TestCase):
+    def test_planner_creates_validated_executable_child_tasks(self):
+        registry = PipelineRegistry()
+        registry.register("TEST", TestPipeline(), capabilities=("test_execution",))
+        parent = Task("Prepare launch")
+
+        children = GoalTaskPlanner(registry).create_subtasks(
+            parent,
+            [
+                {
+                    "task_text": "Prepare deliverable",
+                    "task_type": "TEST",
+                    "parameters": {"priority": "high"},
+                }
+            ],
+        )
+
+        self.assertEqual(1, len(children))
+        self.assertEqual(parent.id, children[0].parent_task_id)
+        self.assertEqual("TEST", children[0].task_type)
+        self.assertEqual({"priority": "high"}, children[0].parameters)
+
+    def test_planner_rejects_unregistered_task_type(self):
+        with self.assertRaisesRegex(ValueError, "not registered"):
+            GoalTaskPlanner(PipelineRegistry()).create_subtasks(
+                Task("Prepare launch"),
+                [{"task_text": "Unknown work", "task_type": "UNKNOWN"}],
+            )
 
 
 class FilePipelineTests(PipelineTestCase):
@@ -392,6 +423,18 @@ class ManagerTests(PipelineTestCase):
         }
         for task_text, expected_type in cases.items():
             self.assertEqual(expected_type, manager.classifier.classify(Task(task_text)))
+
+    def test_manager_uses_validated_declared_task_type(self):
+        registry = PipelineRegistry()
+        registry.register("TEST", TestPipeline())
+        task = Task("Text that the keyword classifier would not classify as TEST")
+        task.task_type = "TEST"
+
+        result = Manager(registry).handle(task)
+
+        self.assertEqual(PipelineStatus.SUCCESS, result["status"])
+        self.assertEqual("TEST", result["task_type"])
+        self.assertEqual("Test Pipeline", result["pipeline"])
 
     def test_manager_routes_every_registered_pipeline(self):
         files = self.root / "test_files"

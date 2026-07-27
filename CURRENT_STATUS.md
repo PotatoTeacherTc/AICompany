@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 29**.
+Current mission baseline: **Mission 30**.
 
 ## Verified completed capabilities
 
@@ -36,6 +36,9 @@ not inferred from a missing historical mission log.
   field is consumed by TaskExecutor, with a regression test at that boundary.
 - Mission 29: PipelineRegistry now stores validated capability metadata and
   exposes it for planning without changing existing Pipeline routing.
+- Mission 30: GoalTaskPlanner now converts structured goal steps into
+  parent-linked executable Tasks only for registered Pipeline types; Manager
+  preserves this validated declared task type during routing.
 
 ## Implemented pipelines
 
@@ -50,19 +53,20 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **28 tests**. Its expected command is:
+The current suite contains **31 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 29 verification result: **28 passed, 0 failed**.
+Mission 30 verification result: **31 passed, 0 failed**.
 
 ## Not implemented
 
 - External web search, external AI providers, and source-backed research.
-- Automatic multi-step planning from a user goal.
+- Automatic natural-language multi-step planning from a user goal. Structured
+  goal-step input can now be validated and represented as executable Tasks.
 - Retry/recovery policy and persistent long-running queue.
 - UI, API, authentication, and interactive goal-submission layer.
 - A default registered NOT_IMPLEMENTED pipeline is not present; `StubPipeline`
