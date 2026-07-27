@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 61**.
+Current mission baseline: **Mission 62**.
 
 ## Verified completed capabilities
 
@@ -132,6 +132,10 @@ not inferred from a missing historical mission log.
   sanitized 409 responses; missing users, workspaces, or memberships return
   sanitized 404 responses. Workspace-aware task reads can return 404 when a
   supplied workspace does not match the Task.
+- Mission 62: Credentials are stored separately from Users through injected
+  in-memory or JSON-file repositories. The standard-library PBKDF2 password
+  hasher stores only salted hashes and uses constant-time verification; plain
+  passwords are neither persisted nor exposed by this domain.
 
 ## Implemented pipelines
 
@@ -146,14 +150,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **73 tests**. Its expected command is:
+The current suite contains **75 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 61 verification result: **73 passed, 0 failed**.
+Mission 62 verification result: **75 passed, 0 failed**.
 
 ## Not implemented
 

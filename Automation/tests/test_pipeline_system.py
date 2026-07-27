@@ -42,6 +42,8 @@ from core.workspace_membership_repository import FileWorkspaceMembershipReposito
 from application.workspace_service import WorkspaceService
 from application.user_service import UserService
 from application.workspace_membership_service import WorkspaceMembershipService
+from application.credential_service import CredentialService
+from core.credential_repository import FileCredentialRepository
 from providers.factory import ProviderFactory
 from providers.mock_provider import MockProvider
 from providers.models import ProviderRequest
@@ -94,6 +96,30 @@ class PipelineTestCase(unittest.TestCase):
 
 
 class TaskTests(unittest.TestCase):
+    def test_credentials_store_only_password_hash_and_verify(self):
+        users = UserService()
+        user = users.create("credential@example.com")
+        service = CredentialService(users)
+        service.set_password(user["user_id"], "safe-passphrase")
+
+        credential = service.repository.get(user["user_id"])
+        self.assertTrue(service.verify_password(user["user_id"], "safe-passphrase"))
+        self.assertFalse(service.verify_password(user["user_id"], "wrong-password"))
+        self.assertNotIn("safe-passphrase", str(credential))
+        self.assertEqual({"user_id", "password_hash"}, set(credential))
+
+    def test_file_credential_repository_reloads_hash_without_plaintext(self):
+        with tempfile.TemporaryDirectory() as directory:
+            users = UserService()
+            user = users.create("credential@example.com")
+            file_path = Path(directory) / "credentials.json"
+            CredentialService(users, FileCredentialRepository(file_path)).set_password(
+                user["user_id"], "safe-passphrase"
+            )
+            reloaded = CredentialService(users, FileCredentialRepository(file_path))
+
+            self.assertTrue(reloaded.verify_password(user["user_id"], "safe-passphrase"))
+            self.assertNotIn("safe-passphrase", file_path.read_text(encoding="utf-8"))
     def test_user_email_normalization_and_duplicate_protection(self):
         service = UserService()
         user = service.create(" A@Example.COM ")

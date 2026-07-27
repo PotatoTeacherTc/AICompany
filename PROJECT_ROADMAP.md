@@ -8,7 +8,7 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 61
+## Current baseline: Mission 62
 
 The verified implementation currently provides a Task/Queue/Worker execution
 path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,
@@ -47,6 +47,9 @@ contract only; no authentication or request authorization is implemented yet.
 User identity and workspace-membership endpoints now expose this domain through
 the FastAPI boundary. Their workspace parameter is a data-scoping contract,
 not an authorization decision; authentication remains the next separate stage.
+Credential storage is now separated from user identity and uses a local PBKDF2
+password-hashing abstraction. Login, bearer tokens, and request authorization
+remain incomplete.
 
 ## Development stages
 
