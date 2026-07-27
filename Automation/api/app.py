@@ -4,7 +4,13 @@ from api.errors import HANDLED_EXCEPTIONS
 from api.task_api import TaskApi
 
 
-def create_app(automation_service=None, task_query_service=None, workspace_service=None):
+def create_app(
+    automation_service=None,
+    task_query_service=None,
+    workspace_service=None,
+    user_service=None,
+    membership_service=None,
+):
     """Create the HTTP application without starting a server."""
     if automation_service is None:
         automation_service, task_query_service = _build_default_services()
@@ -23,7 +29,17 @@ def create_app(automation_service=None, task_query_service=None, workspace_servi
     if workspace_service is None:
         from application.workspace_service import WorkspaceService
         workspace_service = WorkspaceService()
+    if user_service is None:
+        from application.user_service import UserService
+
+        user_service = UserService()
+    if membership_service is None:
+        from application.workspace_membership_service import WorkspaceMembershipService
+
+        membership_service = WorkspaceMembershipService(workspace_service, user_service)
     app.state.workspace_service = workspace_service
+    app.state.user_service = user_service
+    app.state.membership_service = membership_service
     app.state.task_api = TaskApi(automation_service, task_query_service, workspace_service)
     for exception_type, handler in HANDLED_EXCEPTIONS.items():
         app.add_exception_handler(exception_type, handler)
@@ -46,8 +62,8 @@ def create_app(automation_service=None, task_query_service=None, workspace_servi
             return error_response(400, "invalid_request", "Invalid task request")
 
     @app.get("/tasks/{task_id}")
-    def get_task(task_id: str):
-        response = app.state.task_api.get_task(task_id)
+    def get_task(task_id: str, workspace_id: str | None = None):
+        response = app.state.task_api.get_task(task_id, workspace_id=workspace_id)
         if not response["found"]:
             from api.errors import error_response
 
@@ -56,7 +72,15 @@ def create_app(automation_service=None, task_query_service=None, workspace_servi
 
     @app.post("/workspaces", status_code=201)
     def create_workspace(payload: dict):
-        try: return app.state.workspace_service.create(payload.get("name"))
+        try:
+            owner_user_id = payload.get("owner_user_id")
+            if owner_user_id:
+                return app.state.membership_service.create_workspace(payload.get("name"), owner_user_id)
+            return app.state.workspace_service.create(payload.get("name"))
+        except KeyError:
+            from api.errors import error_response
+
+            return error_response(404, "user_not_found", "User not found")
         except (TypeError, ValueError):
             from api.errors import error_response
             return error_response(400, "invalid_request", "Invalid workspace request")
@@ -71,6 +95,60 @@ def create_app(automation_service=None, task_query_service=None, workspace_servi
             from api.errors import error_response
             return error_response(404, "workspace_not_found", "Workspace not found")
         return workspace
+
+    @app.post("/users", status_code=201)
+    def create_user(payload: dict):
+        try:
+            return app.state.user_service.create(payload.get("email"))
+        except ValueError as error:
+            from api.errors import error_response
+
+            if str(error) == "duplicate_email":
+                return error_response(409, "duplicate_email", "Email already exists")
+            return error_response(400, "invalid_request", "Invalid user request")
+
+    @app.get("/users/{user_id}")
+    def get_user(user_id: str):
+        user = app.state.user_service.get(user_id)
+        if user is None:
+            from api.errors import error_response
+
+            return error_response(404, "user_not_found", "User not found")
+        return user
+
+    @app.post("/workspaces/{workspace_id}/members", status_code=201)
+    def add_member(workspace_id: str, payload: dict):
+        try:
+            return app.state.membership_service.add(workspace_id, payload.get("user_id"), payload.get("role", "MEMBER"))
+        except KeyError as error:
+            return _membership_not_found(error)
+        except ValueError as error:
+            return _membership_conflict(error)
+
+    @app.get("/workspaces/{workspace_id}/members")
+    def list_members(workspace_id: str):
+        try:
+            return {"items": app.state.membership_service.list(workspace_id)}
+        except KeyError as error:
+            return _membership_not_found(error)
+
+    @app.patch("/workspaces/{workspace_id}/members/{user_id}")
+    def change_member_role(workspace_id: str, user_id: str, payload: dict):
+        try:
+            return app.state.membership_service.change_role(workspace_id, user_id, payload.get("role"))
+        except KeyError as error:
+            return _membership_not_found(error)
+        except ValueError as error:
+            return _membership_conflict(error)
+
+    @app.delete("/workspaces/{workspace_id}/members/{user_id}", status_code=204)
+    def remove_member(workspace_id: str, user_id: str):
+        try:
+            app.state.membership_service.remove(workspace_id, user_id)
+        except KeyError as error:
+            return _membership_not_found(error)
+        except ValueError as error:
+            return _membership_conflict(error)
 
     @app.get("/tasks")
     def list_tasks(
@@ -142,3 +220,23 @@ def _control_endpoint(response):
 
         return error_response(409, "task_state_conflict", "Task cannot be controlled in its current state")
     return response
+
+
+def _membership_not_found(error):
+    from api.errors import error_response
+
+    code = str(error).strip("'")
+    if code == "user_not_found":
+        return error_response(404, code, "User not found")
+    return error_response(404, "workspace_not_found" if code == "workspace_not_found" else "membership_not_found", "Resource not found")
+
+
+def _membership_conflict(error):
+    from api.errors import error_response
+
+    code = str(error)
+    if code == "last_owner":
+        return error_response(409, code, "The last owner cannot be changed")
+    if code == "duplicate_membership":
+        return error_response(409, code, "Membership already exists")
+    return error_response(400, "invalid_request", "Invalid membership request")

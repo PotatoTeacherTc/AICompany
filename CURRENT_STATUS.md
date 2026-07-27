@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 60**.
+Current mission baseline: **Mission 61**.
 
 ## Verified completed capabilities
 
@@ -126,6 +126,12 @@ not inferred from a missing historical mission log.
   repositories. Memberships are unique, workspace creation through the
   membership service assigns its creator OWNER, and the last OWNER cannot be
   removed or demoted.
+- Mission 61: FastAPI now provides user creation/detail and workspace
+  membership create/list/role-change/removal endpoints through application
+  services. Duplicate emails or memberships and final-OWNER violations return
+  sanitized 409 responses; missing users, workspaces, or memberships return
+  sanitized 404 responses. Workspace-aware task reads can return 404 when a
+  supplied workspace does not match the Task.
 
 ## Implemented pipelines
 
@@ -140,14 +146,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **71 tests**. Its expected command is:
+The current suite contains **73 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 60 verification result: **71 passed, 0 failed**.
+Mission 61 verification result: **73 passed, 0 failed**.
 
 ## Not implemented
 
@@ -158,7 +164,7 @@ Mission 60 verification result: **71 passed, 0 failed**.
 - Automatic natural-language multi-step planning from a user goal. Structured
   goal-step input can now be validated and represented as executable Tasks.
 - Retry/recovery policy and persistent long-running queue.
-- Passwords, authentication tokens, login, and authorization. The User domain
+- Passwords, authentication tokens, login, and request authorization. The User domain
   deliberately contains no credential or secret fields.
 - UI and interactive goal-submission layer.
 - A default registered NOT_IMPLEMENTED pipeline is not present; `StubPipeline`

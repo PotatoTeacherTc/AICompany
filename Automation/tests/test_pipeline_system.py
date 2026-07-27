@@ -403,6 +403,43 @@ class TaskApiEndpointTests(PipelineTestCase):
         self.assertEqual(workspace_id, task.json()["task"]["workspace_id"])
         self.assertEqual(404, missing.status_code)
 
+    def test_user_and_membership_api_preserve_roles_and_workspace_boundary(self):
+        client, _ = self._client()
+        owner = client.post("/users", json={"email": " Owner@Example.com "})
+        member = client.post("/users", json={"email": "member@example.com"})
+        duplicate = client.post("/users", json={"email": "owner@example.com"})
+        workspace = client.post("/workspaces", json={"name": "Members", "owner_user_id": owner.json()["user_id"]})
+        workspace_id = workspace.json()["workspace_id"]
+        added = client.post(f"/workspaces/{workspace_id}/members", json={"user_id": member.json()["user_id"], "role": "MEMBER"})
+        members = client.get(f"/workspaces/{workspace_id}/members")
+        promoted = client.patch(f"/workspaces/{workspace_id}/members/{member.json()['user_id']}", json={"role": "OWNER"})
+        removed = client.delete(f"/workspaces/{workspace_id}/members/{owner.json()['user_id']}")
+        task = client.post("/tasks", json={"task_text": "isolated task", "workspace_id": workspace_id})
+        hidden = client.get(f"/tasks/{task.json()['task_id']}", params={"workspace_id": "default"})
+
+        self.assertEqual("owner@example.com", owner.json()["email"])
+        self.assertEqual(409, duplicate.status_code)
+        self.assertEqual(201, added.status_code)
+        self.assertEqual(2, len(members.json()["items"]))
+        self.assertEqual(200, promoted.status_code)
+        self.assertEqual(204, removed.status_code)
+        self.assertEqual(404, hidden.status_code)
+
+    def test_membership_api_returns_safe_conflict_and_not_found_responses(self):
+        client, _ = self._client()
+        owner = client.post("/users", json={"email": "owner@example.com"}).json()
+        workspace = client.post("/workspaces", json={"name": "Members", "owner_user_id": owner["user_id"]}).json()
+        workspace_id = workspace["workspace_id"]
+        duplicate = client.post(f"/workspaces/{workspace_id}/members", json={"user_id": owner["user_id"], "role": "OWNER"})
+        last_owner = client.delete(f"/workspaces/{workspace_id}/members/{owner['user_id']}")
+        unknown_user = client.get("/users/missing")
+        unknown_workspace = client.get("/workspaces/missing/members")
+
+        self.assertEqual(409, duplicate.status_code)
+        self.assertEqual(409, last_owner.status_code)
+        self.assertEqual(404, unknown_user.status_code)
+        self.assertEqual(404, unknown_workspace.status_code)
+
 
 class TaskControlApiEndpointTests(PipelineTestCase):
     def _client_and_service(self):

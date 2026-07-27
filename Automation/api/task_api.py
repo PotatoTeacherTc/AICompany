@@ -28,8 +28,12 @@ class TaskApi:
         )
         return TaskResponse(self.task_query_service.get(task.id)).to_dict()
 
-    def get_task(self, task_id):
-        return TaskResponse(self.task_query_service.get(task_id)).to_dict()
+    def get_task(self, task_id, workspace_id=None):
+        response = self.task_query_service.get(task_id)
+        task = response.get("task") or {}
+        if workspace_id is not None and response.get("found") and task.get("workspace_id") != workspace_id:
+            return TaskResponse(self.task_query_service._missing(task_id)).to_dict()
+        return TaskResponse(response).to_dict()
 
     def list_tasks(self, request=None):
         request = self._list_request(request)
