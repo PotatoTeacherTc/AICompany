@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 64**.
+Current mission baseline: **Mission 66**.
 
 ## Verified completed capabilities
 
@@ -146,6 +146,12 @@ not inferred from a missing historical mission log.
   changes. Authentication failure, denied role, and missing workspace return
   sanitized 401, 403, and 404 responses. The default remains unauthenticated
   for existing API compatibility; refresh tokens are not implemented.
+- Mission 65: Session repositories now support in-memory and JSON-file
+  storage. Refresh-token values are represented only by hashes, can be
+  rotated, expire, and be revoked without retaining token plaintext.
+- Mission 66: FastAPI now exposes refresh, logout, session-list, and
+  session-revocation endpoints. Refresh-token reuse, expiry, or tampering
+  returns a sanitized 401; users can access only their own session records.
 
 ## Implemented pipelines
 
@@ -160,14 +166,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **78 tests**. Its expected command is:
+The current suite contains **80 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 64 verification result: **78 passed, 0 failed**.
+Mission 66 verification result: **80 passed, 0 failed**.
 
 ## Not implemented
 

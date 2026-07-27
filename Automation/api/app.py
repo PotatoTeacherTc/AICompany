@@ -12,6 +12,7 @@ def create_app(
     membership_service=None,
     credential_service=None,
     login_service=None,
+    session_service=None,
     auth_required=False,
 ):
     """Create the HTTP application without starting a server."""
@@ -46,12 +47,16 @@ def create_app(
         credential_service = CredentialService(user_service)
     if login_service is None:
         from application.login_service import LoginService
+        from application.session_service import SessionService
 
-        login_service = LoginService(user_service, credential_service)
+        session_service = session_service or SessionService()
+        login_service = LoginService(user_service, credential_service, session_service=session_service)
+    session_service = session_service or login_service.session_service
     app.state.workspace_service = workspace_service
     app.state.user_service = user_service
     app.state.membership_service = membership_service
     app.state.login_service = login_service
+    app.state.session_service = session_service
     app.state.auth_required = auth_required
     app.state.task_api = TaskApi(automation_service, task_query_service, workspace_service)
     for exception_type, handler in HANDLED_EXCEPTIONS.items():
@@ -149,6 +154,39 @@ def create_app(
         except ValueError:
             from api.errors import error_response
             return error_response(401, "invalid_credentials", "Invalid credentials")
+
+    @app.post("/auth/refresh")
+    def refresh(payload: dict):
+        try:
+            return app.state.login_service.refresh(payload.get("refresh_token"))
+        except ValueError:
+            from api.errors import error_response
+            return error_response(401, "invalid_refresh_token", "Invalid refresh token")
+
+    @app.post("/auth/logout", status_code=204)
+    def logout(payload: dict, authorization: str | None = Header(default=None)):
+        user = _current_user(app, authorization)
+        if user is None:
+            return _unauthorized()
+        if not app.state.session_service or not app.state.session_service.revoke(payload.get("session_id"), user["user_id"]):
+            from api.errors import error_response
+            return error_response(404, "session_not_found", "Session not found")
+
+    @app.get("/auth/sessions")
+    def list_sessions(authorization: str | None = Header(default=None)):
+        user = _current_user(app, authorization)
+        if user is None:
+            return _unauthorized()
+        return {"items": app.state.session_service.list(user["user_id"]) if app.state.session_service else []}
+
+    @app.delete("/auth/sessions/{session_id}", status_code=204)
+    def delete_session(session_id: str, authorization: str | None = Header(default=None)):
+        user = _current_user(app, authorization)
+        if user is None:
+            return _unauthorized()
+        if not app.state.session_service or not app.state.session_service.revoke(session_id, user["user_id"]):
+            from api.errors import error_response
+            return error_response(404, "session_not_found", "Session not found")
 
     @app.post("/workspaces/{workspace_id}/members", status_code=201)
     def add_member(workspace_id: str, payload: dict, authorization: str | None = Header(default=None)):

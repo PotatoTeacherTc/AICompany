@@ -46,6 +46,8 @@ from application.credential_service import CredentialService
 from core.credential_repository import FileCredentialRepository
 from application.login_service import LoginService
 from core.access_token_provider import SignedAccessTokenProvider
+from application.session_service import SessionService
+from core.session_repository import FileSessionRepository
 from providers.factory import ProviderFactory
 from providers.mock_provider import MockProvider
 from providers.models import ProviderRequest
@@ -98,6 +100,16 @@ class PipelineTestCase(unittest.TestCase):
 
 
 class TaskTests(unittest.TestCase):
+    def test_refresh_sessions_rotate_and_store_only_hashes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            sessions=SessionService(FileSessionRepository(Path(directory)/'sessions.json'))
+            first, token=sessions.create('user')
+            rotated=sessions.rotate(token)
+            self.assertIsNone(sessions.rotate(token))
+            self.assertTrue(rotated)
+            self.assertNotIn(token, Path(directory,'sessions.json').read_text())
+            self.assertTrue(sessions.revoke(rotated[0]['session_id'],'user'))
+            self.assertEqual(2,len(sessions.list('user')))
     def test_login_service_issues_minimal_token_and_rejects_bad_credentials(self):
         users = UserService()
         user = users.create("login@example.com")
@@ -519,6 +531,22 @@ class TaskApiEndpointTests(PipelineTestCase):
         self.assertEqual(403, client.post(f"/workspaces/{workspace_id}/members", headers=headers, json={"user_id": owner["user_id"], "role": "MEMBER"}).status_code)
         self.assertEqual(200, client.get(f"/workspaces/{workspace_id}", headers=headers).status_code)
         self.assertEqual(201, client.post(f"/workspaces/{workspace_id}/members", headers={"Authorization": f"Bearer {owner_token}"}, json={"user_id": third["user_id"], "role": "MEMBER"}).status_code)
+
+    def test_session_api_refresh_logout_and_user_isolation(self):
+        users = UserService(); first = users.create("first@example.com"); second = users.create("second@example.com")
+        credentials = CredentialService(users)
+        for user in (first, second): credentials.set_password(user["user_id"], "safe-passphrase")
+        sessions = SessionService()
+        app = create_app(automation_service=self._client()[1], user_service=users, credential_service=credentials, login_service=LoginService(users, credentials, session_service=sessions), session_service=sessions, auth_required=True)
+        client = TestClient(app)
+        login = client.post("/auth/login", json={"email":"first@example.com","password":"safe-passphrase"}).json()
+        refreshed = client.post("/auth/refresh", json={"refresh_token":login["refresh_token"]})
+        reused = client.post("/auth/refresh", json={"refresh_token":login["refresh_token"]})
+        headers={"Authorization":f"Bearer {refreshed.json()['access_token']}"}
+        listed=client.get("/auth/sessions",headers=headers)
+        deleted=client.delete(f"/auth/sessions/{refreshed.json()['session_id']}",headers=headers)
+        self.assertEqual(200, refreshed.status_code); self.assertEqual(401,reused.status_code)
+        self.assertNotIn("refresh_token_hash", listed.text); self.assertEqual(204,deleted.status_code)
 
 
 class TaskControlApiEndpointTests(PipelineTestCase):
