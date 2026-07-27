@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 38**.
+Current mission baseline: **Mission 39**.
 
 ## Verified completed capabilities
 
@@ -59,6 +59,8 @@ not inferred from a missing historical mission log.
   usage metadata in PipelineResult and ExecutionHistory.
 - Mission 38: RESEARCH accepts an injected provider, records safe usage metadata,
   and returns a FAILED PipelineResult when a provider timeout/error occurs.
+- Mission 39: MUSIC accepts an injected provider, safely records complete or
+  partial usage metadata, and returns a sanitized FAILED result for provider errors.
 
 ## Implemented pipelines
 
@@ -73,14 +75,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **38 tests**. Its expected command is:
+The current suite contains **39 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 38 verification result: **38 passed, 0 failed**.
+Mission 39 verification result: **39 passed, 0 failed**.
 
 ## Not implemented
 

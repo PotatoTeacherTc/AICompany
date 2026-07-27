@@ -15,8 +15,8 @@ path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,
 RESEARCH, HISTORY, and intentional FAIL pipelines, structured PipelineResult
 objects, JSON execution history, validated structured child-task planning, and
 automated regression tests. CONTENT and RESEARCH create local starter projects
-only; neither calls an external AI provider nor the web. Their provider boundary
-is currently verified with the offline MockProvider.
+only; neither calls an external AI provider nor the web. CONTENT, RESEARCH,
+and MUSIC provider boundaries are currently verified with the offline MockProvider.
 
 ## Development stages
 

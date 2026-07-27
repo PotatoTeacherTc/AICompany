@@ -4,6 +4,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from types import SimpleNamespace
 from pathlib import Path
 from unittest.mock import patch
 
@@ -218,6 +219,34 @@ class PipelineRegistryTests(unittest.TestCase):
 
 
 class MusicPipelineTests(PipelineTestCase):
+    def test_music_pipeline_provider_usage_and_failures_are_safe(self):
+        task = self.task("Create a provider-backed song", "MUSIC")
+        result = MusicPipeline(music_root=self.root / "music", provider=MockProvider()).run(task)
+        self.assertEqual("mock", result["data"]["provider_usage"]["provider"])
+        task.pipeline = result["pipeline"]
+        task.start()
+        task.complete(result)
+        self.history.record(task)
+        self.assertEqual(
+            result["data"]["provider_usage"],
+            self.history.get_all()[0]["result"]["data"]["provider_usage"],
+        )
+
+        class PartialProvider:
+            def generate(self, request):
+                return SimpleNamespace(provider="partial", model="local", usage=SimpleNamespace())
+
+        partial = MusicPipeline(music_root=self.root / "partial", provider=PartialProvider()).run(task)
+        self.assertEqual(0, partial["data"]["provider_usage"]["total_tokens"])
+
+        for provider in (
+            type("TimeoutProvider", (), {"generate": lambda self, request: (_ for _ in ()).throw(TimeoutError("timed out"))})(),
+            type("ErrorProvider", (), {"generate": lambda self, request: (_ for _ in ()).throw(RuntimeError("provider error"))})(),
+        ):
+            failed = MusicPipeline(music_root=self.root / "failed", provider=provider).run(task)
+            self.assertEqual(PipelineStatus.FAILED, failed["status"])
+            self.assertIn("Error", failed["error"])
+
     def test_music_pipeline_creates_complete_project_in_temp_directory(self):
         music_root = self.root / "music"
         result = MusicPipeline(music_root=music_root).run(
