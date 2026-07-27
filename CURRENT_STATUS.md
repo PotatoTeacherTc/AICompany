@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 62**.
+Current mission baseline: **Mission 63**.
 
 ## Verified completed capabilities
 
@@ -136,6 +136,10 @@ not inferred from a missing historical mission log.
   in-memory or JSON-file repositories. The standard-library PBKDF2 password
   hasher stores only salted hashes and uses constant-time verification; plain
   passwords are neither persisted nor exposed by this domain.
+- Mission 63: LoginService validates normalized email/password pairs and
+  issues no-storage signed access tokens containing only user ID and expiry.
+  Expired or modified tokens and every invalid credential combination are
+  rejected without exposing credential details.
 
 ## Implemented pipelines
 
@@ -150,14 +154,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **75 tests**. Its expected command is:
+The current suite contains **77 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 62 verification result: **75 passed, 0 failed**.
+Mission 63 verification result: **77 passed, 0 failed**.
 
 ## Not implemented
 

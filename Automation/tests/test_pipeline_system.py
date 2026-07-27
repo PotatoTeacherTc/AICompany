@@ -44,6 +44,8 @@ from application.user_service import UserService
 from application.workspace_membership_service import WorkspaceMembershipService
 from application.credential_service import CredentialService
 from core.credential_repository import FileCredentialRepository
+from application.login_service import LoginService
+from core.access_token_provider import SignedAccessTokenProvider
 from providers.factory import ProviderFactory
 from providers.mock_provider import MockProvider
 from providers.models import ProviderRequest
@@ -96,6 +98,28 @@ class PipelineTestCase(unittest.TestCase):
 
 
 class TaskTests(unittest.TestCase):
+    def test_login_service_issues_minimal_token_and_rejects_bad_credentials(self):
+        users = UserService()
+        user = users.create("login@example.com")
+        credentials = CredentialService(users)
+        credentials.set_password(user["user_id"], "safe-passphrase")
+        tokens = SignedAccessTokenProvider(secret="test-secret", expires_in_seconds=60)
+        service = LoginService(users, credentials, tokens)
+
+        result = service.login(" LOGIN@example.com ", "safe-passphrase")
+        self.assertEqual("bearer", result["token_type"])
+        self.assertEqual(user, service.current_user(result["access_token"]))
+        with self.assertRaisesRegex(ValueError, "invalid_credentials"):
+            service.login("login@example.com", "wrong-password")
+
+    def test_access_token_rejects_expired_and_tampered_values(self):
+        now = [100]
+        provider = SignedAccessTokenProvider(secret="test-secret", expires_in_seconds=1, clock=lambda: now[0])
+        token = provider.issue("user-1")
+        self.assertEqual({"user_id": "user-1"}, provider.verify(token))
+        now[0] = 101
+        self.assertIsNone(provider.verify(token))
+        self.assertIsNone(provider.verify(token + "tampered"))
     def test_credentials_store_only_password_hash_and_verify(self):
         users = UserService()
         user = users.create("credential@example.com")

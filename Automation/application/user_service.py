@@ -15,3 +15,6 @@ class UserService:
 
     def get(self, user_id):
         return self.repository.get(user_id)
+
+    def get_by_email(self, email):
+        return self.repository.get_by_email(email.strip().lower()) if isinstance(email, str) else None
