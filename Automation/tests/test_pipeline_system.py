@@ -224,6 +224,29 @@ class GoalTaskPlannerTests(unittest.TestCase):
 
 
 class FilePipelineTests(PipelineTestCase):
+    def test_all_artifact_producing_pipelines_register_queryable_artifacts(self):
+        artifact_manager = ArtifactManager()
+        test_files = self.root / "artifact_files"
+        test_files.mkdir()
+        (test_files / "photo.jpg").write_text("image", encoding="utf-8")
+
+        pipelines = [
+            (AIPipeline(base_folder=test_files, artifact_manager=artifact_manager), self.task("Organize files", "FILE")),
+            (MusicPipeline(music_root=self.root / "music", artifact_manager=artifact_manager), self.task("Create a song", "MUSIC")),
+            (ContentPipeline(content_root=self.root / "content", artifact_manager=artifact_manager), self.task("Create a video", "CONTENT")),
+            (ResearchPipeline(research_root=self.root / "research", artifact_manager=artifact_manager), self.task("Research a topic", "RESEARCH")),
+        ]
+
+        with patch("scripts.file_manager.log"), patch("scripts.report_generator.log"):
+            for pipeline, task in pipelines:
+                result = pipeline.run(task)
+                self.assertEqual(PipelineStatus.SUCCESS, result["status"])
+                self.assertTrue(result["artifacts"])
+                self.assertEqual(result["artifacts"], result["data"]["artifacts"])
+                for artifact in result["artifacts"]:
+                    self.assertEqual(artifact, artifact_manager.get(artifact["artifact_id"]))
+                    self.assertEqual(pipeline.name, artifact["producer_pipeline"])
+
     def test_file_pipeline_organizes_files_and_returns_common_result(self):
         test_files = self.root / "test_files"
         test_files.mkdir()

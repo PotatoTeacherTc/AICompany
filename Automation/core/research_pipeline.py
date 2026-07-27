@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 
 from config.settings import PROJECT_ROOT
+from core.artifact_manager import ArtifactManager
 from core.base_pipeline import BasePipeline
 from core.result import PipelineResult
 from core.status import PipelineStatus
@@ -11,10 +12,11 @@ from providers.pipeline_utils import get_provider_usage, provider_error
 class ResearchPipeline(BasePipeline):
     """Creates a structured local research project without external services."""
 
-    def __init__(self, research_root=None, provider=None):
+    def __init__(self, research_root=None, provider=None, artifact_manager=None):
         super().__init__("Research Pipeline")
         self.research_root = research_root or PROJECT_ROOT / "Research"
         self.provider = provider
+        self.artifact_manager = artifact_manager or ArtifactManager()
         self.research_root.mkdir(parents=True, exist_ok=True)
 
     def run(self, task):
@@ -93,12 +95,18 @@ class ResearchPipeline(BasePipeline):
             if not all(path.is_file() and path.stat().st_size > 0 for path in files_created):
                 raise RuntimeError("Research project verification failed")
 
+            artifacts = self.artifact_manager.register_files(
+                files_created, "TEXT", self.name
+            )
+            metadata["artifacts"] = artifacts
+
             return PipelineResult(
                 status=PipelineStatus.SUCCESS,
                 pipeline=self.name,
                 task=task,
                 task_type=task.task_type,
                 data=metadata,
+                artifacts=artifacts,
             ).to_dict()
         except Exception as error:
             return PipelineResult(

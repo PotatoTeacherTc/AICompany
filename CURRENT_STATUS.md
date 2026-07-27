@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 48**.
+Current mission baseline: **Mission 49**.
 
 ## Verified completed capabilities
 
@@ -86,6 +86,10 @@ not inferred from a missing historical mission log.
 - Mission 48: Artifact metadata is standardized (including a reserved
   workspace_id) and PipelineResult artifact records are preserved in
   ExecutionHistory.
+- Mission 49: FILE, MUSIC, CONTENT, and RESEARCH now register generated
+  result files through an injectable ArtifactManager. Their existing public
+  result fields are retained, while queryable artifact records are included in
+  PipelineResult and execution history.
 
 ## Implemented pipelines
 
@@ -100,14 +104,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **52 tests**. Its expected command is:
+The current suite contains **53 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 48 verification result: **52 passed, 0 failed**.
+Mission 49 verification result: **53 passed, 0 failed**.
 
 ## Not implemented
 

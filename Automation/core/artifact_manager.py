@@ -55,3 +55,9 @@ class ArtifactManager:
 
     def list(self):
         return self.repository.list()
+
+    def register_files(self, file_paths, artifact_type, producer_pipeline):
+        return [
+            self.register_file(path, artifact_type, producer_pipeline)
+            for path in file_paths
+        ]

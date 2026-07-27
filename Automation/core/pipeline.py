@@ -1,4 +1,5 @@
 from core.base_pipeline import BasePipeline
+from core.artifact_manager import ArtifactManager
 from core.result import PipelineResult
 from core.status import PipelineStatus
 
@@ -13,7 +14,7 @@ from config.settings import BASE_FOLDER
 
 class AIPipeline(BasePipeline):
 
-    def __init__(self, base_folder=None, executor=None):
+    def __init__(self, base_folder=None, executor=None, artifact_manager=None):
 
         super().__init__(
             "Automation Pipeline"
@@ -28,6 +29,8 @@ class AIPipeline(BasePipeline):
         self.reporter = TaskReporter()
 
         self.base_folder = base_folder or BASE_FOLDER
+
+        self.artifact_manager = artifact_manager or ArtifactManager()
 
 
     def run(self, task):
@@ -88,6 +91,16 @@ class AIPipeline(BasePipeline):
 
             }
 
+            artifact_paths = [
+                path
+                for path in self.base_folder.rglob("*")
+                if path.is_file()
+            ]
+            artifacts = self.artifact_manager.register_files(
+                artifact_paths, "FILE", self.name
+            )
+            data["artifacts"] = artifacts
+
 
             status = (
                 PipelineStatus.SUCCESS
@@ -105,7 +118,9 @@ class AIPipeline(BasePipeline):
 
                 task_type=task.task_type,
 
-                data=data
+                data=data,
+
+                artifacts=artifacts,
 
             ).to_dict()
 
