@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 24**.
+Current mission baseline: **Mission 25**.
 
 ## Verified completed capabilities
 
@@ -25,6 +25,9 @@ not inferred from a missing historical mission log.
 - Mission 24: Manager now verifies that PipelineResult execution metadata
   matches the active Task and selected Pipeline, and validates data/error
   value types.
+- Mission 25: NOT_IMPLEMENTED PipelineResult and Worker/ExecutionHistory
+  status preservation are covered by regression tests, completing the current
+  Stage 1 execution-contract test boundaries.
 
 ## Implemented pipelines
 
@@ -39,14 +42,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **22 tests**. Its expected command is:
+The current suite contains **24 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 24 verification result: **22 passed, 0 failed**.
+Mission 25 verification result: **24 passed, 0 failed**.
 
 ## Not implemented
 

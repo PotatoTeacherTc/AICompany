@@ -218,6 +218,36 @@ class FailurePipelineTests(PipelineTestCase):
         self.assertTrue(RESULT_KEYS.issubset(result))
 
 
+class NotImplementedPipelineTests(PipelineTestCase):
+    def test_stub_pipeline_returns_common_not_implemented_result(self):
+        result = StubPipeline("Unavailable Pipeline").run(
+            self.task("Unavailable task", "UNAVAILABLE")
+        )
+
+        self.assertEqual(PipelineStatus.NOT_IMPLEMENTED, result["status"])
+        self.assertTrue(RESULT_KEYS.issubset(result))
+
+    def test_worker_preserves_not_implemented_status_and_records_history(self):
+        class NotImplementedManager:
+            def handle(_, task):
+                task.task_type = "UNAVAILABLE"
+                task.pipeline = "Unavailable Pipeline"
+                return PipelineResult(
+                    PipelineStatus.NOT_IMPLEMENTED,
+                    task.pipeline,
+                    task,
+                    task.task_type,
+                    error="Unavailable Pipeline is not available yet",
+                ).to_dict()
+
+        queue = TaskQueue()
+        queue.add(Task("Unavailable task"))
+        completed = TaskWorker(queue, NotImplementedManager(), self.history).run_once()
+
+        self.assertEqual(PipelineStatus.NOT_IMPLEMENTED, completed.status)
+        self.assertEqual(PipelineStatus.NOT_IMPLEMENTED, self.history.get_all()[0]["status"])
+
+
 class ManagerTests(PipelineTestCase):
     def _manager_for_result(self, result):
         registry = PipelineRegistry()
