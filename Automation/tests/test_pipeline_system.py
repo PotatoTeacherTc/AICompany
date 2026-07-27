@@ -413,10 +413,8 @@ class FastApiFoundationTests(PipelineTestCase):
         response = TestClient(app, raise_server_exceptions=False).get("/test-error")
 
         self.assertEqual(500, response.status_code)
-        self.assertEqual(
-            {"error": {"code": "internal_error", "message": "Internal server error"}},
-            response.json(),
-        )
+        self.assertEqual("internal_error", response.json()["error"]["code"])
+        self.assertTrue(response.json()["error"]["correlation_id"])
         self.assertNotIn("sensitive internal detail", response.text)
 
 
@@ -467,9 +465,12 @@ class TaskApiEndpointTests(PipelineTestCase):
         missing = client.get("/tasks/missing-task")
 
         self.assertEqual(400, invalid.status_code)
-        self.assertEqual({"error": {"code": "invalid_request", "message": "Invalid task request"}}, invalid.json())
+        self.assertEqual("invalid_request", invalid.json()["error"]["code"])
+        self.assertTrue(invalid.json()["error"]["correlation_id"])
         self.assertEqual(404, missing.status_code)
-        self.assertEqual({"error": {"code": "task_not_found", "message": "Task not found"}}, missing.json())
+        self.assertEqual("task_not_found", missing.json()["error"]["code"])
+        self.assertEqual("Task not found", missing.json()["error"]["message"])
+        self.assertTrue(missing.json()["error"]["correlation_id"])
 
     def test_workspace_api_and_workspace_task_creation(self):
         client, _ = self._client()
@@ -564,6 +565,14 @@ class TaskApiEndpointTests(PipelineTestCase):
         deleted=client.delete(f"/auth/sessions/{refreshed.json()['session_id']}",headers=headers)
         self.assertEqual(200, refreshed.status_code); self.assertEqual(401,reused.status_code)
         self.assertNotIn("refresh_token_hash", listed.text); self.assertEqual(204,deleted.status_code)
+
+    def test_api_correlation_id_header_and_safe_error_body(self):
+        client,_=self._client()
+        accepted=client.get('/health',headers={'X-Correlation-ID':'trace_12345678'})
+        invalid=client.get('/tasks/missing',headers={'X-Correlation-ID':'bad value!'})
+        self.assertEqual('trace_12345678',accepted.headers['X-Correlation-ID'])
+        self.assertNotEqual('bad value!',invalid.headers['X-Correlation-ID'])
+        self.assertEqual(invalid.headers['X-Correlation-ID'],invalid.json()['error']['correlation_id'])
 
 
 class TaskControlApiEndpointTests(PipelineTestCase):

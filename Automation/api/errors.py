@@ -3,9 +3,12 @@ from fastapi.responses import JSONResponse
 
 
 def error_response(status_code, code, message):
+    from api.request_context import current_context
+    from api.request_context import RequestContext
+    context=current_context() or RequestContext.create()
     return JSONResponse(
         status_code=status_code,
-        content={"error": {"code": code, "message": message}},
+        content={"error": {"code": code, "message": message, "correlation_id": context.correlation_id}},
     )
 
 

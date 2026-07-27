@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 68**.
+Current mission baseline: **Mission 69**.
 
 ## Verified completed capabilities
 
@@ -158,6 +158,9 @@ not inferred from a missing historical mission log.
   pagination and require OWNER or ADMIN when authentication is enabled.
 - Mission 68: AuditQueryService provides created-at-descending, filtered audit
   queries with compatible offset/limit and opaque cursor pagination.
+- Mission 69: FastAPI assigns an isolated correlation ID to each request,
+  safely reuses valid client IDs, returns it in response headers and sanitized
+  error bodies, and attaches it to audit events when available.
 
 ## Implemented pipelines
 
@@ -172,14 +175,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **82 tests**. Its expected command is:
+The current suite contains **83 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 68 verification result: **82 passed, 0 failed**.
+Mission 69 verification result: **83 passed, 0 failed**.
 
 ## Not implemented
 

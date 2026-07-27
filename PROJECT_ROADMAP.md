@@ -8,7 +8,7 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 68
+## Current baseline: Mission 69
 
 The verified implementation currently provides a Task/Queue/Worker execution
 path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,
@@ -64,6 +64,8 @@ injectable repository boundary; sensitive credentials, token values, hashes,
 and prompts are excluded.
 Audit-log operations now support cursor pagination and resource/user/action
 filters while retaining offset/limit compatibility.
+Request correlation IDs now provide safe cross-boundary diagnostics without
+recording request bodies, credentials, tokens, prompts, or exception details.
 
 ## Development stages
 

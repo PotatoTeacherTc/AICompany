@@ -1,4 +1,6 @@
-from fastapi import FastAPI, Header
+from fastapi import FastAPI, Header, Request
+from api.request_context import RequestContext, set_context, reset_context
+import time
 
 from api.errors import HANDLED_EXCEPTIONS
 from api.task_api import TaskApi
@@ -30,6 +32,15 @@ def create_app(
         )
 
     app = FastAPI(title="AICompany API", version="0.1.0")
+    @app.middleware("http")
+    async def correlation_middleware(request: Request, call_next):
+        context=RequestContext.create(request.headers.get("X-Correlation-ID")); token=set_context(context); started=time.perf_counter()
+        try:
+            response=await call_next(request)
+        finally:
+            reset_context(token)
+        response.headers["X-Correlation-ID"]=context.correlation_id
+        return response
     app.state.automation_service = automation_service
     app.state.task_query_service = task_query_service
     if workspace_service is None:
