@@ -300,6 +300,25 @@ class ContentPipelineTests(PipelineTestCase):
 
 
 class ResearchPipelineTests(PipelineTestCase):
+    def test_research_pipeline_uses_configurable_questions_and_type(self):
+        task = Task(
+            "Research testing",
+            parameters={
+                "research_type": "Competitive analysis",
+                "research_questions": ["Which testing practices are most repeatable?"],
+            },
+        )
+        task.task_type = "RESEARCH"
+
+        result = ResearchPipeline(research_root=self.root / "research").run(task)
+
+        self.assertEqual(PipelineStatus.SUCCESS, result["status"])
+        self.assertEqual("Competitive analysis", result["data"]["research_type"])
+        self.assertEqual(
+            ["Which testing practices are most repeatable?"],
+            result["data"]["research_questions"],
+        )
+
     def test_research_pipeline_records_structured_local_sources(self):
         research_root = self.root / "research"
         task = Task(

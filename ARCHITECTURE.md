@@ -33,8 +33,9 @@ the workflow; `run()` is the explicit entry point.
   content type, title prefix, and tags can be supplied through validated Task
   parameters.
 - RESEARCH: creates a structured local research-project scaffold with a review
-  checklist and preserves validated local source records; it does not perform
-  web search or AI/API calls.
+  checklist and preserves validated local source records; research type and
+  questions can be supplied through validated Task parameters. It does not
+  perform web search or AI/API calls.
 - HISTORY: reads recent execution records.
 - FAIL: deliberately returns `FAILED` to validate failure handling.
 

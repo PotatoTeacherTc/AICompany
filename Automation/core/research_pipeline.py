@@ -24,11 +24,8 @@ class ResearchPipeline(BasePipeline):
             project_path.mkdir()
 
             topic = task.task_text
-            research_questions = [
-                f"What is the current scope of {topic}?",
-                f"Which audience needs are most relevant to {topic}?",
-                f"What next research steps would validate assumptions about {topic}?",
-            ]
+            options = self._get_options(task, topic)
+            research_questions = options["research_questions"]
             findings = [
                 "This project contains a local research scaffold; no external web or AI API data was collected.",
                 f"The requested topic is: {topic}.",
@@ -73,7 +70,7 @@ class ResearchPipeline(BasePipeline):
                 "project_name": project_name,
                 "project_path": str(project_path),
                 "task": task.task_text,
-                "research_type": "Structured local research",
+                "research_type": options["research_type"],
                 "research_questions": research_questions,
                 "findings": findings,
                 "summary": summary,
@@ -106,6 +103,25 @@ class ResearchPipeline(BasePipeline):
                 task_type=task.task_type,
                 error=str(error),
             ).to_dict()
+
+    @staticmethod
+    def _get_options(task, topic):
+        research_type = task.parameters.get("research_type", "Structured local research")
+        research_questions = task.parameters.get(
+            "research_questions",
+            [
+                f"What is the current scope of {topic}?",
+                f"Which audience needs are most relevant to {topic}?",
+                f"What next research steps would validate assumptions about {topic}?",
+            ],
+        )
+        if not isinstance(research_type, str) or not research_type.strip():
+            raise ValueError("research_type must be a non-empty string")
+        if not isinstance(research_questions, list) or not research_questions:
+            raise ValueError("research_questions must be a non-empty list")
+        if not all(isinstance(question, str) and question.strip() for question in research_questions):
+            raise ValueError("research_questions must contain non-empty strings")
+        return {"research_type": research_type, "research_questions": list(research_questions)}
 
     @staticmethod
     def _get_source_records(task):

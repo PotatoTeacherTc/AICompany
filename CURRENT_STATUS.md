@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 33**.
+Current mission baseline: **Mission 34**.
 
 ## Verified completed capabilities
 
@@ -47,6 +47,8 @@ not inferred from a missing historical mission log.
 - Mission 33: CONTENT and RESEARCH projects now generate and validate explicit
   review-checklist artifacts before any future external publishing or research
   integration.
+- Mission 34: RESEARCH project generation now supports validated per-Task
+  research type and question configuration while preserving local defaults.
 
 ## Implemented pipelines
 
@@ -61,14 +63,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **33 tests**. Its expected command is:
+The current suite contains **34 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 33 verification result: **33 passed, 0 failed**.
+Mission 34 verification result: **34 passed, 0 failed**.
 
 ## Not implemented
 
