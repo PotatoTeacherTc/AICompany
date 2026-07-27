@@ -13,6 +13,8 @@ from agent.goal_task_planner import GoalTaskPlanner
 from config.settings import PROJECT_ROOT
 from core.execution_history import ExecutionHistory
 from core.execution_history_repository import InMemoryExecutionHistoryRepository
+from core.artifact_manager import ArtifactManager
+from core.artifact_repository import FileArtifactRepository, InMemoryArtifactRepository
 from core.base_pipeline import BasePipeline
 from core.content_pipeline import ContentPipeline
 from core.history_analyzer import HistoryAnalyzer
@@ -113,6 +115,53 @@ class ProviderTests(unittest.TestCase):
         self.assertIsInstance(ProviderFactory.from_environment({}).provider, MockProvider)
         with self.assertRaisesRegex(ValueError, "Unsupported AI provider"):
             ProviderFactory.from_environment({"AICOMPANY_PROVIDER": "unknown"})
+
+
+class ArtifactManagerTests(PipelineTestCase):
+    def test_artifact_manager_registers_and_queries_file_metadata(self):
+        artifact_file = self.root / "output.txt"
+        artifact_file.write_text("artifact content", encoding="utf-8")
+        manager = ArtifactManager(repository=InMemoryArtifactRepository())
+
+        artifact = manager.register_file(
+            artifact_file,
+            artifact_type="TEXT",
+            producer_pipeline="Test Pipeline",
+        )
+
+        self.assertTrue(artifact["artifact_id"])
+        self.assertEqual("TEXT", artifact["artifact_type"])
+        self.assertEqual("output.txt", artifact["filename"])
+        self.assertEqual(len("artifact content".encode("utf-8")), artifact["size"])
+        self.assertEqual("Test Pipeline", artifact["producer_pipeline"])
+        self.assertIsNone(artifact["workspace_id"])
+        self.assertEqual(artifact, manager.get(artifact["artifact_id"]))
+        self.assertEqual([artifact], manager.list())
+
+        result = PipelineResult(
+            PipelineStatus.SUCCESS,
+            "Test Pipeline",
+            self.task("artifact task", "FILE"),
+            artifacts=[artifact],
+        ).to_dict()
+        self.assertEqual([artifact], result["artifacts"])
+
+    def test_file_artifact_repository_reloads_records_and_handles_missing_data(self):
+        repository_file = self.root / "artifacts.json"
+        manager = ArtifactManager(repository=FileArtifactRepository(repository_file))
+        artifact_file = self.root / "report.txt"
+        artifact_file.write_text("report", encoding="utf-8")
+        artifact = manager.register_file(artifact_file, "TEXT", "Test Pipeline")
+
+        reloaded = ArtifactManager(repository=FileArtifactRepository(repository_file))
+        self.assertEqual(artifact, reloaded.get(artifact["artifact_id"]))
+        (self.root / "broken_artifacts.json").write_text("{", encoding="utf-8")
+        self.assertEqual(
+            [],
+            ArtifactManager(
+                repository=FileArtifactRepository(self.root / "broken_artifacts.json")
+            ).list(),
+        )
 
 
 class GoalTaskPlannerTests(unittest.TestCase):

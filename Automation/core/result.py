@@ -10,7 +10,8 @@ class PipelineResult:
         task,
         task_type=None,
         data=None,
-        error=None
+        error=None,
+        artifacts=None,
     ):
 
         self.status = status
@@ -23,6 +24,8 @@ class PipelineResult:
         self.data = data or {}
 
         self.error = error
+
+        self.artifacts = list(artifacts or [])
 
 
     def is_success(self):
@@ -72,6 +75,8 @@ class PipelineResult:
             "task_type": self.task_type,
 
             "data": self.data,
+
+            "artifacts": list(self.artifacts),
 
             "error": self.error
 

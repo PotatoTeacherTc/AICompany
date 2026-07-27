@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 46**.
+Current mission baseline: **Mission 47**.
 
 ## Verified completed capabilities
 
@@ -80,6 +80,9 @@ not inferred from a missing historical mission log.
 - Mission 46: CANCELLED and TIMED_OUT are terminal Task/PipelineResult states.
   Queued work can be cancelled once, while an elapsed per-task deadline safely
   produces a TIMED_OUT result and matching execution-history record.
+- Mission 47: ArtifactManager now creates artifact IDs and stores file metadata
+  through injectable in-memory and file repositories; PipelineResult can carry
+  linked artifact records.
 
 ## Implemented pipelines
 
@@ -94,14 +97,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **49 tests**. Its expected command is:
+The current suite contains **51 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 46 verification result: **49 passed, 0 failed**.
+Mission 47 verification result: **51 passed, 0 failed**.
 
 ## Not implemented
 

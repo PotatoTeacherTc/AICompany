@@ -8,7 +8,7 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 46
+## Current baseline: Mission 47
 
 The verified implementation currently provides a Task/Queue/Worker execution
 path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,
@@ -20,7 +20,8 @@ synchronized into one history record per task, including bounded retry state
 and sanitized error types, cancellation, and timeout state. CONTENT and RESEARCH create
 local starter projects only; neither calls an external AI provider nor the
 web. CONTENT, RESEARCH, and MUSIC provider boundaries are currently verified
-with the offline MockProvider.
+with the offline MockProvider. Artifact metadata can now be stored through an
+in-memory or file-backed repository boundary.
 
 ## Development stages
 
