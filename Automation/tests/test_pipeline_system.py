@@ -264,6 +264,80 @@ class MusicPipelineTests(PipelineTestCase):
 
 
 class HistoryPipelineTests(PipelineTestCase):
+    def test_history_analyzer_aggregates_query_results_and_provider_usage(self):
+        records = [
+            {
+                "task_id": "1", "status": "SUCCESS", "pipeline": "File Pipeline",
+                "task_type": "FILE", "completed_at": "2026-01-01T10:00:00",
+                "result": {"data": {}},
+            },
+            {
+                "task_id": "2", "status": "FAILED", "pipeline": "Content Pipeline",
+                "task_type": "CONTENT", "completed_at": "2026-01-02T10:00:00",
+                "result": {"data": {"provider_usage": {
+                    "provider": "mock", "model": "mock-small", "input_tokens": 10,
+                    "output_tokens": 5, "total_tokens": 15, "estimated_cost_usd": 0.1,
+                }}},
+            },
+            {
+                "task_id": "3", "status": "SKIPPED", "pipeline": "Music Pipeline",
+                "task_type": "MUSIC", "completed_at": "2026-01-03T10:00:00",
+                "result": {"data": {"provider_usage": None}},
+            },
+            {
+                "task_id": "4", "status": "SUCCESS", "pipeline": "Music Pipeline",
+                "task_type": "MUSIC", "completed_at": "2026-01-04T10:00:00",
+                "result": {"data": {"provider_usage": {
+                    "provider": "mock", "model": "mock-small", "input_tokens": 20,
+                    "output_tokens": 8, "total_tokens": 28, "estimated_cost_usd": 0.2,
+                }}},
+            },
+            {
+                "task_id": "5", "status": "SUCCESS", "pipeline": "Music Pipeline",
+                "task_type": "MUSIC", "completed_at": "2026-01-05T10:00:00",
+                "result": {"data": {"provider_usage": {
+                    "provider": "partial", "model": "local", "input_tokens": 4,
+                }}},
+            },
+        ]
+        history = ExecutionHistory(repository=InMemoryExecutionHistoryRepository(records))
+        analysis = HistoryAnalyzer(history).analyze()["analysis"]
+
+        self.assertEqual(5, analysis["total_executions"])
+        self.assertEqual(3, analysis["successful"])
+        self.assertEqual(1, analysis["failed"])
+        self.assertEqual(1, analysis["skipped"])
+        self.assertEqual(60.0, analysis["success_rate"])
+        self.assertEqual({"SUCCESS": 3, "FAILED": 1, "SKIPPED": 1}, analysis["status_distribution"])
+        self.assertEqual({"Music Pipeline": 3, "Content Pipeline": 1, "File Pipeline": 1}, analysis["pipeline_distribution"])
+        self.assertEqual({"MUSIC": 3, "CONTENT": 1, "FILE": 1}, analysis["task_type_distribution"])
+        self.assertEqual({"mock": 2, "partial": 1}, analysis["provider_usage"]["provider_distribution"])
+        self.assertEqual(34, analysis["provider_usage"]["input_tokens"])
+        self.assertEqual(13, analysis["provider_usage"]["output_tokens"])
+        self.assertEqual(43, analysis["provider_usage"]["total_tokens"])
+        self.assertEqual(0.3, analysis["provider_usage"]["estimated_cost"])
+
+        filtered = HistoryAnalyzer(history).analyze(task_type="MUSIC", status="SUCCESS")["analysis"]
+        self.assertEqual(2, filtered["total_executions"])
+        self.assertEqual({"MUSIC": 2}, filtered["task_type_distribution"])
+        self.assertEqual(24, filtered["provider_usage"]["input_tokens"])
+
+        json_history = ExecutionHistory(self.root / "analytics_history.json")
+        json_history.records = list(records)
+        json_history.save()
+        self.assertEqual(
+            analysis,
+            HistoryAnalyzer(ExecutionHistory(self.root / "analytics_history.json")).analyze()["analysis"],
+        )
+
+    def test_history_analyzer_returns_empty_analysis_for_empty_history(self):
+        result = HistoryAnalyzer(
+            ExecutionHistory(repository=InMemoryExecutionHistoryRepository())
+        ).analyze(status="SUCCESS")
+
+        self.assertEqual(PipelineStatus.SUCCESS, result["status"])
+        self.assertEqual({}, result["analysis"])
+
     def test_execution_history_query_filters_sorting_and_pagination(self):
         records = [
             {"task_id": "1", "status": "SUCCESS", "pipeline": "Music Pipeline", "task_type": "MUSIC", "completed_at": "2026-01-01T10:00:00"},

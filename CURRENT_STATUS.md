@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 42**.
+Current mission baseline: **Mission 43**.
 
 ## Verified completed capabilities
 
@@ -68,6 +68,9 @@ not inferred from a missing historical mission log.
 - Mission 42: ExecutionHistory queries now return latest-first records and
   support status, pipeline, task-type, date-range, and offset/limit filters
   consistently for in-memory and JSON repositories.
+- Mission 43: HistoryAnalyzer now reuses the ExecutionHistory query contract
+  for filtered status, pipeline/task-type, and provider/model usage, token,
+  and cost aggregates while safely handling absent or partial usage metadata.
 
 ## Implemented pipelines
 
@@ -82,14 +85,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **41 tests**. Its expected command is:
+The current suite contains **43 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 42 verification result: **41 passed, 0 failed**.
+Mission 43 verification result: **43 passed, 0 failed**.
 
 ## Not implemented
 
