@@ -17,6 +17,7 @@ class ArtifactManager:
         "producer_pipeline",
         "workspace_id",
         "mission_id",
+        "task_id",
         "stage",
         "status",
     )
@@ -31,6 +32,7 @@ class ArtifactManager:
         producer_pipeline,
         workspace_id=None,
         mission_id=None,
+        task_id=None,
         stage=None,
         status="AVAILABLE",
     ):
@@ -52,6 +54,7 @@ class ArtifactManager:
             "producer_pipeline": producer_pipeline,
             "workspace_id": workspace_id or "default",
             "mission_id": mission_id,
+            "task_id": task_id,
             "stage": stage or producer_pipeline,
             "status": status,
             "path": str(path),
@@ -88,6 +91,7 @@ class ArtifactManager:
         producer_pipeline,
         workspace_id=None,
         mission_id=None,
+        task_id=None,
         stage=None,
     ):
         return [
@@ -97,6 +101,7 @@ class ArtifactManager:
                 producer_pipeline,
                 workspace_id=workspace_id,
                 mission_id=mission_id,
+                task_id=task_id,
                 stage=stage,
             )
             for path in file_paths

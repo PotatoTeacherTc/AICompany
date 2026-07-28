@@ -18,6 +18,7 @@ def create_app(
     audit_service=None,
     audit_query_service=None,
     authorization_service=None,
+    artifact_service=None,
     health_service=None,
     auth_required=False,
 ):
@@ -79,6 +80,13 @@ def create_app(
             login_service, workspace_service, membership_service
         )
     app.state.authorization_service = authorization_service
+    if artifact_service is None:
+        from application.artifact_service import ArtifactApplicationService
+
+        artifact_service = ArtifactApplicationService(
+            getattr(automation_service, "artifact_manager", None)
+        )
+    app.state.artifact_service = artifact_service
     if audit_service is None:
         from application.audit_service import AuditService
         audit_service = AuditService()
@@ -346,6 +354,92 @@ def create_app(
         except ValueError:
             from api.errors import error_response
             return error_response(400,'invalid_cursor','Invalid audit query')
+
+    @app.get("/workspaces/{workspace_id}/artifacts")
+    def list_artifacts(
+        workspace_id: str,
+        artifact_type: str | None = None,
+        mission_id: str | None = None,
+        task_id: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
+        authorization: str | None = Header(default=None),
+    ):
+        denied = _authorize_workspace(
+            app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"}
+        )
+        if denied:
+            return denied
+        try:
+            return app.state.artifact_service.list(
+                workspace_id,
+                artifact_type=artifact_type,
+                mission_id=mission_id,
+                task_id=task_id,
+                limit=limit,
+                offset=offset,
+            )
+        except (TypeError, ValueError):
+            from api.errors import error_response
+
+            return error_response(400, "invalid_request", "Invalid artifact query")
+
+    @app.get("/workspaces/{workspace_id}/artifacts/{artifact_id}")
+    def get_artifact(
+        workspace_id: str,
+        artifact_id: str,
+        authorization: str | None = Header(default=None),
+    ):
+        denied = _authorize_workspace(
+            app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"}
+        )
+        if denied:
+            return denied
+        try:
+            value = app.state.artifact_service.get(workspace_id, artifact_id)
+        except (TypeError, ValueError):
+            from api.errors import error_response
+
+            return error_response(400, "invalid_request", "Invalid artifact request")
+        if value is None:
+            from api.errors import error_response
+
+            return error_response(404, "artifact_not_found", "Artifact not found")
+        return value
+
+    @app.get("/workspaces/{workspace_id}/artifacts/{artifact_id}/content")
+    def get_artifact_content(
+        workspace_id: str,
+        artifact_id: str,
+        authorization: str | None = Header(default=None),
+    ):
+        denied = _authorize_workspace(
+            app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"}
+        )
+        if denied:
+            return denied
+        try:
+            value = app.state.artifact_service.content(workspace_id, artifact_id)
+        except ValueError as error:
+            from api.errors import error_response
+
+            code = str(error)
+            if code in {
+                "content_unavailable",
+                "unsupported_content_type",
+                "content_too_large",
+            }:
+                return error_response(409, code, "Artifact content is unavailable")
+            return error_response(400, "invalid_request", "Invalid artifact request")
+        if value is None:
+            from api.errors import error_response
+
+            return error_response(404, "artifact_not_found", "Artifact not found")
+        if value.get("status") == "MISSING":
+            from api.errors import error_response
+
+            return error_response(409, "artifact_missing", "Artifact content is missing")
+        return value
 
     @app.post("/workspaces/{workspace_id}/members", status_code=201)
     def add_member(workspace_id: str, payload: dict, authorization: str | None = Header(default=None)):

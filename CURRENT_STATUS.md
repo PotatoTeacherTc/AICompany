@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 106**.
+Current mission baseline: **Mission 107**.
 
 ## Verified completed capabilities
 
@@ -404,6 +404,17 @@ not inferred from a missing historical mission log.
   the full 248-test suite pass offline. The unauthenticated legacy default is
   unchanged. API versioning, deployment, signup/admin APIs, and Mission 107
   Artifact work remain unimplemented.
+- Mission 107: Existing ArtifactManager and Artifact repositories are now
+  exposed through an injected ArtifactApplicationService rather than direct
+  Router/repository access. Workspace-scoped list/detail queries support type,
+  Mission, optional Task, newest-first pagination, and path-free DTOs. The
+  authenticated API provides Artifact list, detail, and bounded content
+  access. Only UTF-8 TEXT/JSON beneath a configured storage root is readable;
+  content is capped at 1 MiB and includes MIME, size, and SHA-256 checksum.
+  Sensitive JSON keys are recursively removed. Missing files, corrupt records,
+  traversal references, Workspace mismatch, inactive Workspace, and removed
+  Memberships fail safely. Five focused tests and the full 253-test suite pass
+  offline. Binary streaming and deletion/archive policy remain unimplemented.
 
 ## Implemented pipelines
 

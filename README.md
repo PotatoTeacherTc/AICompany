@@ -247,3 +247,27 @@ local clients.
 API versioning, an external ASGI deployment, signup/email verification,
 administrator User management, and Mission 107 Artifact work remain future
 scope.
+
+## Workspace artifact access
+
+Mission 107 exposes the existing ArtifactManager through authenticated,
+Workspace-scoped application routes:
+
+```text
+GET /workspaces/{workspace_id}/artifacts
+GET /workspaces/{workspace_id}/artifacts/{artifact_id}
+GET /workspaces/{workspace_id}/artifacts/{artifact_id}/content
+```
+
+Lists support Artifact type, Mission, optional Task, `limit`, and `offset`.
+Responses never include `path`, `internal_ref`, or repository locations.
+Content access is available only for UTF-8 TEXT/JSON artifacts stored beneath a
+configured FileArtifactRepository storage root. Reads are capped at 1 MiB and
+return MIME type, byte size, and SHA-256 checksum. Sensitive JSON keys are
+removed recursively.
+
+Missing files return a safe MISSING response; traversal references and corrupt
+metadata are ignored. OWNER, ADMIN, and MEMBER may read their current active
+Workspace, while inactive Users/Workspaces and removed Memberships are
+rejected. Binary download/streaming and artifact deletion/archive policy are
+not implemented.

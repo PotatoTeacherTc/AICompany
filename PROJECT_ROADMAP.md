@@ -8,7 +8,7 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 106
+## Current baseline: Mission 107
 
 The verified implementation currently provides a Task/Queue/Worker execution
 path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,
@@ -317,6 +317,24 @@ user-scoped query needed for collection filtering, including JSON-file
 implementations. The historical `auth_required=False` default remains for
 backward compatibility. API versioning, public server deployment, signup,
 admin User APIs, and Mission 107 Artifact expansion remain unimplemented.
+
+Mission 107 is the Phase D Artifact application boundary. It reuses
+ArtifactManager and the in-memory/JSON FileArtifactRepository rather than
+creating another store. ArtifactApplicationService returns path-free safe DTOs
+with Workspace, Artifact type, Mission, and optional Task filtering,
+newest-first ordering, and bounded pagination. The authenticated API exposes
+Workspace-scoped list, detail, and bounded content endpoints through the
+existing AuthorizationService.
+
+Content access is limited to UTF-8 TEXT/JSON artifacts persisted beneath a
+configured storage root. It resolves only validated `internal_ref` values,
+limits reads to 1 MiB, returns MIME type, size, and SHA-256 checksum, and
+recursively redacts sensitive JSON keys. Missing files become MISSING without
+revealing paths or raw filesystem errors. Metadata restart recovery and
+traversal/corrupt-record rejection remain in FileArtifactRepository. Binary
+download/streaming and artifact deletion/archive policy are not implemented.
+Mission 108 is the remaining named Phase D Usage boundary; Mission 109-110 are
+not named in the current roadmap and are not inferred.
 
 ## Development stages
 
