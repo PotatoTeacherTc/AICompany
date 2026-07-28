@@ -4,6 +4,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from datetime import datetime
 from types import SimpleNamespace
 from pathlib import Path
 from unittest.mock import patch
@@ -26,6 +27,7 @@ from core.content_pipeline import ContentPipeline
 from core.history_analyzer import HistoryAnalyzer
 from core.history_pipeline import HistoryPipeline
 from core.music_pipeline import MusicPipeline
+from core.mission import Mission
 from core.pipeline import AIPipeline
 from core.registry import PipelineRegistry
 from core.result import PipelineResult
@@ -103,6 +105,93 @@ class PipelineTestCase(unittest.TestCase):
 
 
 class TaskTests(unittest.TestCase):
+    def test_mission_creation_and_serialization(self):
+        mission = Mission.create(
+            title="Prepare release",
+            objective="Produce a validated release candidate",
+            requested_by="user-1",
+            workspace_id="workspace-1",
+            metadata={"priority": "high"},
+        )
+
+        self.assertEqual(
+            {
+                "id",
+                "title",
+                "objective",
+                "requested_by",
+                "workspace_id",
+                "created_at",
+                "metadata",
+            },
+            set(mission.to_dict()),
+        )
+        self.assertEqual("workspace-1", mission.workspace_id)
+        self.assertEqual({"priority": "high"}, mission.metadata)
+        self.assertIsNotNone(datetime.fromisoformat(mission.created_at).utcoffset())
+
+    def test_mission_ids_are_unique(self):
+        arguments = {
+            "title": "Title",
+            "objective": "Objective",
+            "requested_by": "user-1",
+            "workspace_id": "workspace-1",
+        }
+        self.assertNotEqual(Mission.create(**arguments).id, Mission.create(**arguments).id)
+
+    def test_mission_metadata_defaults_are_not_shared(self):
+        first = Mission.create("One", "Objective", "user-1", "workspace-1")
+        second = Mission.create("Two", "Objective", "user-1", "workspace-1")
+
+        first.metadata["local"] = True
+        self.assertEqual({}, second.metadata)
+
+    def test_mission_rejects_missing_required_strings_safely(self):
+        arguments = {
+            "title": "Title",
+            "objective": "Objective",
+            "requested_by": "user-1",
+            "workspace_id": "workspace-1",
+        }
+        for field_name in arguments:
+            with self.subTest(field_name=field_name):
+                invalid = dict(arguments)
+                invalid[field_name] = " "
+                with self.assertRaises(ValueError) as raised:
+                    Mission.create(**invalid)
+                self.assertNotIn("sensitive-user-input", str(raised.exception))
+
+    def test_mission_direct_construction_requires_timezone_and_copies_metadata(self):
+        metadata = {"source": "request"}
+        mission = Mission(
+            id="mission-1",
+            title="Title",
+            objective="Objective",
+            requested_by="user-1",
+            workspace_id="workspace-1",
+            created_at="2026-07-28T12:00:00+00:00",
+            metadata=metadata,
+        )
+        metadata["source"] = "changed"
+
+        self.assertEqual("request", mission.metadata["source"])
+        self.assertEqual(mission.to_dict(), dict(mission.to_dict()))
+        with self.assertRaisesRegex(ValueError, "timezone"):
+            Mission(
+                id="mission-2",
+                title="Title",
+                objective="Objective",
+                requested_by="user-1",
+                workspace_id="workspace-1",
+                created_at="2026-07-28T12:00:00",
+            )
+
+    def test_mission_rejects_non_dictionary_metadata_without_echoing_it(self):
+        secret = "api-key-sensitive-user-input"
+        with self.assertRaises(ValueError) as raised:
+            Mission.create("Title", "Objective", "user-1", "workspace-1", secret)
+        self.assertNotIn(secret, str(raised.exception))
+
     def test_audit_repository_filters_and_never_records_sensitive_metadata(self):
         with tempfile.TemporaryDirectory() as directory:
             service=AuditService(FileAuditRepository(Path(directory)/'audit.json'))

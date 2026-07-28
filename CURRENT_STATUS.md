@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 69**.
+Current mission baseline: **Mission 70**.
 
 ## Verified completed capabilities
 
@@ -161,6 +161,11 @@ not inferred from a missing historical mission log.
 - Mission 69: FastAPI assigns an isolated correlation ID to each request,
   safely reuses valid client IDs, returns it in response headers and sanitized
   error bodies, and attaches it to audit events when available.
+- Mission 70: A frozen, serializable Mission contract represents collaboration
+  work with a unique ID, title, objective, requester, explicit workspace ID,
+  timezone-aware creation timestamp, and isolated optional metadata. It
+  validates every construction path without echoing submitted values in
+  errors. Mission state and locking are intentionally reserved for Mission 71.
 
 ## Implemented pipelines
 
@@ -175,14 +180,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **83 tests**. Its expected command is:
+The current suite contains **89 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 69 verification result: **83 passed, 0 failed**.
+Mission 70 verification result: **89 passed, 0 failed**.
 
 ## Not implemented
 
@@ -196,6 +201,8 @@ Mission 69 verification result: **83 passed, 0 failed**.
 - Passwords, authentication tokens, login, and request authorization. The User domain
   deliberately contains no credential or secret fields.
 - UI and interactive goal-submission layer.
+- Mission lifecycle state, locking, worker assignment, context building,
+  validation, and collaboration orchestration.
 - A default registered NOT_IMPLEMENTED pipeline is not present; `StubPipeline`
   remains available for future unavailable capabilities.
 

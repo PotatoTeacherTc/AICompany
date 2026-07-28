@@ -8,7 +8,7 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 69
+## Current baseline: Mission 70
 
 The verified implementation currently provides a Task/Queue/Worker execution
 path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,
@@ -66,6 +66,11 @@ Audit-log operations now support cursor pagination and resource/user/action
 filters while retaining offset/limit compatibility.
 Request correlation IDs now provide safe cross-boundary diagnostics without
 recording request bodies, credentials, tokens, prompts, or exception details.
+The collaboration domain now has a validated, serializable Mission contract
+for representing a requested unit of work with explicit requester and
+workspace ownership. Mission lifecycle state and locking remain separate
+Mission 71 work; no worker execution or collaboration orchestration is
+implemented by this contract.
 
 ## Development stages
 
