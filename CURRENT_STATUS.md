@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 98**.
+Current mission baseline: **Mission 99**.
 
 ## Verified completed capabilities
 
@@ -298,6 +298,17 @@ not inferred from a missing historical mission log.
   failure does not change an update. ProviderFactory environment dictionaries
   and RetryPolicy objects are derived through explicit methods. Sensitive,
   arbitrary, path-like, paid, and out-of-range settings are rejected.
+- Mission 99: DepartmentManager defines Workspace-scoped AI Departments with
+  safe summaries, fixed organization types, enabled state, actual registered
+  Worker IDs, a member lead, supported Pipeline task types, timestamps, and
+  revision-checked updates. It reuses StateRepository for in-memory/JSON
+  recovery and supports create/query/update, enable/disable, Worker
+  assignment/removal, lead selection, and task-type configuration.
+  WorkerDirectory adds Workspace/capability ownership around existing
+  BaseWorker instances without creating replacement Workers. Default
+  departments are created only where real registered Workers and task types
+  match. Cross-Workspace, duplicate, stale, sensitive, path-like, and corrupt
+  data are safely rejected or ignored.
 
 ## Implemented pipelines
 
@@ -314,14 +325,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **181 tests**. Its expected command is:
+The current suite contains **191 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 98 verification result: **181 passed, 0 failed**.
+Mission 99 verification result: **191 passed, 0 failed**.
 
 ## Not implemented
 
@@ -342,12 +353,11 @@ Mission 98 verification result: **181 passed, 0 failed**.
 - Real image/video providers, YouTube OAuth, and real YouTube upload. Paid
   providers remain disabled and no content-generation network call is made.
 - Distributed locking, OS cron, Celery/Redis/message-broker infrastructure,
-  external databases/cloud storage, and Mission 99+ product/SaaS services.
+  external databases/cloud storage, and Mission 100+ product/SaaS services.
 - Web Dashboard, external APM/Prometheus/Grafana/Sentry integrations,
   distributed monitoring, real-time WebSocket updates, remote log shipping,
   distributed tracing, log retention/rotation, model pricing, credit/billing
-  ledgers, Mission 99 AI Departments, and Mission 100 Personal Operating
-  System.
+  ledgers and Mission 100 Department Workflow Integration.
 - A default registered NOT_IMPLEMENTED pipeline is not present; `StubPipeline`
   remains available for future unavailable capabilities.
 

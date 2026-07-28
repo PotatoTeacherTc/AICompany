@@ -8,7 +8,7 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 98
+## Current baseline: Mission 99
 
 The verified implementation currently provides a Task/Queue/Worker execution
 path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,
@@ -186,6 +186,21 @@ Workspace settings; unknown, sensitive, path-like, paid, or out-of-range
 values are rejected before persistence. It stores no prompts, credentials, or
 arbitrary metadata. Mission 99 AI Departments and Mission 100 Personal
 Operating System remain separate product-composition work.
+Mission 99 adds a persistent AI Department organization contract. Department
+records contain Workspace ownership, safe name/summary, a fixed department
+type, enabled state, existing Worker IDs, an optional member lead, supported
+registered task types, timestamps, and an optimistic revision. DepartmentManager
+reuses StateRepository with Workspace-qualified IDs for in-memory/JSON restart
+recovery and supports create/get/list/update, enable/disable, Worker
+assignment/removal, lead selection, and task-type changes. WorkerDirectory
+registers actual injected BaseWorker instances with Workspace and capability
+ownership; it does not create another Worker implementation or repository.
+Default Planning, Research, Content, Media, Quality Assurance, and Operations
+definitions are considered only when matching registered task types and real
+Workers exist, so no fictional completed capability is created. Sensitive
+text, paths, duplicate/foreign Workers, unsupported task types, invalid leads,
+and stale revisions are rejected. Mission 100 workflow selection and execution
+remain unimplemented at this checkpoint.
 
 ## Development stages
 
