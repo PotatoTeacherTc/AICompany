@@ -2,6 +2,7 @@ from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta, timezone
 
 from core.status import PipelineStatus
+from core.structured_logging import LogLevel, safe_log
 
 
 @dataclass(frozen=True)
@@ -35,13 +36,23 @@ class RetryExecutor:
         "validation", "workspace", "cost_policy", "authentication", "unknown"
     }
 
-    def __init__(self, policy=None, clock=None):
+    def __init__(self, policy=None, clock=None, logger=None):
         self.policy = policy or RetryPolicy()
         self.clock = clock or (lambda: datetime.now(timezone.utc))
+        self.logger = logger
 
-    def execute(self, operation, recovery=None):
+    def execute(
+        self, operation, recovery=None, workspace_id=None, mission_id=None,
+        execution_id=None,
+    ):
         previous = None
         for attempt in range(1, self.policy.max_attempts + 1):
+            safe_log(
+                self.logger, "RETRY_ATTEMPT", "RetryExecutor",
+                workspace_id=workspace_id, mission_id=mission_id,
+                execution_id=execution_id, status="RUNNING",
+                metadata={"current_attempt": attempt},
+            )
             try:
                 result = operation(previous) if recovery else operation()
             except Exception as error:
@@ -53,6 +64,12 @@ class RetryExecutor:
                 }
             category = self.classify(result)
             if result.get("status") == PipelineStatus.SUCCESS:
+                safe_log(
+                    self.logger, "RETRY_SUCCEEDED", "RetryExecutor",
+                    workspace_id=workspace_id, mission_id=mission_id,
+                    execution_id=execution_id, status=PipelineStatus.SUCCESS,
+                    metadata={"current_attempt": attempt},
+                )
                 return result, RetryState(
                     self.policy.max_attempts, attempt, False, None, None, None
                 )
@@ -70,6 +87,17 @@ class RetryExecutor:
             )
             result.setdefault("data", {})["retry"] = state.to_dict()
             if not retryable:
+                safe_log(
+                    self.logger, "RETRY_STOPPED", "RetryExecutor",
+                    level=LogLevel.WARNING,
+                    workspace_id=workspace_id, mission_id=mission_id,
+                    execution_id=execution_id, status=PipelineStatus.FAILED,
+                    error=state.last_safe_error,
+                    metadata={
+                        "current_attempt": attempt,
+                        "failure_category": category,
+                    },
+                )
                 return result, state
             previous = result
         return previous, state

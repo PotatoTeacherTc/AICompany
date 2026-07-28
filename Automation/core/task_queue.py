@@ -3,6 +3,8 @@ from dataclasses import asdict, dataclass, field, replace
 from datetime import datetime, timezone
 import uuid
 
+from core.structured_logging import LogLevel, safe_log
+
 
 class TaskQueue:
 
@@ -130,8 +132,9 @@ class Job:
 class PersistentJobQueue:
     """Repository-backed in-process queue with explicit claim ownership."""
 
-    def __init__(self, repository, workspace_ids=()):
+    def __init__(self, repository, workspace_ids=(), logger=None):
         self.repository = repository
+        self.logger = logger
         self._jobs = {}
         for workspace_id in workspace_ids:
             for value in repository.list("job", workspace_id):
@@ -163,6 +166,11 @@ class PersistentJobQueue:
         )
         self._jobs[job.job_id] = job
         self._save(job)
+        safe_log(
+            self.logger, "QUEUE_ENQUEUED", "PersistentJobQueue",
+            workspace_id=workspace_id, mission_id=mission_id, job_id=job.job_id,
+            status=job.status,
+        )
         return job
 
     def claim(self, workspace_id, worker_id):
@@ -173,6 +181,11 @@ class PersistentJobQueue:
                 )
                 self._jobs[job.job_id] = claimed
                 self._save(claimed)
+                safe_log(
+                    self.logger, "QUEUE_CLAIMED", "PersistentJobQueue",
+                    workspace_id=workspace_id, mission_id=job.mission_id,
+                    job_id=job.job_id, status=claimed.status,
+                )
                 return claimed
         return None
 
@@ -196,6 +209,11 @@ class PersistentJobQueue:
         updated = replace(job, status=JobStatus.PENDING, claimed_by=None)
         self._jobs[job_id] = updated
         self._save(updated)
+        safe_log(
+            self.logger, "QUEUE_REQUEUED", "PersistentJobQueue",
+            workspace_id=workspace_id, mission_id=job.mission_id,
+            job_id=job_id, status=updated.status,
+        )
         return updated
 
     def get(self, job_id, workspace_id):
@@ -221,6 +239,21 @@ class PersistentJobQueue:
         )
         self._jobs[job_id] = updated
         self._save(updated)
+        safe_log(
+            self.logger,
+            "QUEUE_COMPLETED" if status == JobStatus.COMPLETED else "QUEUE_FAILED",
+            "PersistentJobQueue",
+            level=LogLevel.INFO if status == JobStatus.COMPLETED else LogLevel.ERROR,
+            workspace_id=workspace_id,
+            mission_id=job.mission_id,
+            job_id=job_id,
+            status=status,
+            error=safe_result.get("error"),
+            metadata={
+                "retryable": (retry_state or {}).get("retryable")
+                if isinstance(retry_state, dict) else None,
+            },
+        )
         return updated
 
     @staticmethod

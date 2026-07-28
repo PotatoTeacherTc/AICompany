@@ -1,6 +1,7 @@
 from agent.classifier import TaskClassifier
 from core.result import PipelineResult
 from core.status import PipelineStatus
+from core.structured_logging import LogLevel, safe_log
 
 
 class Manager:
@@ -26,9 +27,10 @@ class Manager:
         PipelineStatus.TIMED_OUT,
     }
 
-    def __init__(self, registry, classifier=None):
+    def __init__(self, registry, classifier=None, logger=None):
         self.registry = registry
         self.classifier = classifier or TaskClassifier()
+        self.logger = logger
 
     def handle(self, task):
         if not hasattr(task, "task_text"):
@@ -51,20 +53,65 @@ class Manager:
 
         task.pipeline = pipeline.name
         print(f"Manager: Routing task to {pipeline.name}...")
+        log_fields = {
+            "workspace_id": getattr(task, "workspace_id", "default"),
+            "execution_id": task.id,
+            "status": PipelineStatus.RUNNING,
+            "metadata": {"task_type": task_type},
+        }
+        safe_log(
+            self.logger, "PIPELINE_STARTED", pipeline.name,
+            safe_message="Pipeline execution started", **log_fields,
+        )
         try:
             result = pipeline.run(task)
             self._validate_pipeline_result(result, task, task_type, pipeline)
             print(f"Manager: Task completed with status: {result.get('status')}")
+            usage = (
+                result.get("data", {}).get("provider_usage")
+                if isinstance(result.get("data"), dict)
+                else None
+            )
+            safe_log(
+                self.logger,
+                (
+                    "PIPELINE_COMPLETED"
+                    if result.get("status") == PipelineStatus.SUCCESS
+                    else "PIPELINE_FAILED"
+                ),
+                pipeline.name,
+                level=(
+                    LogLevel.INFO
+                    if result.get("status") == PipelineStatus.SUCCESS
+                    else LogLevel.ERROR
+                ),
+                workspace_id=log_fields["workspace_id"],
+                execution_id=task.id,
+                status=result.get("status"),
+                error=result.get("error"),
+                usage=usage,
+                metadata={"task_type": task_type},
+            )
             return result
         except Exception as error:
             print("Manager: Pipeline execution failed")
-            return PipelineResult(
+            result = PipelineResult(
                 status=PipelineStatus.FAILED,
                 pipeline=pipeline.name,
                 task=task,
                 task_type=task_type,
                 error=str(error),
             ).to_dict()
+            safe_log(
+                self.logger, "PIPELINE_FAILED", pipeline.name,
+                level=LogLevel.ERROR,
+                workspace_id=log_fields["workspace_id"],
+                execution_id=task.id,
+                status=PipelineStatus.FAILED,
+                error=error,
+                metadata={"task_type": task_type},
+            )
+            return result
 
     def _validate_pipeline_result(self, result, task, task_type, pipeline):
         if not isinstance(result, dict):

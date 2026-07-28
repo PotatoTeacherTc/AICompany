@@ -9,6 +9,7 @@ from providers.content_media import (
     FakeVideoProvider,
     FakeYouTubeProvider,
 )
+from core.structured_logging import LogLevel, safe_log
 
 
 @dataclass(frozen=True)
@@ -70,14 +71,34 @@ class ProviderFactory:
         )
 
     @classmethod
-    def ensure_provider_allowed(cls, provider, environment=None):
+    def ensure_provider_allowed(
+        cls, provider, environment=None, logger=None, workspace_id=None,
+        mission_id=None,
+    ):
         environment = os.environ if environment is None else environment
         allow_paid = (
             ALLOW_PAID_PROVIDER
             and str(environment.get("ALLOW_PAID_PROVIDER", "false")).lower() == "true"
         )
         if getattr(provider, "is_paid", False) and not allow_paid:
+            safe_log(
+                logger, "PROVIDER_BLOCKED", "ProviderFactory",
+                level=LogLevel.WARNING,
+                workspace_id=workspace_id,
+                mission_id=mission_id,
+                status="BLOCKED",
+                provider=provider.__class__.__name__,
+                error="ProviderError: CostPolicy",
+                metadata={"policy": "paid_provider_disabled"},
+            )
             raise ValueError("Paid provider is disabled by policy")
+        safe_log(
+            logger, "PROVIDER_SELECTED", "ProviderFactory",
+            workspace_id=workspace_id,
+            mission_id=mission_id,
+            status="SELECTED",
+            provider=provider.__class__.__name__,
+        )
         return provider
 
     @classmethod

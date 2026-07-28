@@ -8,7 +8,7 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 95
+## Current baseline: Mission 96
 
 The verified implementation currently provides a Task/Queue/Worker execution
 path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,
@@ -145,6 +145,21 @@ The same recursive redaction used at persistence boundaries is applied again
 on reads, with standard token-count fields explicitly retained. In-memory and
 JSON restart scenarios are supported. No dashboard, APM, Prometheus, Grafana,
 Sentry, WebSocket, execution control, or network/provider call is included.
+Mission 96 adds a separate structured operational logging boundary. LogEvent
+supports timezone-aware timestamps, five severity levels, event/component and
+existing correlation identifiers, status, safe message/error, duration,
+provider/model, optional UsageMetadata fields, and recursively sanitized
+metadata. InMemoryLogger provides deterministic tests and LocalFileLogger
+appends JSON Lines beneath an injected local path, supports restart reads, and
+ignores corrupt rows. Queries require a Workspace and may filter component,
+level, timezone-aware range, and recent count. Logging failures are contained
+inside the Logger and never change Pipeline, Queue, Retry, or Provider policy
+results. The legacy scripts Logger now delegates to this contract. Manager
+Pipeline events, PersistentJobQueue lifecycle, RetryExecutor attempts, and
+ProviderFactory paid-policy decisions accept injected logging. ExecutionHistory
+remains the user execution record, while Monitor remains a read-only state
+view. No remote logging, tracing, retention service, dashboard, network call,
+or paid Provider is enabled.
 
 ## Development stages
 

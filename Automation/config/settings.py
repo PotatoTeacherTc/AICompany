@@ -22,3 +22,4 @@ TARGET_FOLDER = BASE_FOLDER
 # Logging
 LOG_FOLDER = PROJECT_ROOT / "logs"
 LOG_FILE = LOG_FOLDER / "automation.log"
+LOG_LEVEL = "INFO"

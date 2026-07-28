@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 95**.
+Current mission baseline: **Mission 96**.
 
 ## Verified completed capabilities
 
@@ -270,6 +270,16 @@ not inferred from a missing historical mission log.
   redaction removes prompts, objectives, credentials, raw errors, and absolute
   paths without removing standard token-count usage fields. Monitoring never
   runs, cancels, retries, or mutates Jobs.
+- Mission 96: LogEvent and StructuredLogger define safe operational events
+  independently from user-facing ExecutionHistory and read-only Monitor
+  snapshots. InMemoryLogger and append-only local JSON Lines logging support
+  Workspace/component/level/time/recent filters, restart reads, corrupt-row
+  tolerance, INFO-default level control, partial UsageMetadata, and recursive
+  metadata/path/error redaction. Logger failures return a false recording
+  result and do not alter Pipeline, Queue, Retry, or Provider-policy outcomes.
+  Manager Pipeline, PersistentJobQueue, RetryExecutor, and ProviderFactory
+  policy events use optional dependency injection; legacy script logging
+  delegates to the same local contract.
 
 ## Implemented pipelines
 
@@ -286,14 +296,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **151 tests**. Its expected command is:
+The current suite contains **161 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 95 verification result: **151 passed, 0 failed**.
+Mission 96 verification result: **161 passed, 0 failed**.
 
 ## Not implemented
 
@@ -316,7 +326,8 @@ Mission 95 verification result: **151 passed, 0 failed**.
 - Distributed locking, OS cron, Celery/Redis/message-broker infrastructure,
   external databases/cloud storage, and Mission 96+ operational/SaaS services.
 - Web Dashboard, external APM/Prometheus/Grafana/Sentry integrations,
-  distributed monitoring, real-time WebSocket updates, and Mission 96 Logging.
+  distributed monitoring, real-time WebSocket updates, remote log shipping,
+  distributed tracing, log retention/rotation, and Mission 97 Usage Engine.
 - A default registered NOT_IMPLEMENTED pipeline is not present; `StubPipeline`
   remains available for future unavailable capabilities.
 
