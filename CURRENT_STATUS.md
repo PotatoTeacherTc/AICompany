@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 90**.
+Current mission baseline: **Mission 94**.
 
 ## Verified completed capabilities
 
@@ -246,6 +246,21 @@ not inferred from a missing historical mission log.
   locking/workers/validation, immediate or scheduled execution, Fake content
   generation, retry/recovery, ArtifactManager, ExecutionHistory, and safe
   results for an offline personal workflow.
+- Mission 91: StateRepository now has in-memory and atomic versioned JSON
+  implementations. PersistenceService stores safe Mission summaries,
+  Schedules, RetryState, and history summaries by Workspace. Prompt/objective
+  and credential-like fields are removed, corrupt or old-version records are
+  ignored, and the storage file location is injected.
+- Mission 92: Existing ArtifactManager/FileArtifactRepository now support
+  Mission/stage/status metadata, Workspace/Mission/artifact queries, optional
+  storage-root-relative internal references, path-escape rejection, MISSING
+  status, and explicit metadata-only deletion.
+- Mission 93: Existing `task_queue.py` now also provides PersistentJobQueue,
+  Job claim ownership, restart recovery of abandoned RUNNING work to PENDING,
+  RetryState linkage, idempotent enqueue, and an injected InProcessJobWorker.
+- Mission 94: BatchManager groups persisted Jobs with Workspace isolation,
+  item limits and idempotency keys. Batch summaries preserve per-item success,
+  failure, and retry state; partial failure does not discard successful jobs.
 
 ## Implemented pipelines
 
@@ -262,14 +277,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **131 tests**. Its expected command is:
+The current suite contains **142 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 88-90 verification result: **131 passed, 0 failed**.
+Mission 91-94 verification result: **142 passed, 0 failed**.
 
 ## Not implemented
 
@@ -289,8 +304,8 @@ Mission 88-90 verification result: **131 passed, 0 failed**.
 - Real external music providers and binary audio generation.
 - Real image/video providers, YouTube OAuth, and real YouTube upload. Paid
   providers remain disabled and no content-generation network call is made.
-- Durable schedules, process restart recovery, distributed locking, OS cron,
-  Celery/Redis infrastructure, and Mission 91+ SaaS persistence.
+- Distributed locking, OS cron, Celery/Redis/message-broker infrastructure,
+  external databases/cloud storage, and Mission 95+ monitoring/SaaS services.
 - A default registered NOT_IMPLEMENTED pipeline is not present; `StubPipeline`
   remains available for future unavailable capabilities.
 

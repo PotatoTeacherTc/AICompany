@@ -76,7 +76,8 @@ class MediaPipeline(BasePipeline):
                 raise ValueError("provider returned an invalid result")
             paths = self._paths(project, generation)
             records = self.artifact_manager.register_files(
-                paths, self.artifact_type, self.name, workspace_id=workspace_id
+                paths, self.artifact_type, self.name, workspace_id=workspace_id,
+                mission_id=mission_id, stage=self.kind
             )
             artifacts = [self._safe_artifact(item) for item in records]
             data = {

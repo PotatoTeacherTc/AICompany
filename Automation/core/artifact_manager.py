@@ -16,6 +16,9 @@ class ArtifactManager:
         "created_at",
         "producer_pipeline",
         "workspace_id",
+        "mission_id",
+        "stage",
+        "status",
     )
 
     def __init__(self, repository=None):
@@ -27,6 +30,9 @@ class ArtifactManager:
         artifact_type,
         producer_pipeline,
         workspace_id=None,
+        mission_id=None,
+        stage=None,
+        status="AVAILABLE",
     ):
         path = Path(file_path)
         if not path.is_file():
@@ -45,6 +51,9 @@ class ArtifactManager:
             "created_at": datetime.now().isoformat(),
             "producer_pipeline": producer_pipeline,
             "workspace_id": workspace_id or "default",
+            "mission_id": mission_id,
+            "stage": stage or producer_pipeline,
+            "status": status,
             "path": str(path),
         }
         self.repository.save(artifact)
@@ -58,12 +67,28 @@ class ArtifactManager:
         artifacts = self.repository.list()
         return artifacts if workspace_id is None else [artifact for artifact in artifacts if artifact.get("workspace_id", "default") == workspace_id]
 
+    def find(self, workspace_id, mission_id=None, artifact_id=None):
+        values = self.list(workspace_id)
+        return [
+            artifact for artifact in values
+            if (mission_id is None or artifact.get("mission_id") == mission_id)
+            and (artifact_id is None or artifact.get("artifact_id") == artifact_id)
+        ]
+
+    def delete_metadata(self, artifact_id, workspace_id):
+        artifact = self.get(artifact_id, workspace_id)
+        if artifact is None:
+            return False
+        return self.repository.delete(artifact_id)
+
     def register_files(
         self,
         file_paths,
         artifact_type,
         producer_pipeline,
         workspace_id=None,
+        mission_id=None,
+        stage=None,
     ):
         return [
             self.register_file(
@@ -71,6 +96,8 @@ class ArtifactManager:
                 artifact_type,
                 producer_pipeline,
                 workspace_id=workspace_id,
+                mission_id=mission_id,
+                stage=stage,
             )
             for path in file_paths
         ]

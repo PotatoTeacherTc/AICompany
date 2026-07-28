@@ -8,7 +8,7 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 90
+## Current baseline: Mission 94
 
 The verified implementation currently provides a Task/Queue/Worker execution
 path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,
@@ -121,6 +121,19 @@ artifacts belonging to the same workspace. PersonalAICompany composes Mission,
 CollaborationOrchestrator, immediate or scheduled execution, the Fake content
 flow, retry/recovery, artifacts, and history. This is an in-process personal
 baseline, not Mission 91 persistence or later SaaS infrastructure.
+Mission 91-94 add a local restart-recovery boundary without external
+infrastructure. A versioned StateRepository has in-memory and atomic JSON-file
+implementations for safe workspace-scoped Mission summaries, schedules,
+RetryState, history summaries, Jobs, and Batches; corrupt or incompatible
+records are ignored. FileArtifactRepository can persist only storage-root
+relative internal references, and ArtifactManager now records Mission, stage,
+and availability metadata while metadata deletion never deletes user files.
+PersistentJobQueue restores pending work, converts abandoned RUNNING claims
+back to PENDING, enforces claim ownership, and supports injected in-process
+targets. BatchManager reuses that queue and repository, applies idempotency
+keys and item limits, preserves successful items when peers fail, and reflects
+retry transitions. The local JSON location is application-injected; no
+external database, broker, cloud storage, or Monitor functionality exists.
 
 ## Development stages
 

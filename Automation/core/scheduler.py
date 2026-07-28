@@ -56,11 +56,18 @@ class FakeClock:
 class InMemoryScheduler:
     """Workspace-scoped deterministic scheduler; no external timer is started."""
 
-    def __init__(self, clock=None):
+    def __init__(self, clock=None, repository=None, workspace_ids=()):
         self.clock = clock or SystemClock()
         self._schedules = {}
         self._targets = {}
         self._running = set()
+        self.repository = repository
+        if repository is not None:
+            for workspace_id in workspace_ids:
+                for value in repository.list("schedule", workspace_id):
+                    item = self._restore(value)
+                    if item is not None:
+                        self._schedules[item.schedule_id] = item
 
     def register_target(self, target_id, callback):
         _safe_id(target_id, "target_id")
@@ -95,6 +102,7 @@ class InMemoryScheduler:
             safe_metadata,
         )
         self._schedules[item.schedule_id] = item
+        self._persist(item)
         return item
 
     def set_enabled(self, schedule_id, enabled, workspace_id):
@@ -103,6 +111,7 @@ class InMemoryScheduler:
             raise ValueError("schedule not found")
         updated = replace(item, enabled=bool(enabled))
         self._schedules[schedule_id] = updated
+        self._persist(updated)
         return updated
 
     def get(self, schedule_id, workspace_id):
@@ -157,6 +166,35 @@ class InMemoryScheduler:
                 item, run_at=next_run.isoformat(), last_run_at=now.isoformat()
             )
         self._schedules[item.schedule_id] = updated
+        self._persist(updated)
+
+    def _persist(self, item):
+        if self.repository is not None:
+            self.repository.save(
+                "schedule", item.schedule_id, item.workspace_id, item.to_dict()
+            )
+
+    @staticmethod
+    def _restore(value):
+        try:
+            recurrence = value.get("recurrence")
+            return Schedule(
+                schedule_id=value["schedule_id"],
+                workspace_id=value["workspace_id"],
+                target_id=value["target_id"],
+                run_at=value["run_at"],
+                created_at=value["created_at"],
+                recurrence=(
+                    Recurrence(recurrence["interval_seconds"])
+                    if isinstance(recurrence, dict)
+                    else None
+                ),
+                enabled=bool(value.get("enabled", True)),
+                metadata=InMemoryScheduler._metadata(value.get("metadata")),
+                last_run_at=value.get("last_run_at"),
+            )
+        except (KeyError, TypeError, ValueError):
+            return None
 
     @staticmethod
     def _failure(item, error):

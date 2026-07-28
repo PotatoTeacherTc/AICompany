@@ -113,6 +113,8 @@ class MusicPipeline(BasePipeline):
                 "MUSIC",
                 self.name,
                 workspace_id=workspace_id,
+                mission_id=mission_id,
+                stage="music",
             )
             safe_artifacts = [self._safe_artifact(item) for item in artifact_records]
             result = PipelineResult(
