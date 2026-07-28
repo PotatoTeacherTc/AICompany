@@ -8,7 +8,7 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 96
+## Current baseline: Mission 97
 
 The verified implementation currently provides a Task/Queue/Worker execution
 path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,
@@ -160,6 +160,19 @@ ProviderFactory paid-policy decisions accept injected logging. ExecutionHistory
 remains the user execution record, while Monitor remains a read-only state
 view. No remote logging, tracing, retention service, dashboard, network call,
 or paid Provider is enabled.
+Mission 97 adds a provider-neutral UsageEngine because the existing
+HistoryAnalyzer only derives transient statistics from execution records and
+does not provide a durable, idempotent usage ledger. UsageEngine accepts the
+existing UsageMetadata object or a partial dictionary, keeps absent fields
+absent, and records only provider/model/token/cost fields plus existing
+Workspace, Mission, and execution identifiers. It reuses StateRepository for
+in-memory or versioned JSON persistence, uses the execution ID as the default
+idempotency key, supports restart-safe Workspace/provider/model/time/recent
+queries, and produces Workspace totals and provider/model distributions.
+Invalid or corrupt records are rejected or ignored safely. Optional structured
+logging is failure-isolated from usage recording. This is offline accounting
+metadata only: it does not price models, infer missing usage, call providers,
+manage credits, bill users, or introduce Mission 98 Settings.
 
 ## Development stages
 

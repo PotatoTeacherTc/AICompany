@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 96**.
+Current mission baseline: **Mission 97**.
 
 ## Verified completed capabilities
 
@@ -280,6 +280,15 @@ not inferred from a missing historical mission log.
   Manager Pipeline, PersistentJobQueue, RetryExecutor, and ProviderFactory
   policy events use optional dependency injection; legacy script logging
   delegates to the same local contract.
+- Mission 97: UsageEngine provides the durable Workspace usage ledger that was
+  not covered by HistoryAnalyzer's derived execution statistics. It normalizes
+  the existing UsageMetadata contract or partial dictionaries without
+  inventing absent values, persists only safe usage/correlation fields through
+  the shared StateRepository, and supports idempotent records, in-memory/JSON
+  restart recovery, Workspace/provider/model/time/recent queries, totals, and
+  provider/model distributions. Repository and Logger failures have safe
+  boundaries. It performs no provider call, pricing, credit, billing, or
+  Settings management.
 
 ## Implemented pipelines
 
@@ -296,14 +305,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **161 tests**. Its expected command is:
+The current suite contains **171 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 96 verification result: **161 passed, 0 failed**.
+Mission 97 verification result: **171 passed, 0 failed**.
 
 ## Not implemented
 
@@ -324,10 +333,11 @@ Mission 96 verification result: **161 passed, 0 failed**.
 - Real image/video providers, YouTube OAuth, and real YouTube upload. Paid
   providers remain disabled and no content-generation network call is made.
 - Distributed locking, OS cron, Celery/Redis/message-broker infrastructure,
-  external databases/cloud storage, and Mission 96+ operational/SaaS services.
+  external databases/cloud storage, and Mission 98+ operational/SaaS services.
 - Web Dashboard, external APM/Prometheus/Grafana/Sentry integrations,
   distributed monitoring, real-time WebSocket updates, remote log shipping,
-  distributed tracing, log retention/rotation, and Mission 97 Usage Engine.
+  distributed tracing, log retention/rotation, model pricing, credit/billing
+  ledgers, and Mission 98 Settings.
 - A default registered NOT_IMPLEMENTED pipeline is not present; `StubPipeline`
   remains available for future unavailable capabilities.
 
