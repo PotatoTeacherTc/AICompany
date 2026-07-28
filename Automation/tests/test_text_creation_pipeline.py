@@ -137,6 +137,25 @@ class TextCreationPipelineTests(unittest.TestCase):
             self.assertEqual(PipelineStatus.FAILED, result["status"])
             self.assertNotIn("secret", repr(result))
 
+    def test_ollama_malformed_json_uses_safe_internal_fallback(self):
+        result = self.pipeline(BadProvider(TextGenerationResult(
+            "ollama", "qwen2.5:1.5b", "한국어 로컬 생성 본문", None
+        ))).run(self.task("LYRICS"))
+        self.assertEqual(PipelineStatus.SUCCESS, result["status"])
+        artifact = self.artifacts.get(
+            result["artifacts"][0]["artifact_id"], "workspace-a"
+        )
+        content = json.loads(
+            (self.storage / artifact["internal_ref"]).read_text(encoding="utf-8")
+        )
+        self.assertEqual("한국어 로컬 생성 본문", content["lyrics"])
+        self.assertNotIn("한국어 로컬 생성 본문", repr(result))
+        unsafe = self.pipeline(BadProvider(TextGenerationResult(
+            "ollama", "qwen2.5:1.5b", "secret=private-value", None
+        ))).run(self.task("LYRICS"))
+        self.assertEqual(PipelineStatus.FAILED, unsafe["status"])
+        self.assertNotIn("private-value", repr(unsafe))
+
     def test_prompt_sensitive_metadata_paths_and_paid_usage_are_rejected(self):
         safe = FakeTextProvider().generate_text(
             TextGenerationRequest(

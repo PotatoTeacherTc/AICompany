@@ -57,7 +57,8 @@ class TextProviderTests(unittest.TestCase):
                 timeout_seconds=selection.timeout_seconds,
             )
         )
-        self.assertEqual("ollama-local", result.provider)
+        self.assertEqual("ollama", result.provider)
+        self.assertIn("Return exactly one valid JSON object", captured["payload"]["prompt"])
         self.assertEqual(7, result.usage.total_tokens)
         self.assertEqual(5, captured["timeout"])
 

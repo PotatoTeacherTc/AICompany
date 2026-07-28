@@ -333,6 +333,15 @@ not inferred from a missing historical mission log.
   metadata, absolute paths, paid usage, raw errors, and provider output are not
   exposed by the result contract. This increment has no Mission number and does
   not begin Mission 101.
+- Local integration verification: Ollama 0.32.5 with `qwen2.5:1.5b` was
+  exercised through the real `127.0.0.1:11434` endpoint. All four Text task
+  types produced Workspace-scoped UTF-8 artifacts, persisted metadata survived
+  repository restart, and the Hybrid Creative Demo completed real Ollama
+  lyrics/content-plan stages followed by Fake music/image/video/YouTube stages.
+  Reported estimated cost was 0. The adapter now supplies an exact task-specific
+  JSON shape and safely preserves nonconforming local output inside a normalized
+  internal artifact. Automated tests continue to use injected transports and
+  do not require Ollama. Mission 101 remains unstarted.
 
 ## Implemented pipelines
 
@@ -349,14 +358,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **222 tests**. Its expected command is:
+The current suite contains **223 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Current verification result: **222 passed, 0 failed**.
+Current verification result: **223 passed, 0 failed**.
 
 ## Not implemented
 

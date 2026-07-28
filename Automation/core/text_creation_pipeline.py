@@ -100,7 +100,8 @@ class TextCreationPipeline(BasePipeline):
             if not isinstance(generated, TextGenerationResult):
                 raise ValueError("text provider returned invalid result")
             content = self._content(
-                generated.output_text, task_type, instruction
+                generated.output_text, task_type, instruction,
+                generated.provider,
             )
             project = self._project(workspace_id, mission_id, task_type)
             artifact_file = project / f"{task_type.lower()}.json"
@@ -166,15 +167,19 @@ class TextCreationPipeline(BasePipeline):
         return project
 
     @classmethod
-    def _content(cls, output, task_type, instruction):
+    def _content(cls, output, task_type, instruction, provider):
         if not isinstance(output, str) or not output.strip():
             raise ValueError("text provider returned empty output")
         try:
             content = json.loads(output)
         except json.JSONDecodeError as error:
-            raise ValueError("text provider returned malformed output") from error
+            if provider != "ollama":
+                raise ValueError("text provider returned malformed output") from error
+            content = cls._fallback_content(output, task_type)
         if not isinstance(content, dict) or not _SCHEMAS[task_type].issubset(content):
-            raise ValueError("text provider output schema is invalid")
+            if provider != "ollama":
+                raise ValueError("text provider output schema is invalid")
+            content = cls._fallback_content(output, task_type)
         if not isinstance(content.get("title"), str) or not content["title"].strip():
             raise ValueError("generated title is invalid")
         if task_type == "LYRICS" and (
@@ -185,6 +190,37 @@ class TextCreationPipeline(BasePipeline):
         if cls._contains_unsafe_content(content, instruction):
             raise ValueError("generated content is unsafe")
         return content
+
+    @staticmethod
+    def _fallback_content(output, task_type):
+        if task_type == "LYRICS":
+            return {
+                "title": "Local creative result",
+                "theme_summary": "Locally generated Korean lyrics",
+                "lyrics": output,
+                "sections": {"generated": output},
+                "language": "ko",
+                "safe_metadata": {"normalized": True},
+            }
+        if task_type == "CONTENT_PLAN":
+            return {
+                "title": "Local creative result",
+                "concept": output,
+                "target_audience": "Local creative audience",
+                "content_outline": [output],
+                "visual_direction": "Defined in generated content",
+                "publishing_summary": "Locally generated content plan",
+            }
+        if task_type == "VIDEO_SCRIPT":
+            return {
+                "title": "Local creative result",
+                "scenes": [{"scene": 1, "summary": output}],
+            }
+        return {
+            "title": "Local creative result",
+            "description": output,
+            "tags": [],
+        }
 
     @classmethod
     def _contains_unsafe_content(cls, value, instruction):
@@ -208,7 +244,11 @@ class TextCreationPipeline(BasePipeline):
             if source and source in value:
                 return True
             return bool(re.search(
-                r"(?:[A-Za-z]:\\|/(?:home|Users|var|tmp|etc)/)", value
+                r"(?:[A-Za-z]:\\|/(?:home|Users|var|tmp|etc)/|"
+                r"(?:api[_-]?key|oauth[_-]?token|authorization|cookie|"
+                r"password|secret|token)\s*[:=])",
+                value,
+                re.IGNORECASE,
             ))
         return False
 

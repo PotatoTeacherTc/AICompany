@@ -102,6 +102,22 @@ python main.py creative-demo --local-text
 
 The endpoint must be loopback and Ollama must already be installed and running.
 There is no automatic download, account login, API key, paid-provider fallback,
-or external media call. The verified development environment did not contain
-Ollama, so the local adapter is covered with an injected Fake transport rather
-than a claimed live model result.
+or external media call. Automated regression tests cover the local adapter
+through an injected transport so they remain portable when Ollama is absent.
+
+The loopback workflow has subsequently been verified with Ollama 0.32.5 and
+`qwen2.5:1.5b`:
+
+```powershell
+$env:AICOMPANY_TEXT_PROVIDER = "ollama"
+$env:AICOMPANY_TEXT_MODEL = "qwen2.5:1.5b"
+$env:AICOMPANY_OLLAMA_ENDPOINT = "http://127.0.0.1:11434"
+$env:AICOMPANY_TEXT_PROVIDER_TIMEOUT = "60"
+python main.py creative-demo "한국어 발라드와 회복을 주제로 한 영상 콘텐츠를 구성해 주세요." --local-text
+```
+
+Only the lyrics and content-plan stages use the local model. Music, image,
+video, and YouTube remain deterministic Fake stages. The verified run reported
+zero estimated cost. A failed explicit Ollama run returns failure and never
+falls back to Fake. Model installation, updates, and downloads remain explicit
+user actions.

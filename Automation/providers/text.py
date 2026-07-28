@@ -119,7 +119,7 @@ class OllamaTextProvider(TextProvider):
             raise ValueError("local model is required")
         payload = {
             "model": request.model,
-            "prompt": request.instruction,
+            "prompt": _structured_prompt(request),
             "stream": False,
             "format": request.output_format,
             "options": {"num_predict": min(request.maximum_output_size // 4, 4096)},
@@ -147,7 +147,7 @@ class OllamaTextProvider(TextProvider):
                 estimated_cost_usd=0.0,
             )
         return TextGenerationResult(
-            "ollama-local", request.model, output, usage
+            "ollama", request.model, output, usage
         )
 
     @staticmethod
@@ -192,3 +192,30 @@ def _validate_request(request):
 
 def _non_negative(value):
     return value if isinstance(value, int) and not isinstance(value, bool) and value >= 0 else 0
+
+
+def _structured_prompt(request):
+    schemas = {
+        "LYRICS": (
+            '{"title":"string","theme_summary":"string","lyrics":"string",'
+            '"sections":{"verse":"string","chorus":"string","outro":"string"},'
+            '"language":"ko","safe_metadata":{"generation_mode":"local"}}'
+        ),
+        "CONTENT_PLAN": (
+            '{"title":"string","concept":"string","target_audience":"string",'
+            '"content_outline":["string"],"visual_direction":"string",'
+            '"publishing_summary":"string"}'
+        ),
+        "VIDEO_SCRIPT": (
+            '{"title":"string","scenes":[{"scene":1,"summary":"string"}]}'
+        ),
+        "TITLE_DESCRIPTION": (
+            '{"title":"string","description":"string","tags":["string"]}'
+        ),
+    }
+    return (
+        "Return exactly one valid JSON object with no markdown or commentary. "
+        f"Use this exact shape and value types: {schemas[request.task_type]}\n"
+        "Write the creative content in Korean.\n"
+        f"Creative instruction: {request.instruction}"
+    )

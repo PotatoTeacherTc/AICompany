@@ -157,9 +157,11 @@ if __name__ == "__main__":
         request_parts = [
             item for item in sys.argv[2:] if item != "--local-text"
         ]
-        run_creative_demo(
+        creative_result = run_creative_demo(
             " ".join(request_parts) if request_parts else None,
             use_local_text=local,
         )
+        if creative_result.get("status") != PipelineStatus.SUCCESS:
+            raise SystemExit(1)
     else:
         run()
