@@ -251,26 +251,47 @@ Phase C
 
 Phase D
 
-101~110
+101 Backend
 
-Backend  
-User  
-Workspace  
-Auth  
-RBAC  
-API  
-Artifact  
-Usage
+102 User
+
+103 Workspace
+
+104 Auth
+
+105 RBAC
+
+106 API
+
+107 Artifact
+
+108 Usage
+
+109 Persistent Job Execution
+
+110 Job & Execution API
 
 Phase E
 
-111~120
+111 AI Organization API
 
-Dashboard  
-Subscription  
-Billing  
-Admin  
-SaaS Beta
+112 Artifact Lifecycle
+
+113 Quota & Budget
+
+114 Plans & Entitlements
+
+115 Dashboard API
+
+116 Web Dashboard
+
+117 Subscription
+
+118 Billing
+
+119 Admin
+
+120 SaaS Beta
 
 Phase F
 

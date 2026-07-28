@@ -4,6 +4,9 @@
 
 Current mission baseline: **Mission 108**.
 
+Roadmap review baseline: `750d755 feat: add workspace usage reporting`
+following `af72f6c feat: expose workspace artifact access`.
+
 ## Verified completed capabilities
 
 The following status is based on the current source tree and automated tests,
@@ -15,8 +18,9 @@ not inferred from a missing historical mission log.
   timezone-aware range, and bounded pagination filters. Aggregates include
   only present usage fields, retain zero estimated cost, and explicitly do
   not represent billed amounts. Abnormal numeric values are rejected.
-  Pricing, credits, billing, subscriptions, and unnamed Mission 109-110 work
-  remain unimplemented.
+  Pricing, credits, billing, and subscriptions remain unimplemented. The
+  source-based roadmap now defines Mission 109 Persistent Job Execution and
+  Mission 110 Job & Execution API as the next boundaries.
 
 - Mission 1–17: individual mission outcomes cannot be verified from the
   current codebase alone; this document does not invent them.
@@ -333,8 +337,7 @@ not inferred from a missing historical mission log.
 - Post-Mission-100 creative validation: provider-neutral text generation now
   covers lyrics, content plans, video scripts, and title/description contracts.
   FakeTextProvider is the default. Ollama is an explicit loopback-only local
-  adapter with injected transport tests; no installed Ollama runtime was found,
-  so no live local-model call is claimed. TextCreationPipeline persists safe
+  adapter with injected transport tests. TextCreationPipeline persists safe
   UTF-8 artifacts and integrates PipelineResult, Usage, ArtifactManager,
   ExecutionHistory, and structured Logging. HybridCreativeDemo routes a single
   Mission through the Content Department and combines text output with the
@@ -425,6 +428,31 @@ not inferred from a missing historical mission log.
   Memberships fail safely. Five focused tests and the full 253-test suite pass
   offline. Binary streaming and deletion/archive policy remain unimplemented.
 
+## Current SaaS boundary
+
+- Missions 101-108 are complete at their documented local Backend contract
+  scope. Authentication and Workspace RBAC are implemented when
+  `auth_required=True`; the unauthenticated default remains only for legacy
+  compatibility.
+- Task create/list/detail/cancel/retry HTTP routes exist, but they operate on
+  `AutomationService`'s in-memory TaskQueue and process-local Task index.
+  They are not the persistent Job execution boundary.
+- `PersistentJobQueue`, `InProcessJobWorker`, BatchManager, Scheduler,
+  ExecutionHistory, Monitor, and JSON StateRepository exist and are tested,
+  but persistent Jobs/Batches/History are not composed into authenticated
+  Backend execution APIs.
+- AI Departments and Worker capability ownership exist as persistent domain
+  contracts and support the creative workflow, but have no authenticated
+  management API.
+- Artifact reads and Usage reporting are authenticated and Workspace-scoped.
+  Artifact archive/restore policy and Usage quota/budget enforcement do not
+  exist.
+- FakeTextProvider remains the default. Ollama Text is a verified explicit
+  loopback option using `qwen2.5:1.5b`; Music, Image, Video, and YouTube remain
+  Fake. Paid providers and external media calls remain disabled.
+- The next defined work is Mission 109 — Persistent Job Execution, followed
+  by Mission 110 — Job & Execution API.
+
 ## Implemented pipelines
 
 | Type | Pipeline | Current result |
@@ -451,15 +479,15 @@ Current verification result: **258 passed, 0 failed**.
 
 ## Not implemented
 
-- External web search, external AI providers, and source-backed research.
-- A real external AI provider integration is not implemented. The
-  provider-neutral boundary, MockProvider, environment-based selection, and
-  usage/cost metadata exist without requiring an API key.
+- External web search and source-backed research.
+- External paid AI providers are not implemented. Provider-neutral boundaries,
+  Fake/Mock defaults, usage metadata, and explicit loopback-only Ollama Text
+  exist without requiring an API key.
 - Automatic natural-language multi-step planning from a user goal. Structured
   goal-step input can now be validated and represented as executable Tasks.
-- Persistent long-running queue and restart-safe retry/recovery.
-- Passwords, authentication tokens, login, and request authorization. The User domain
-  deliberately contains no credential or secret fields.
+- Persistent Job execution composed into the Backend request boundary. The
+  persistent queue/restart contracts exist but are not connected to HTTP work
+  submission or a continuously running worker.
 - UI and interactive goal-submission layer.
 - Repository-backed/distributed Mission locking, real Git worktrees, external
   Claude/Gemini provider adapters and credentials, in-flight call
@@ -468,12 +496,12 @@ Current verification result: **258 passed, 0 failed**.
 - Real image/video providers, YouTube OAuth, and real YouTube upload. Paid
   providers remain disabled and no content-generation network call is made.
 - Distributed locking, OS cron, Celery/Redis/message-broker infrastructure,
-  external databases/cloud storage, and Mission 101+ Backend/SaaS services.
+  external databases, and cloud storage.
 - Web Dashboard, external APM/Prometheus/Grafana/Sentry integrations,
   distributed monitoring, real-time WebSocket updates, remote log shipping,
   distributed tracing, log retention/rotation, model pricing, credit/billing
-  ledgers, a general desktop/OS agent, dynamic LLM organization design, HR
-  workflows, and Mission 101+ Backend expansion.
+  ledgers, a general desktop/OS agent, dynamic LLM organization design, and HR
+  workflows.
 - A default registered NOT_IMPLEMENTED pipeline is not present; `StubPipeline`
   remains available for future unavailable capabilities.
 
@@ -483,8 +511,9 @@ Current verification result: **258 passed, 0 failed**.
 - Task and PipelineResult use dictionaries/strings rather than runtime schema
   validation or static types.
 - Console `print()` calls are widespread; structured logging is incomplete.
-- JSON history is process-local and does not provide durable queue semantics,
-  locking, or recovery.
+- JSON persistence is local single-process storage; the persistent queue has
+  restart recovery and claim ownership but no atomic multi-process claim or
+  distributed locking.
 - FILE pipeline still relies on a simple local file-type mapping.
 - CONTENT and RESEARCH generate local scaffolds, not source-backed or
   AI-generated results.

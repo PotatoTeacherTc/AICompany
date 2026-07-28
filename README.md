@@ -145,8 +145,9 @@ It never returns environment values, paths, headers, prompts, or raw errors.
 Existing task, Workspace, User, authentication, membership, and audit routes
 remain available through the same app. No ASGI server runtime is installed or
 selected, so a localhost production-server command is not claimed. Media
-providers remain Fake, paid providers remain disabled, and Mission 102+ is not
-part of this foundation.
+providers remain Fake and paid providers remain disabled. Missions 102-108
+subsequently added the documented User, Workspace, Auth, RBAC, authenticated
+API, Artifact-read, and Usage-reporting boundaries.
 
 ## User lifecycle
 
@@ -244,9 +245,9 @@ does not expose its records. Authorization and Cookie values are never
 returned. The default `auth_required=False` behavior remains for existing
 local clients.
 
-API versioning, an external ASGI deployment, signup/email verification,
-administrator User management, and Mission 107 Artifact work remain future
-scope.
+API versioning, an external ASGI deployment, signup/email verification, and
+administrator User management remain future scope. Artifact access was added
+in Mission 107.
 
 ## Workspace artifact access
 
@@ -289,3 +290,32 @@ estimated cost is preserved. Estimated cost is informational and is not a
 billed amount. In-memory and JSON persistence remain supported. Pricing,
 credits, billing, subscriptions, and external provider calls are not part of
 this feature.
+
+## Current Backend scope and next work
+
+Missions 101-108 provide the local Backend composition, User and Workspace
+lifecycle, session-backed Auth, Workspace RBAC, authenticated Task context,
+safe Artifact reads, and read-only Usage reporting. The existing Task HTTP
+routes can create, list, inspect, cancel, and retry in-process Tasks.
+
+The repository also contains a restart-aware `PersistentJobQueue`,
+`InProcessJobWorker`, `BatchManager`, Scheduler, ExecutionHistory, and Monitor.
+Those persistent execution contracts are not yet connected to Backend Task
+submission or exposed as authenticated Job/Execution APIs. AI Departments are
+implemented as persistent domain services but likewise have no management
+API. Artifact archive/restore, quota enforcement, plans, billing, Dashboard,
+and production deployment are not implemented.
+
+The next defined sequence is:
+
+1. Mission 109 — Persistent Job Execution
+2. Mission 110 — Job & Execution API
+3. Mission 111 — AI Organization API
+4. Mission 112 — Artifact Lifecycle
+5. Mission 113 — Quota & Budget Enforcement
+6. Mission 114 — Plans & Entitlements
+7. Mission 115 — Dashboard API
+8. Mission 116 — Web Dashboard
+
+Ollama Text remains explicit and loopback-only. Music, Image, Video, and
+YouTube remain Fake; no paid Provider or external media API is enabled.

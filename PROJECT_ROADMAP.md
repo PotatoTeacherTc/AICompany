@@ -343,8 +343,179 @@ The in-memory and JSON repositories remain the source of truth, so restart
 recovery, idempotency, and Workspace isolation are retained without a second
 ledger. The current aggregation is bounded to the latest 100 matching records
 and reports when it is limited. Pricing, credits, billing, and subscription
-work are not implemented. Mission 109-110 are not named in the current
-roadmap and are not inferred.
+work are not implemented. The code-based gap analysis below now defines the
+next sequence without treating any of those missing contracts as complete.
+
+## Post-backend gap analysis
+
+The Mission 109+ order below is based on the source and tests at Mission 108,
+not on placeholder numbering:
+
+| Area | Current implementation | Level | Missing contract |
+|---|---|---|---|
+| Backend job execution | `AutomationService` submits to the in-memory `TaskQueue`; `PersistentJobQueue` and `InProcessJobWorker` exist separately. | PARTIAL | A DI composition that persists an accepted execution and processes it outside the request path without losing Workspace/Mission ownership. |
+| Job and execution access | Task list/detail/cancel/retry routes exist; Persistent Job, Batch, and ExecutionHistory do not have a unified authenticated API. | PARTIAL | Workspace-scoped Job status/control and execution/history/result queries over persistent state. |
+| AI organization access | `DepartmentManager`, `WorkerDirectory`, and `DepartmentWorkflow` are tested domain services used by the creative composition. | FOUNDATION_ONLY | Authenticated Department and safe Worker-capability application/API contracts. |
+| Artifact lifecycle | Safe list/detail and bounded TEXT/JSON reads exist; metadata-only deletion exists only at the core boundary. | PARTIAL | Explicit archive/soft-delete policy, lifecycle authorization, retention semantics, and stable result-to-artifact access. |
+| Quota and budgets | UsageEngine reports durable usage and Settings has operational limits. | FOUNDATION_ONLY | Enforced Workspace quotas and budget decisions before work is accepted or a provider is invoked. |
+| Plans and entitlements | No plan, entitlement, credit, or billing domain exists. | NOT_STARTED | Provider-neutral feature/limit entitlements that do not yet charge money. |
+| Dashboard support | Monitor, audit, tasks, artifacts, and usage each expose parts of the required data. | FOUNDATION_ONLY | One authenticated dashboard-oriented read model with stable pagination and partial-failure behavior. |
+| Web dashboard | No UI application or frontend build exists. | NOT_STARTED | Authenticated user interface over the completed Backend contracts. |
+| Subscription, billing, admin | Not implemented. | NOT_STARTED | Subscription lifecycle, billable ledger/payment boundary, and operator authorization/audit. |
+| Real media providers | Music, image, video, and YouTube remain Fake; Ollama text is explicit loopback-only. | BLOCKED_EXTERNAL | Explicit provider credentials/accounts, cost approval, network policy, and integration verification. |
+| Deployment and operations | Tests use FastAPI TestClient; no selected ASGI deployment, external database/broker, CI/CD, or cloud runtime exists. | FOUNDATION_ONLY | Production runtime, migrations, observability, backup, and security/deployment policy. |
+
+The existing synchronous Task controls, Usage reporting, Artifact reads,
+Monitor, Logging, and Department domain are not renamed or counted again as
+new Missions.
+
+## Defined next Missions
+
+### Mission 109 — Persistent Job Execution
+
+- Goal: connect accepted Backend work to the existing persistent Job contract
+  without running a Pipeline inside the HTTP request.
+- Scope: a dependency-injected application coordinator over
+  `PersistentJobQueue`, `InProcessJobWorker`, Mission/Task identity, existing
+  settings, Logging, and ExecutionHistory; idempotent submission; safe
+  restart recovery; explicit in-process worker execution.
+- Excludes: HTTP Job query/control routes, distributed workers, Redis/Celery,
+  OS services, and concurrent multi-process claims.
+- Completion: an accepted Workspace execution survives repository restart,
+  is claimed once, produces the existing PipelineResult/history contract, and
+  safely records retryable or terminal failure.
+- Prerequisites: Missions 91, 93, 96, 101, and 106.
+- Tests: submission/idempotency, Workspace isolation, restart recovery,
+  single claim, success/failure/retry, missing target, Logging failure
+  isolation, and no network/paid-provider calls.
+
+### Mission 110 — Job & Execution API
+
+- Goal: expose persistent execution state and controls through the
+  authenticated Backend boundary.
+- Scope: Workspace-scoped Job list/detail, safe retry/cancel semantics,
+  ExecutionHistory list/detail, Batch status where already supported, and
+  path-free result/Artifact references. Reuse Mission 106 authorization and
+  Mission 109 execution services.
+- Excludes: streaming events, WebSocket, queue administration, Dashboard view
+  models, and distributed cancellation.
+- Completion: an authorized member can submit, inspect, and safely control
+  their Workspace Job and retrieve its execution result/history; another
+  Workspace receives no existence disclosure.
+- Prerequisites: Mission 109.
+- Tests: RBAC, filtering/pagination, pending/running/terminal states,
+  idempotency, valid/invalid retry and cancellation, partial Usage, safe
+  errors, result/Artifact linkage, restart recovery, and cross-Workspace
+  denial.
+
+### Mission 111 — AI Organization API
+
+- Goal: expose the existing AI Department organization safely without
+  duplicating Worker or Department storage.
+- Scope: application DTOs and authenticated Department list/detail/create/
+  update/enable operations, Worker capability listing, assignment, lead, and
+  optimistic revision handling.
+- Excludes: arbitrary code upload, dynamic LLM hiring, payroll/HR, provider
+  credentials, and execution scheduling.
+- Completion: OWNER/ADMIN can manage safe Department composition and MEMBER
+  can inspect it, with actual registered Worker capabilities and Workspace
+  isolation preserved.
+- Prerequisites: Missions 105, 106, and 110.
+- Tests: RBAC, revision conflict, Worker capability validation, disabled
+  Department behavior, restart recovery, sensitive-data rejection, and
+  cross-Workspace denial.
+
+### Mission 112 — Artifact Lifecycle
+
+- Goal: define a reversible result lifecycle over existing Artifact metadata
+  and content access.
+- Scope: AVAILABLE/ARCHIVED/MISSING state policy, explicit soft archive and
+  restore operations, result-to-artifact references, optimistic or
+  idempotent transitions, and authenticated lifecycle queries.
+- Excludes: deleting user files, binary streaming, object storage, retention
+  automation, and CDN delivery.
+- Completion: authorized lifecycle changes survive restart, never delete the
+  underlying file, and remain path-free and Workspace-scoped.
+- Prerequisites: Missions 107 and 110.
+- Tests: archive/restore idempotency, MISSING behavior, result linkage,
+  restart recovery, RBAC, path traversal, corrupt metadata, and
+  cross-Workspace denial.
+
+### Mission 113 — Quota & Budget Enforcement
+
+- Goal: turn existing Usage and Workspace settings into pre-execution safety
+  decisions.
+- Scope: Workspace quota/budget contracts, period-aware counters, reservation
+  and release semantics for accepted Jobs, enforcement before Worker/provider
+  execution, and safe limit status reporting.
+- Excludes: pricing inference, credits, invoicing, payments, subscriptions,
+  and enabling paid providers.
+- Completion: work exceeding an explicit limit is rejected before execution;
+  concurrent/idempotent reservations cannot double count; missing Usage
+  remains safe and no absent cost is invented.
+- Prerequisites: Missions 97, 98, 109, and 110.
+- Tests: limits below/at/above boundary, reservation idempotency, release,
+  restart recovery, Workspace isolation, partial/missing Usage, clock-period
+  rollover, and Logging failure isolation.
+
+### Mission 114 — Plans & Entitlements
+
+- Goal: define non-billing product plans and Workspace feature entitlements
+  that quota enforcement can consume.
+- Scope: injected plan catalog, Workspace plan assignment, versioned
+  entitlements, feature/limit resolution, safe defaults, and audit records.
+- Excludes: subscriptions, invoices, payment providers, tax, credits, and
+  plan purchase flows.
+- Completion: effective entitlements are deterministic, restart-safe,
+  auditable, Workspace-scoped, and enforced by Mission 113 without embedding
+  plan names in Pipelines.
+- Prerequisites: Mission 113.
+- Tests: default/custom plans, assignment revision, invalid entitlement,
+  downgrade limits, restart recovery, RBAC, audit failure isolation, and
+  cross-Workspace denial.
+
+### Mission 115 — Dashboard API
+
+- Goal: provide a stable Backend read model for a future Web Dashboard.
+- Scope: authenticated Workspace overview combining Monitor, recent Jobs and
+  executions, Batch progress, Usage/quota status, and Artifact summaries with
+  bounded queries.
+- Excludes: frontend code, WebSocket, charts, billing administration, and
+  execution side effects.
+- Completion: one safe read-only response supports the primary dashboard
+  state without replacing Monitor or duplicating repositories.
+- Prerequisites: Missions 110, 112, 113, and 114.
+- Tests: empty/partial/full state, pagination, stale/missing records, Usage
+  omission, read-only behavior, RBAC, restart recovery, and
+  cross-Workspace denial.
+
+### Mission 116 — Web Dashboard
+
+- Goal: deliver the first authenticated browser UI over existing Backend
+  contracts.
+- Scope: login/session use, Workspace selection, Job submission/status,
+  execution results, safe Artifact access, Usage/quota visibility, and
+  Department inspection.
+- Excludes: subscription checkout, billing, admin console, real-time
+  WebSocket, provider credentials, and production cloud deployment.
+- Completion: a user can complete the principal Workspace workflow through
+  the browser using only authorized API calls and without exposing secrets,
+  prompts, raw errors, or internal paths.
+- Prerequisites: Mission 115.
+- Tests: frontend unit/contract tests, authenticated happy path, expired
+  session, role restrictions, partial failure, safe rendering, and offline
+  end-to-end execution.
+
+## Longer-term phases
+
+- Missions 117-120: Subscription, Billing, Admin, then SaaS Beta. These remain
+  Phase-level boundaries until Mission 114 entitlements and Mission 116 user
+  flow establish their detailed contracts.
+- Missions 121-130: production cloud/storage/broker choices, CI/CD, security
+  hardening, Workflow Builder, Marketplace, Enterprise, and AICompany v1.0.
+- Real music/image/video/YouTube adapters remain separately blocked by
+  explicit account, network, credential, legal, and cost approval. They are
+  not prerequisites for the Fake/Offline SaaS contract work above.
 
 ## Development stages
 

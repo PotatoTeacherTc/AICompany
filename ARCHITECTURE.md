@@ -122,21 +122,37 @@ AI provider layer: provider adapters used by pipelines, never directly by UI
 - AI providers are injected adapters. They receive a standard request and
   return a standard response with usage metadata; Pipelines must not contain a
   provider name, model name, or credential.
-- Persistent storage will attach workspace ownership to Tasks, artifacts,
-  execution history, provider usage, and costs before any web-facing API is
-  introduced.
-- User identity is currently a minimal, credential-free domain. Membership,
-  authorization, and authentication must build on it without adding secrets to
-  its repository records. The existing membership roles are not yet enforced
-  by API requests because authentication is not implemented.
-- Supplying `workspace_id` when reading a Task provides data-scope mismatch
-  protection at the current API boundary. It is not a substitute for future
-  authenticated membership authorization.
+- Local persistent state already attaches Workspace ownership to Jobs,
+  Missions, Batches, Artifact metadata, Usage, and selected history records.
+  The Backend Task submission path still uses the separate in-memory TaskQueue
+  and process-local Task index; Mission 109 must compose persistent Job
+  execution rather than replace either contract speculatively.
+- User identity remains credential-free. Credential hashes, sessions, and
+  token verification are separate injected services. Workspace Membership and
+  RBAC are enforced on authenticated routes without storing roles in tokens.
 - `create_app(auth_required=True)` enables Bearer checks for workspace/task
   access. MEMBER may access workspace work; OWNER and ADMIN may change
   membership. The default remains false solely for legacy API compatibility.
-- Backend API and web dashboard layers will access workspace-scoped services,
-  never filesystem Pipelines or provider credentials directly.
-- Authentication, subscription, credit, and payment components belong outside
-  the current Pipeline contract and will be added only after storage and API
-  boundaries exist.
+- Artifact and Usage application services are read-only Workspace boundaries.
+  Persistent Job/Batch/ExecutionHistory access, Department management,
+  Artifact lifecycle, and quota enforcement are not yet Backend APIs.
+- Future Dashboard and billing layers must access Workspace-scoped application
+  services, never filesystem Pipelines, repositories, or provider credentials
+  directly. Plans, subscriptions, credits, and payments remain outside the
+  Pipeline contract.
+
+## Current asynchronous execution boundary
+
+`PersistentJobQueue` persists PENDING/RUNNING/COMPLETED/FAILED Jobs and
+`InProcessJobWorker` can claim one Workspace Job and invoke an injected target.
+Restart converts abandoned RUNNING records back to PENDING. `BatchManager`
+groups those Jobs and preserves item outcomes. These are local, deterministic
+core contracts only.
+
+The FastAPI Task routes instead submit to `AutomationService`, whose
+`TaskQueue` and Task lookup are in memory. Request submission does not enqueue
+a `PersistentJobQueue` Job, no background runner is composed by
+`BackendDependencies`, and persistent Job/Batch/ExecutionHistory routes do not
+exist. Existing Task cancel/retry endpoints control only that in-process Task
+contract. Mission 109 therefore owns persistent execution composition;
+Mission 110 owns its authenticated query and control API.
