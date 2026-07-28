@@ -8,7 +8,7 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 70
+## Current baseline: Mission 71
 
 The verified implementation currently provides a Task/Queue/Worker execution
 path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,
@@ -68,9 +68,11 @@ Request correlation IDs now provide safe cross-boundary diagnostics without
 recording request bodies, credentials, tokens, prompts, or exception details.
 The collaboration domain now has a validated, serializable Mission contract
 for representing a requested unit of work with explicit requester and
-workspace ownership. Mission lifecycle state and locking remain separate
-Mission 71 work; no worker execution or collaboration orchestration is
-implemented by this contract.
+workspace ownership. Missions now follow validated PENDING, IN_PROGRESS, and
+terminal state transitions and support an exclusive, owner-checked,
+timezone-stamped collaboration lock. These immutable contract operations do
+not yet provide repository-backed distributed locking, worker execution,
+context building, or collaboration orchestration.
 
 ## Development stages
 

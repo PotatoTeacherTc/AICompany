@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 70**.
+Current mission baseline: **Mission 71**.
 
 ## Verified completed capabilities
 
@@ -166,6 +166,12 @@ not inferred from a missing historical mission log.
   timezone-aware creation timestamp, and isolated optional metadata. It
   validates every construction path without echoing submitted values in
   errors. Mission state and locking are intentionally reserved for Mission 71.
+- Mission 71: MissionState defines validated PENDING, IN_PROGRESS, COMPLETED,
+  FAILED, and CANCELLED lifecycle transitions. Mission locks record one
+  non-empty owner and a timezone-aware acquisition timestamp, are idempotent
+  for that owner, and reject acquisition or release by another owner without
+  exposing submitted identities. Operations return new Mission values rather
+  than mutating the frozen contract.
 
 ## Implemented pipelines
 
@@ -180,14 +186,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **89 tests**. Its expected command is:
+The current suite contains **94 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 70 verification result: **89 passed, 0 failed**.
+Mission 71 verification result: **94 passed, 0 failed**.
 
 ## Not implemented
 
@@ -201,8 +207,8 @@ Mission 70 verification result: **89 passed, 0 failed**.
 - Passwords, authentication tokens, login, and request authorization. The User domain
   deliberately contains no credential or secret fields.
 - UI and interactive goal-submission layer.
-- Mission lifecycle state, locking, worker assignment, context building,
-  validation, and collaboration orchestration.
+- Repository-backed/distributed Mission locking, worker assignment, context
+  building, validation, and collaboration orchestration.
 - A default registered NOT_IMPLEMENTED pipeline is not present; `StubPipeline`
   remains available for future unavailable capabilities.
 

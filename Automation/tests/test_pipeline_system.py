@@ -27,7 +27,7 @@ from core.content_pipeline import ContentPipeline
 from core.history_analyzer import HistoryAnalyzer
 from core.history_pipeline import HistoryPipeline
 from core.music_pipeline import MusicPipeline
-from core.mission import Mission
+from core.mission import Mission, MissionState
 from core.pipeline import AIPipeline
 from core.registry import PipelineRegistry
 from core.result import PipelineResult
@@ -123,6 +123,9 @@ class TaskTests(unittest.TestCase):
                 "workspace_id",
                 "created_at",
                 "metadata",
+                "state",
+                "locked_by",
+                "locked_at",
             },
             set(mission.to_dict()),
         )
@@ -191,6 +194,74 @@ class TaskTests(unittest.TestCase):
         with self.assertRaises(ValueError) as raised:
             Mission.create("Title", "Objective", "user-1", "workspace-1", secret)
         self.assertNotIn(secret, str(raised.exception))
+
+    def test_mission_state_follows_valid_lifecycle(self):
+        mission = Mission.create("Title", "Objective", "user-1", "workspace-1")
+
+        running = mission.transition_to(MissionState.IN_PROGRESS)
+        completed = running.transition_to(MissionState.COMPLETED)
+
+        self.assertEqual(MissionState.PENDING, mission.state)
+        self.assertEqual(MissionState.IN_PROGRESS, running.state)
+        self.assertTrue(completed.is_terminal)
+        self.assertEqual(MissionState.COMPLETED, completed.to_dict()["state"])
+
+    def test_mission_state_rejects_invalid_and_terminal_transitions(self):
+        mission = Mission.create("Title", "Objective", "user-1", "workspace-1")
+        with self.assertRaisesRegex(ValueError, "transition"):
+            mission.transition_to(MissionState.COMPLETED)
+        with self.assertRaisesRegex(ValueError, "invalid mission state"):
+            mission.transition_to("UNKNOWN")
+
+        cancelled = mission.transition_to(MissionState.CANCELLED)
+        with self.assertRaisesRegex(ValueError, "transition"):
+            cancelled.transition_to(MissionState.IN_PROGRESS)
+
+    def test_mission_lock_is_exclusive_and_timezone_aware(self):
+        mission = Mission.create("Title", "Objective", "user-1", "workspace-1")
+        locked = mission.acquire_lock("worker-1")
+
+        self.assertFalse(mission.is_locked)
+        self.assertTrue(locked.is_locked)
+        self.assertEqual("worker-1", locked.locked_by)
+        self.assertIsNotNone(datetime.fromisoformat(locked.locked_at).utcoffset())
+        self.assertIs(locked, locked.acquire_lock("worker-1"))
+        with self.assertRaisesRegex(ValueError, "already locked"):
+            locked.acquire_lock("worker-2")
+
+    def test_mission_lock_can_only_be_released_by_owner(self):
+        locked = Mission.create(
+            "Title", "Objective", "user-1", "workspace-1"
+        ).acquire_lock("worker-1")
+
+        with self.assertRaisesRegex(ValueError, "another worker"):
+            locked.release_lock("worker-2")
+        released = locked.release_lock("worker-1")
+        self.assertFalse(released.is_locked)
+        self.assertIsNone(released.locked_at)
+        self.assertIs(released, released.release_lock("worker-1"))
+
+    def test_mission_rejects_partial_or_unsafe_lock_data(self):
+        base = {
+            "id": "mission-1",
+            "title": "Title",
+            "objective": "Objective",
+            "requested_by": "user-1",
+            "workspace_id": "workspace-1",
+            "created_at": "2026-07-28T12:00:00+00:00",
+        }
+        with self.assertRaisesRegex(ValueError, "set together"):
+            Mission(**base, locked_by="worker-1")
+        with self.assertRaisesRegex(ValueError, "timezone"):
+            Mission(
+                **base,
+                locked_by="worker-1",
+                locked_at="2026-07-28T12:00:00",
+            )
+        sensitive_owner = "worker-private@example.com"
+        with self.assertRaises(ValueError) as raised:
+            Mission(**base).acquire_lock(sensitive_owner).release_lock("worker-2")
+        self.assertNotIn(sensitive_owner, str(raised.exception))
 
     def test_audit_repository_filters_and_never_records_sensitive_metadata(self):
         with tempfile.TemporaryDirectory() as directory:
