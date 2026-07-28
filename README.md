@@ -271,3 +271,21 @@ metadata are ignored. OWNER, ADMIN, and MEMBER may read their current active
 Workspace, while inactive Users/Workspaces and removed Memberships are
 rejected. Binary download/streaming and artifact deletion/archive policy are
 not implemented.
+
+## Workspace usage reporting
+
+Mission 108 adds authenticated, read-only reporting over the existing
+Workspace UsageEngine:
+
+```text
+GET /workspaces/{workspace_id}/usage
+GET /workspaces/{workspace_id}/usage/summary
+```
+
+Queries support provider, model, Mission, timezone-aware date range, and
+bounded pagination filters. Summary values include only usage fields that
+were recorded; missing metadata is not invented, while an explicit zero
+estimated cost is preserved. Estimated cost is informational and is not a
+billed amount. In-memory and JSON persistence remain supported. Pricing,
+credits, billing, subscriptions, and external provider calls are not part of
+this feature.

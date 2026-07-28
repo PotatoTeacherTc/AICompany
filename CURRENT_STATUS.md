@@ -2,12 +2,21 @@
 
 ## Mission
 
-Current mission baseline: **Mission 107**.
+Current mission baseline: **Mission 108**.
 
 ## Verified completed capabilities
 
 The following status is based on the current source tree and automated tests,
 not inferred from a missing historical mission log.
+
+- Mission 108: Workspace-scoped Usage reporting now reuses UsageEngine and
+  its in-memory/JSON persistence through a read-only application service.
+  Authenticated list and summary routes support provider, model, Mission,
+  timezone-aware range, and bounded pagination filters. Aggregates include
+  only present usage fields, retain zero estimated cost, and explicitly do
+  not represent billed amounts. Abnormal numeric values are rejected.
+  Pricing, credits, billing, subscriptions, and unnamed Mission 109-110 work
+  remain unimplemented.
 
 - Mission 1–17: individual mission outcomes cannot be verified from the
   current codebase alone; this document does not invent them.
@@ -431,14 +440,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **235 tests**. Its expected command is:
+The current suite contains **258 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Current verification result: **235 passed, 0 failed**.
+Current verification result: **258 passed, 0 failed**.
 
 ## Not implemented
 

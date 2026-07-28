@@ -19,6 +19,7 @@ def create_app(
     audit_query_service=None,
     authorization_service=None,
     artifact_service=None,
+    usage_service=None,
     health_service=None,
     auth_required=False,
 ):
@@ -87,6 +88,13 @@ def create_app(
             getattr(automation_service, "artifact_manager", None)
         )
     app.state.artifact_service = artifact_service
+    if usage_service is None:
+        usage_engine = getattr(automation_service, "usage_engine", None)
+        if usage_engine is not None:
+            from application.usage_reporting_service import UsageReportingService
+
+            usage_service = UsageReportingService(usage_engine)
+    app.state.usage_service = usage_service
     if audit_service is None:
         from application.audit_service import AuditService
         audit_service = AuditService()
@@ -440,6 +448,76 @@ def create_app(
 
             return error_response(409, "artifact_missing", "Artifact content is missing")
         return value
+
+    @app.get("/workspaces/{workspace_id}/usage")
+    def list_usage(
+        workspace_id: str,
+        provider: str | None = None,
+        model: str | None = None,
+        mission_id: str | None = None,
+        start_at: str | None = None,
+        end_at: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
+        authorization: str | None = Header(default=None),
+    ):
+        denied = _authorize_workspace(
+            app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"}
+        )
+        if denied:
+            return denied
+        if app.state.usage_service is None:
+            from api.errors import error_response
+
+            return error_response(503, "usage_unavailable", "Usage is unavailable")
+        try:
+            return app.state.usage_service.list(
+                workspace_id,
+                provider=provider,
+                model=model,
+                mission_id=mission_id,
+                start_at=start_at,
+                end_at=end_at,
+                limit=limit,
+                offset=offset,
+            )
+        except (TypeError, ValueError):
+            from api.errors import error_response
+
+            return error_response(400, "invalid_request", "Invalid usage query")
+
+    @app.get("/workspaces/{workspace_id}/usage/summary")
+    def usage_summary(
+        workspace_id: str,
+        provider: str | None = None,
+        model: str | None = None,
+        mission_id: str | None = None,
+        start_at: str | None = None,
+        end_at: str | None = None,
+        authorization: str | None = Header(default=None),
+    ):
+        denied = _authorize_workspace(
+            app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"}
+        )
+        if denied:
+            return denied
+        if app.state.usage_service is None:
+            from api.errors import error_response
+
+            return error_response(503, "usage_unavailable", "Usage is unavailable")
+        try:
+            return app.state.usage_service.summary(
+                workspace_id,
+                provider=provider,
+                model=model,
+                mission_id=mission_id,
+                start_at=start_at,
+                end_at=end_at,
+            )
+        except (TypeError, ValueError):
+            from api.errors import error_response
+
+            return error_response(400, "invalid_request", "Invalid usage query")
 
     @app.post("/workspaces/{workspace_id}/members", status_code=201)
     def add_member(workspace_id: str, payload: dict, authorization: str | None = Header(default=None)):

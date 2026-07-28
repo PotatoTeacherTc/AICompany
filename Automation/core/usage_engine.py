@@ -19,6 +19,8 @@ NUMERIC_FIELDS = (
     "total_tokens",
     "estimated_cost_usd",
 )
+_MAX_TOKEN_COUNT = 10**12
+_MAX_ESTIMATED_COST = 10**9
 _SAFE_IDENTIFIER = re.compile(r"^[A-Za-z0-9_.:-]+$")
 
 
@@ -248,6 +250,14 @@ def _normalize_usage(usage):
             not isinstance(value, (int, float))
             or isinstance(value, bool)
             or value < 0
+            or (
+                field == "estimated_cost_usd"
+                and value > _MAX_ESTIMATED_COST
+            )
+            or (
+                field != "estimated_cost_usd"
+                and value > _MAX_TOKEN_COUNT
+            )
         ):
             raise ValueError(f"{field} must be non-negative")
         result[field] = value

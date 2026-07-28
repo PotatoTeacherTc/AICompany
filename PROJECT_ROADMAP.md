@@ -8,7 +8,7 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 107
+## Current baseline: Mission 108
 
 The verified implementation currently provides a Task/Queue/Worker execution
 path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,
@@ -333,8 +333,18 @@ recursively redacts sensitive JSON keys. Missing files become MISSING without
 revealing paths or raw filesystem errors. Metadata restart recovery and
 traversal/corrupt-record rejection remain in FileArtifactRepository. Binary
 download/streaming and artifact deletion/archive policy are not implemented.
-Mission 108 is the remaining named Phase D Usage boundary; Mission 109-110 are
-not named in the current roadmap and are not inferred.
+Mission 108 completes the named Phase D Usage boundary by exposing the
+existing UsageEngine through a read-only, Workspace-scoped application
+service and authenticated API routes. Usage records support provider, model,
+Mission, timezone-aware date-range, and bounded pagination filters. Summary
+responses aggregate only fields that are actually present, preserve zero
+estimated cost, and clearly state that estimated cost is not a billed amount.
+The in-memory and JSON repositories remain the source of truth, so restart
+recovery, idempotency, and Workspace isolation are retained without a second
+ledger. The current aggregation is bounded to the latest 100 matching records
+and reports when it is limited. Pricing, credits, billing, and subscription
+work are not implemented. Mission 109-110 are not named in the current
+roadmap and are not inferred.
 
 ## Development stages
 
