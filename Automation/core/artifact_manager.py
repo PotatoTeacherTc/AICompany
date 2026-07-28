@@ -58,8 +58,19 @@ class ArtifactManager:
         artifacts = self.repository.list()
         return artifacts if workspace_id is None else [artifact for artifact in artifacts if artifact.get("workspace_id", "default") == workspace_id]
 
-    def register_files(self, file_paths, artifact_type, producer_pipeline):
+    def register_files(
+        self,
+        file_paths,
+        artifact_type,
+        producer_pipeline,
+        workspace_id=None,
+    ):
         return [
-            self.register_file(path, artifact_type, producer_pipeline)
+            self.register_file(
+                path,
+                artifact_type,
+                producer_pipeline,
+                workspace_id=workspace_id,
+            )
             for path in file_paths
         ]

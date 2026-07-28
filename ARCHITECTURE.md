@@ -45,11 +45,15 @@ the workflow; `run()` is the explicit entry point.
 | Supporting services | `agent/planner.py`, `executor.py`, `validator.py`, `reporter.py`, `scripts/` | FILE pipeline planning, execution, validation, report generation, and logging. TaskPlanner produces the execution plan; FILE adds its target folder and TaskExecutor consumes that plan rather than an independent folder argument. |
 | Tests | `Automation/tests/test_pipeline_system.py` | Standard-library unittest regression suite using temporary directories. It covers SUCCESS, FAILED, NOT_IMPLEMENTED, exception, registry, and Manager result-contract boundaries. |
 | AI provider boundary | `providers/base.py`, `providers/models.py`, `providers/mock_provider.py`, `providers/factory.py`, `providers/pipeline_utils.py` | Provider-neutral request/response and usage metadata. The shared utility normalizes absent or partial usage and formats provider errors without raw messages. MockProvider is the offline default; CONTENT, RESEARCH, and MUSIC can receive an injected provider and persist only provider/model/token/cost metadata through PipelineResult and ExecutionHistory, never API keys. |
+| Music provider boundary | `providers/music.py`, `providers/factory.py` | MusicProvider defines `generate_music(MusicGenerationRequest) -> MusicGenerationResult` with generated artifact and optional shared UsageMetadata contracts. FakeMusicProvider is the deterministic offline selection; GenericMusicProviderAdapter keeps existing AIProvider injection compatible. Internal generated artifacts carry paths only for registration, while their default serialization omits paths. No external music service or API key is built in. |
+| Music execution and history | `core/music_pipeline.py`, `core/artifact_manager.py`, `core/execution_history.py` | MusicPipeline writes only below its configured `workspace_id` directory, validates Mission scope IDs and provider artifacts, normalizes missing usage, and maps timeout/provider errors to safe PipelineResult values. ArtifactManager retains internal paths in its repository, but Music PipelineResult exposes only standard safe metadata. Optional `record_music` upserts one MUSIC record with workspace, mission, provider, model, status, usage, and safe artifacts; it records neither task text nor absolute paths, and history failures do not override generation status. |
 
 ## Current pipeline behavior
 
 - FILE: organizes known file types in a configured folder.
-- MUSIC: creates a local music-project scaffold.
+- MUSIC: uses an injected provider-neutral music generator, with an offline
+  FakeMusicProvider default, and returns workspace-scoped safe artifact
+  metadata.
 - CONTENT: creates a local content-project scaffold with a review checklist;
   content type, title prefix, and tags can be supplied through validated Task
   parameters.

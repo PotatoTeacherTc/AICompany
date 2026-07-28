@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 80**.
+Current mission baseline: **Mission 83**.
 
 ## Verified completed capabilities
 
@@ -203,6 +203,22 @@ not inferred from a missing historical mission log.
   state transition, isolated Context construction, multiple Worker execution,
   validation, aggregate completion/failure, lock release, and history
   recording end to end without external APIs or secrets.
+- Mission 81: MusicProvider, MusicGenerationRequest, GeneratedMusicArtifact,
+  and MusicGenerationResult define a provider-neutral music boundary.
+  FakeMusicProvider produces a deterministic local test artifact, and the
+  existing ProviderFactory supplies offline music selection without API keys.
+  GenericMusicProviderAdapter preserves compatibility with the existing
+  AIProvider boundary.
+- Mission 82: MusicPipeline now validates task/workspace/mission input, injects
+  provider selection, applies timeout and type-only provider errors, normalizes
+  complete/partial/missing usage, and registers workspace-owned artifacts.
+  PipelineResult retains its common keys while request text and absolute paths
+  are excluded from the Music response.
+- Mission 83: MusicPipeline can write a safe MUSIC record through the existing
+  ExecutionHistory and repository boundary. Records include workspace,
+  mission, provider, model, status, safe artifact metadata, and usage but omit
+  original prompts and absolute paths. History write failures do not change a
+  successful generation result.
 
 ## Implemented pipelines
 
@@ -217,14 +233,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **112 tests**. Its expected command is:
+The current suite contains **115 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 75-80 verification result: **112 passed, 0 failed**.
+Mission 81-83 verification result: **115 passed, 0 failed**.
 
 ## Not implemented
 
@@ -241,6 +257,7 @@ Mission 75-80 verification result: **112 passed, 0 failed**.
 - Repository-backed/distributed Mission locking, real Git worktrees, external
   Claude/Gemini provider adapters and credentials, in-flight call
   interruption, human approval, and collaboration commit/push automation.
+- Real external music providers and binary audio generation.
 - A default registered NOT_IMPLEMENTED pipeline is not present; `StubPipeline`
   remains available for future unavailable capabilities.
 

@@ -61,6 +61,13 @@ from application.audit_service import AuditService
 from core.audit_repository import FileAuditRepository
 from application.audit_query_service import AuditQueryService
 from providers.factory import ProviderFactory
+from providers.music import (
+    FakeMusicProvider,
+    GeneratedMusicArtifact,
+    MusicGenerationRequest,
+    MusicGenerationResult,
+    MusicProvider,
+)
 from providers.mock_provider import MockProvider
 from providers.models import ProviderRequest
 
@@ -1364,7 +1371,10 @@ class FilePipelineTests(PipelineTestCase):
                 self.assertTrue(result["artifacts"])
                 self.assertEqual(result["artifacts"], result["data"]["artifacts"])
                 for artifact in result["artifacts"]:
-                    self.assertEqual(artifact, artifact_manager.get(artifact["artifact_id"]))
+                    stored = artifact_manager.get(artifact["artifact_id"])
+                    self.assertTrue(
+                        all(stored.get(key) == value for key, value in artifact.items())
+                    )
                     self.assertEqual(pipeline.name, artifact["producer_pipeline"])
 
     def test_file_pipeline_organizes_files_and_returns_common_result(self):
@@ -1441,47 +1451,172 @@ class PipelineRegistryTests(unittest.TestCase):
 
 
 class MusicPipelineTests(PipelineTestCase):
+    @staticmethod
+    def music_task(text="Create a song", workspace_id="default", mission_id=None):
+        task = Task(
+            text,
+            workspace_id=workspace_id,
+            parameters={"mission_id": mission_id} if mission_id else None,
+        )
+        task.task_type = "MUSIC"
+        return task
+
+    def test_fake_music_provider_uses_standard_contract(self):
+        output = self.root / "provider"
+        result = FakeMusicProvider().generate_music(
+            MusicGenerationRequest(
+                prompt="Create a safe test song",
+                workspace_id="workspace-1",
+                mission_id="mission-1",
+                output_directory=str(output),
+                timeout_seconds=5,
+            )
+        )
+
+        self.assertEqual("fake-music", result.provider)
+        self.assertTrue((output / result.artifacts[0].filename).is_file())
+        self.assertNotIn("path", result.artifacts[0].to_dict())
+        self.assertGreater(result.usage.total_tokens, 0)
+
+    def test_music_provider_factory_and_selection_support_dependency_injection(self):
+        selection = ProviderFactory.music_from_environment(
+            {
+                "AICOMPANY_MUSIC_PROVIDER": "fake",
+                "AICOMPANY_MUSIC_PROVIDER_MODEL": "fake-v2",
+                "AICOMPANY_MUSIC_PROVIDER_TIMEOUT": "4",
+            }
+        )
+        result = MusicPipeline(
+            music_root=self.root / "music",
+            provider_selection=selection,
+        ).run(self.music_task())
+
+        self.assertIsInstance(selection.provider, FakeMusicProvider)
+        self.assertEqual("fake-v2", result["data"]["model"])
+        self.assertEqual(PipelineStatus.SUCCESS, result["status"])
+
     def test_music_pipeline_provider_usage_and_failures_are_safe(self):
-        task = self.task("Create a provider-backed song", "MUSIC")
+        task = self.music_task("Create a provider-backed song")
         result = MusicPipeline(music_root=self.root / "music", provider=MockProvider()).run(task)
         self.assertEqual("mock", result["data"]["provider_usage"]["provider"])
-        task.pipeline = result["pipeline"]
-        task.start()
-        task.complete(result)
-        self.history.record(task)
-        self.assertEqual(
-            result["data"]["provider_usage"],
-            self.history.get_all()[0]["result"]["data"]["provider_usage"],
-        )
 
-        class PartialProvider:
-            def generate(self, request):
-                return SimpleNamespace(provider="partial", model="local", usage=SimpleNamespace())
+        class PartialMusicProvider(MusicProvider):
+            name = "partial"
 
-        partial = MusicPipeline(music_root=self.root / "partial", provider=PartialProvider()).run(task)
-        self.assertEqual(0, partial["data"]["provider_usage"]["total_tokens"])
+            def generate_music(self, request):
+                path = Path(request.output_directory) / "partial.txt"
+                path.write_text("partial", encoding="utf-8")
+                return MusicGenerationResult(
+                    self.name,
+                    "local",
+                    (GeneratedMusicArtifact(path.name, "text/plain", str(path)),),
+                    SimpleNamespace(input_tokens=2),
+                )
 
-        for provider in (
-            type("TimeoutProvider", (), {"generate": lambda self, request: (_ for _ in ()).throw(TimeoutError("timed out"))})(),
-            type("ErrorProvider", (), {"generate": lambda self, request: (_ for _ in ()).throw(RuntimeError("provider error"))})(),
-        ):
-            failed = MusicPipeline(music_root=self.root / "failed", provider=provider).run(task)
-            self.assertEqual(PipelineStatus.FAILED, failed["status"])
-            self.assertIn("Error", failed["error"])
+        class MissingUsageProvider(PartialMusicProvider):
+            name = "missing"
+
+            def generate_music(self, request):
+                generated = super().generate_music(request)
+                return MusicGenerationResult(
+                    self.name, generated.model, generated.artifacts, None
+                )
+
+        partial = MusicPipeline(
+            music_root=self.root / "partial", provider=PartialMusicProvider()
+        ).run(task)
+        missing = MusicPipeline(
+            music_root=self.root / "missing", provider=MissingUsageProvider()
+        ).run(task)
+        self.assertEqual(2, partial["data"]["provider_usage"]["total_tokens"])
+        self.assertEqual(0, missing["data"]["provider_usage"]["total_tokens"])
+
+        class TimeoutMusicProvider(MusicProvider):
+            name = "timeout"
+
+            def generate_music(self, request):
+                raise TimeoutError("private prompt")
+
+        class ErrorMusicProvider(MusicProvider):
+            name = "error"
+
+            def generate_music(self, request):
+                raise RuntimeError("provider api key")
+
+        timed_out = MusicPipeline(
+            music_root=self.root / "timeout", provider=TimeoutMusicProvider()
+        ).run(task)
+        failed = MusicPipeline(
+            music_root=self.root / "failed", provider=ErrorMusicProvider()
+        ).run(task)
+        self.assertEqual(PipelineStatus.TIMED_OUT, timed_out["status"])
+        self.assertEqual("ProviderError: TimeoutError", timed_out["error"])
+        self.assertEqual(PipelineStatus.FAILED, failed["status"])
+        self.assertEqual("ProviderError: RuntimeError", failed["error"])
+        self.assertNotIn("api key", str(failed))
 
     def test_music_pipeline_creates_complete_project_in_temp_directory(self):
-        music_root = self.root / "music"
-        result = MusicPipeline(music_root=music_root).run(
-            self.task("Create a song", "MUSIC")
+        artifact_manager = ArtifactManager(InMemoryArtifactRepository())
+        prompt = "Create a private song request"
+        result = MusicPipeline(
+            music_root=self.root / "music",
+            artifact_manager=artifact_manager,
+        ).run(
+            self.music_task(prompt, "workspace-1", "mission-1")
         )
 
-        project_path = Path(result["data"]["project_path"])
         self.assertEqual(PipelineStatus.SUCCESS, result["status"])
         self.assertTrue(RESULT_KEYS.issubset(result))
-        self.assertTrue(project_path.is_dir())
-        self.assertTrue((project_path / "metadata.txt").is_file())
-        self.assertTrue((project_path / "song_structure.txt").is_file())
-        self.assertIn("Create a song", (project_path / "metadata.txt").read_text(encoding="utf-8"))
+        self.assertEqual("workspace-1", result["data"]["workspace_id"])
+        self.assertEqual("mission-1", result["data"]["mission_id"])
+        self.assertTrue(result["artifacts"])
+        self.assertTrue(
+            all(item["workspace_id"] == "workspace-1" for item in result["artifacts"])
+        )
+        self.assertNotIn(str(self.root), str(result))
+        self.assertNotIn(prompt, str(result))
+        self.assertTrue(artifact_manager.list("workspace-1"))
+        self.assertFalse(artifact_manager.list("workspace-2"))
+
+    def test_music_history_is_safe_scoped_and_history_failures_do_not_fail_generation(self):
+        history = ExecutionHistory(repository=InMemoryExecutionHistoryRepository())
+        prompt = "private original music prompt"
+        result = MusicPipeline(
+            music_root=self.root / "history",
+            execution_history=history,
+        ).run(self.music_task(prompt, "workspace-1", "mission-1"))
+        record = history.query(workspace_id="workspace-1")[0]
+
+        self.assertEqual(PipelineStatus.SUCCESS, result["status"])
+        self.assertEqual("mission-1", record["mission_id"])
+        self.assertEqual("fake-music", record["result"]["provider"])
+        self.assertTrue(record["result"]["artifacts"])
+        self.assertNotIn(prompt, str(record))
+        self.assertNotIn(str(self.root), str(record))
+        self.assertEqual([], history.query(workspace_id="workspace-2"))
+
+        completed_task = self.music_task(prompt, "workspace-1", "mission-1")
+        completed_result = MusicPipeline(
+            music_root=self.root / "history-upsert"
+        ).run(completed_task)
+        completed_task.pipeline = completed_result["pipeline"]
+        completed_task.start()
+        completed_task.complete(completed_result)
+        history.record(completed_task)
+        updated_record = history.query(workspace_id="workspace-1")[0]
+        self.assertEqual("mission-1", updated_record["mission_id"])
+        self.assertNotIn(prompt, str(updated_record))
+
+        failing_history = SimpleNamespace(
+            record_music=lambda task, value: (_ for _ in ()).throw(
+                OSError("private history path")
+            )
+        )
+        safe_result = MusicPipeline(
+            music_root=self.root / "history-failure",
+            execution_history=failing_history,
+        ).run(self.music_task(prompt))
+        self.assertEqual(PipelineStatus.SUCCESS, safe_result["status"])
 
 
 class HistoryPipelineTests(PipelineTestCase):

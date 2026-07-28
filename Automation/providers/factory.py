@@ -2,6 +2,7 @@ import os
 from dataclasses import dataclass
 
 from providers.mock_provider import MockProvider
+from providers.music import FakeMusicProvider
 
 
 @dataclass(frozen=True)
@@ -28,6 +29,21 @@ class ProviderFactory:
             )
 
         raise ValueError(f"Unsupported AI provider: {provider_name}")
+
+    @classmethod
+    def music_from_environment(cls, environment=None):
+        environment = os.environ if environment is None else environment
+        provider_name = environment.get("AICOMPANY_MUSIC_PROVIDER", "fake").lower()
+        timeout_seconds = cls._timeout(
+            environment.get("AICOMPANY_MUSIC_PROVIDER_TIMEOUT", "30")
+        )
+        if provider_name == "fake":
+            return ProviderSelection(
+                provider=FakeMusicProvider(),
+                default_model=environment.get("AICOMPANY_MUSIC_PROVIDER_MODEL"),
+                timeout_seconds=timeout_seconds,
+            )
+        raise ValueError(f"Unsupported music provider: {provider_name}")
 
     @staticmethod
     def _timeout(value):

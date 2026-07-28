@@ -91,13 +91,25 @@ class ExecutionHistory:
 
     def record(self, task):
 
+        result_data = (
+            task.result.get("data", {})
+            if isinstance(getattr(task, "result", None), dict)
+            else {}
+        )
+        safe_music = (
+            getattr(task, "task_type", None) == "MUSIC"
+            and result_data.get("task_redacted") is True
+        )
+
         record = {
 
             "task_id": task.id,
 
-            "task": task.task_text,
+            "mission_id": result_data.get("mission_id") if safe_music else None,
 
-            "parameters": dict(task.parameters),
+            "task": "Music generation" if safe_music else task.task_text,
+
+            "parameters": {} if safe_music else dict(task.parameters),
             "workspace_id": getattr(task, "workspace_id", "default"),
 
             "parent_task_id": task.parent_task_id,
@@ -182,6 +194,49 @@ class ExecutionHistory:
         }
         for index, existing_record in enumerate(self.records):
             if existing_record.get("task_id") == mission.id:
+                self.records[index] = record
+                break
+        else:
+            self.records.append(record)
+        self.save()
+
+    def record_music(self, task, pipeline_result):
+        data = pipeline_result.get("data") or {}
+        artifacts = [
+            {key: value for key, value in artifact.items() if key != "path"}
+            for artifact in pipeline_result.get("artifacts", [])
+        ]
+        record = {
+            "task_id": getattr(task, "id", None),
+            "mission_id": data.get("mission_id"),
+            "task": "Music generation",
+            "parameters": {},
+            "workspace_id": data.get(
+                "workspace_id", getattr(task, "workspace_id", "default")
+            ),
+            "parent_task_id": None,
+            "retry_count": 0,
+            "max_retries": 0,
+            "timeout_seconds": None,
+            "last_error_type": None,
+            "status": pipeline_result.get("status"),
+            "created_at": getattr(task, "created_at", None),
+            "queued_at": None,
+            "started_at": None,
+            "completed_at": datetime.now().isoformat(),
+            "duration_seconds": None,
+            "result": {
+                "provider": data.get("provider"),
+                "model": data.get("model"),
+                "usage": data.get("provider_usage"),
+                "artifacts": artifacts,
+                "error": pipeline_result.get("error"),
+            },
+            "task_type": "MUSIC",
+            "pipeline": "Music Pipeline",
+        }
+        for index, existing_record in enumerate(self.records):
+            if existing_record.get("task_id") == record["task_id"]:
                 self.records[index] = record
                 break
         else:

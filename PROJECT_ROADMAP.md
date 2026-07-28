@@ -8,7 +8,7 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 80
+## Current baseline: Mission 83
 
 The verified implementation currently provides a Task/Queue/Worker execution
 path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,
@@ -90,6 +90,17 @@ execution, validation, aggregate Mission outcome, and a safe workspace-scoped
 ExecutionHistory summary. It does not call external providers by default,
 create Git worktrees, interrupt a provider call in progress, seek human
 approval, commit, or push.
+The music domain now defines provider-neutral generation request, generated
+artifact, result, timeout, and usage contracts. ProviderFactory selects the
+offline FakeMusicProvider by default while MusicPipeline also accepts injected
+music providers or the existing generic provider boundary through a
+compatibility adapter. MusicPipeline validates input and scope identifiers,
+writes beneath a workspace-specific root, normalizes partial or absent usage,
+returns PipelineResult and artifact metadata without prompt text or absolute
+paths, and safely maps provider failures. Its optional ExecutionHistory
+integration records one workspace/mission-scoped MUSIC summary without
+creating a duplicate repository. No external music service is configured or
+called.
 
 ## Development stages
 

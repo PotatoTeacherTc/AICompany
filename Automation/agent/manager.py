@@ -87,6 +87,13 @@ class Manager:
             "task_type": task_type,
         }
         for key, expected_value in expected_values.items():
+            if (
+                key == "task"
+                and isinstance(result["data"], dict)
+                and result["data"].get("task_redacted") is True
+                and result[key] == "Music generation"
+            ):
+                continue
             if result[key] != expected_value:
                 raise ValueError(f"PipelineResult {key} does not match the current execution")
 
