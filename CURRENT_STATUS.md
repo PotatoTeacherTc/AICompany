@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 74**.
+Current mission baseline: **Mission 80**.
 
 ## Verified completed capabilities
 
@@ -183,6 +183,26 @@ not inferred from a missing historical mission log.
   FunctionWorker is an injected local/fake implementation that enforces
   WorkerResult worker, Mission, and Workspace identities and converts handler
   exceptions to sanitized type-only FAILED results.
+- Mission 75: MissionWorkspaceManager creates isolated
+  `workspace_id/mission_id` directories under an injected root and rejects
+  unsafe identifiers and path traversal. This is the safe local
+  worktree-equivalent contract; it does not run Git commands.
+- Mission 76: WorkerResultValidator verifies WorkerResult type, Mission and
+  Workspace identity, success/error consistency, and artifact workspace
+  ownership through a serializable validation result.
+- Mission 77: ClaudeWorker adapts the common Provider boundary to WorkerResult,
+  defaults to the offline ProviderFactory selection, normalizes absent usage,
+  redacts echoed request text, and sanitizes timeout/provider failures.
+- Mission 78: GeminiWorker supplies the same provider-neutral, offline-safe
+  behavior with an independent Worker identity.
+- Mission 79: CollaborationOrchestrator coordinates unique Workers
+  sequentially, enforces per-Worker Mission lock ownership, validates every
+  result, preserves partial failures, and records safe summaries through
+  ExecutionHistory.
+- Mission 80: The Fake-tested collaboration path now runs Mission creation,
+  state transition, isolated Context construction, multiple Worker execution,
+  validation, aggregate completion/failure, lock release, and history
+  recording end to end without external APIs or secrets.
 
 ## Implemented pipelines
 
@@ -197,14 +217,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **100 tests**. Its expected command is:
+The current suite contains **112 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 72-74 verification result: **100 passed, 0 failed**.
+Mission 75-80 verification result: **112 passed, 0 failed**.
 
 ## Not implemented
 
@@ -218,8 +238,9 @@ Mission 72-74 verification result: **100 passed, 0 failed**.
 - Passwords, authentication tokens, login, and request authorization. The User domain
   deliberately contains no credential or secret fields.
 - UI and interactive goal-submission layer.
-- Repository-backed/distributed Mission locking, worktree isolation,
-  validation, provider-specific workers, and collaboration orchestration.
+- Repository-backed/distributed Mission locking, real Git worktrees, external
+  Claude/Gemini provider adapters and credentials, in-flight call
+  interruption, human approval, and collaboration commit/push automation.
 - A default registered NOT_IMPLEMENTED pipeline is not present; `StubPipeline`
   remains available for future unavailable capabilities.
 

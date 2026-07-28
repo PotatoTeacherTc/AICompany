@@ -8,7 +8,7 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 74
+## Current baseline: Mission 80
 
 The verified implementation currently provides a Task/Queue/Worker execution
 path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,
@@ -77,8 +77,19 @@ sensitive and non-scalar metadata. WorkerResult standardizes terminal worker
 outcomes with existing PipelineStatus values, provider usage fields, and
 artifact metadata. BaseWorker and the injected FunctionWorker establish a
 testable worker boundary with sanitized handler failures and strict
-mission/workspace/result identity checks. Provider-specific workers, worktrees,
-validation, and collaboration orchestration are not implemented.
+mission/workspace/result identity checks.
+MissionWorkspaceManager now provides an injected-root, path-escape-safe
+`workspace_id/mission_id` directory boundary as the current worktree-equivalent
+isolation. WorkerResultValidator checks status/error and Mission, Workspace,
+and Artifact identities. ClaudeWorker and GeminiWorker share the existing
+provider abstraction, default to the offline ProviderFactory selection, and
+normalize missing usage plus sanitized timeout/provider failures.
+CollaborationOrchestrator completes the local end-to-end flow from Mission
+state transition through per-Worker locking, Context construction, Worker
+execution, validation, aggregate Mission outcome, and a safe workspace-scoped
+ExecutionHistory summary. It does not call external providers by default,
+create Git worktrees, interrupt a provider call in progress, seek human
+approval, commit, or push.
 
 ## Development stages
 

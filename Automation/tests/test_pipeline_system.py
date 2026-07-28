@@ -28,7 +28,10 @@ from core.history_analyzer import HistoryAnalyzer
 from core.history_pipeline import HistoryPipeline
 from core.music_pipeline import MusicPipeline
 from core.mission import Mission, MissionState
+from core.mission_workspace import MissionWorkspaceManager
 from core.collaboration_worker import BaseWorker, FunctionWorker
+from core.collaboration_orchestrator import CollaborationOrchestrator
+from core.provider_workers import ClaudeWorker, GeminiWorker
 from core.pipeline import AIPipeline
 from core.registry import PipelineRegistry
 from core.result import PipelineResult
@@ -40,6 +43,7 @@ from core.task_queue import TaskQueue
 from core.worker import TaskWorker
 from core.worker_context import ContextBuilder, WorkerContext
 from core.worker_result import WorkerResult
+from core.worker_result_validator import WorkerResultValidator
 from core.workspace_repository import FileWorkspaceRepository, InMemoryWorkspaceRepository
 from core.user_repository import FileUserRepository
 from core.workspace_membership import ADMIN, MEMBER, OWNER
@@ -108,6 +112,304 @@ class PipelineTestCase(unittest.TestCase):
 
 
 class TaskTests(unittest.TestCase):
+    def test_claude_and_gemini_workers_use_fake_provider_safely(self):
+        class FakeProvider:
+            name = "fake"
+
+            def generate(self, request):
+                return SimpleNamespace(
+                    provider=self.name,
+                    model=request.model or "fake-model",
+                    output_text=f"Completed {request.prompt}",
+                    usage=SimpleNamespace(
+                        input_tokens=2,
+                        output_tokens=3,
+                        total_tokens=5,
+                        estimated_cost_usd=0.0,
+                    ),
+                )
+
+        context = ContextBuilder().build(
+            Mission.create(
+                "Title", "private normalized objective", "user-1", "workspace-1"
+            )
+        )
+        results = [
+            ClaudeWorker(provider=FakeProvider()).execute(context),
+            GeminiWorker(provider=FakeProvider()).execute(context),
+        ]
+
+        self.assertEqual(["claude", "gemini"], [result.worker for result in results])
+        self.assertTrue(
+            all(result.status == PipelineStatus.SUCCESS for result in results)
+        )
+        self.assertTrue(all(result.usage["provider"] == "fake" for result in results))
+        self.assertNotIn("private normalized objective", str(results))
+
+    def test_provider_workers_handle_missing_usage_timeout_and_errors(self):
+        class MissingUsageProvider:
+            name = "fake"
+
+            def generate(self, request):
+                return SimpleNamespace(
+                    provider=self.name,
+                    model="fake-model",
+                    output_text="done",
+                    usage=None,
+                )
+
+        class TimeoutProvider:
+            name = "fake"
+
+            def generate(self, request):
+                raise TimeoutError("private request")
+
+        class ErrorProvider:
+            name = "fake"
+
+            def generate(self, request):
+                raise RuntimeError("api-key-private")
+
+        context = ContextBuilder().build(
+            Mission.create("Title", "Objective", "user-1", "workspace-1")
+        )
+        missing = ClaudeWorker(provider=MissingUsageProvider()).execute(context)
+        timed_out = ClaudeWorker(provider=TimeoutProvider()).execute(context)
+        failed = GeminiWorker(provider=ErrorProvider()).execute(context)
+
+        self.assertEqual(0, missing.usage["total_tokens"])
+        self.assertEqual(PipelineStatus.TIMED_OUT, timed_out.status)
+        self.assertEqual("ProviderError: TimeoutError", timed_out.error)
+        self.assertEqual(PipelineStatus.FAILED, failed.status)
+        self.assertEqual("ProviderError: RuntimeError", failed.error)
+        self.assertNotIn("api-key-private", str(failed.to_dict()))
+
+    def test_orchestrator_rejects_worker_without_mission_lock(self):
+        mission = Mission.create(
+            "Title", "Objective", "user-1", "workspace-1"
+        ).acquire_lock("other-worker")
+        worker = FunctionWorker(
+            "worker",
+            lambda context: WorkerResult.create(
+                PipelineStatus.SUCCESS, "worker", context
+            ),
+        )
+        orchestrator = CollaborationOrchestrator([worker])
+
+        result = orchestrator.run_worker(mission, worker)
+
+        self.assertEqual(PipelineStatus.FAILED, result.status)
+        self.assertEqual("LockError: MissionLockOwnershipError", result.error)
+
+    def test_orchestrator_runs_multiple_workers_and_records_history(self):
+        with tempfile.TemporaryDirectory() as directory:
+            history = ExecutionHistory(
+                repository=InMemoryExecutionHistoryRepository()
+            )
+            context_builder = ContextBuilder(MissionWorkspaceManager(directory))
+
+            def handler(worker_name):
+                return lambda context: WorkerResult.create(
+                    PipelineStatus.SUCCESS,
+                    worker_name,
+                    context,
+                    data={"workspace_path": context.workspace_path},
+                )
+
+            workers = [
+                FunctionWorker("worker-1", handler("worker-1")),
+                FunctionWorker("worker-2", handler("worker-2")),
+            ]
+            mission = Mission.create(
+                "Title", "Objective", "user-1", "workspace-1"
+            )
+            result = CollaborationOrchestrator(
+                workers,
+                context_builder=context_builder,
+                execution_history=history,
+            ).run(mission)
+
+            self.assertEqual(MissionState.COMPLETED, result.status)
+            self.assertEqual(2, len(result.worker_results))
+            self.assertTrue(
+                all(
+                    item["status"] == PipelineStatus.SUCCESS
+                    for item in result.worker_results
+                )
+            )
+            records = history.query(workspace_id="workspace-1")
+            self.assertEqual(1, len(records))
+            self.assertEqual("COLLABORATION", records[0]["task_type"])
+            self.assertNotIn("Objective", str(records[0]))
+
+    def test_orchestrator_marks_mission_failed_when_one_worker_fails(self):
+        context_worker = FunctionWorker(
+            "success",
+            lambda context: WorkerResult.create(
+                PipelineStatus.SUCCESS, "success", context
+            ),
+        )
+
+        def fail(_context):
+            raise RuntimeError("private prompt")
+
+        result = CollaborationOrchestrator(
+            [context_worker, FunctionWorker("failure", fail)]
+        ).run(Mission.create("Title", "Objective", "user-1", "workspace-1"))
+
+        self.assertEqual(MissionState.FAILED, result.status)
+        self.assertEqual(
+            [PipelineStatus.SUCCESS, PipelineStatus.FAILED],
+            [item["status"] for item in result.worker_results],
+        )
+        self.assertNotIn("private prompt", str(result.to_dict()))
+
+    def test_orchestrator_sanitizes_reported_worker_data_errors_and_paths(self):
+        def unsafe(context):
+            return WorkerResult.create(
+                PipelineStatus.FAILED,
+                "unsafe",
+                context,
+                data={
+                    "api_key": "private-key",
+                    "output": f"echo {context.objective}",
+                },
+                artifacts=[
+                    {
+                        "artifact_id": "artifact-1",
+                        "workspace_id": context.workspace_id,
+                        "path": "C:/Users/private/output.txt",
+                    }
+                ],
+                error="raw private prompt and personal information",
+            )
+
+        result = CollaborationOrchestrator(
+            [FunctionWorker("unsafe", unsafe)]
+        ).run(
+            Mission.create(
+                "Title", "private objective", "user-1", "workspace-1"
+            )
+        )
+        serialized = str(result.to_dict())
+
+        self.assertNotIn("private-key", serialized)
+        self.assertNotIn("private objective", serialized)
+        self.assertNotIn("C:/Users/private", serialized)
+        self.assertIn("WorkerError: ReportedFailure", serialized)
+
+    def test_collaboration_end_to_end_with_fake_provider_and_workspace(self):
+        class FakeProvider:
+            name = "fake"
+
+            def generate(self, request):
+                return SimpleNamespace(
+                    provider=self.name,
+                    model="fake-model",
+                    output_text="validated output",
+                    usage=None,
+                )
+
+        with tempfile.TemporaryDirectory() as directory:
+            mission = Mission.create(
+                "Create result",
+                "Produce a safe result",
+                "user-1",
+                "workspace-1",
+                metadata={"api_key": "never-expose", "priority": "high"},
+            )
+            result = CollaborationOrchestrator(
+                [
+                    ClaudeWorker(provider=FakeProvider()),
+                    GeminiWorker(provider=FakeProvider()),
+                ],
+                context_builder=ContextBuilder(MissionWorkspaceManager(directory)),
+                execution_history=ExecutionHistory(
+                    repository=InMemoryExecutionHistoryRepository()
+                ),
+            ).run(mission)
+
+            self.assertEqual(MissionState.COMPLETED, result.status)
+            self.assertEqual(MissionState.COMPLETED, result.mission["state"])
+            self.assertFalse(result.mission["locked_by"])
+            self.assertNotIn("never-expose", str(result.to_dict()))
+
+    def test_mission_workspaces_isolate_workspace_and_mission_files(self):
+        with tempfile.TemporaryDirectory() as directory:
+            manager = MissionWorkspaceManager(directory)
+            first = Mission.create("One", "Objective", "user-1", "workspace-1")
+            second = Mission.create("Two", "Objective", "user-1", "workspace-2")
+
+            first_workspace = manager.create(first)
+            second_workspace = manager.create(second)
+            first_file = manager.resolve_file(first_workspace, "result.txt")
+            second_file = manager.resolve_file(second_workspace, "result.txt")
+            first_file.write_text("first", encoding="utf-8")
+            second_file.write_text("second", encoding="utf-8")
+
+            self.assertNotEqual(first_workspace.path, second_workspace.path)
+            self.assertEqual("first", first_file.read_text(encoding="utf-8"))
+            self.assertEqual("second", second_file.read_text(encoding="utf-8"))
+
+    def test_mission_workspace_rejects_path_escape(self):
+        with tempfile.TemporaryDirectory() as directory:
+            manager = MissionWorkspaceManager(directory)
+            workspace = manager.create(
+                Mission.create("One", "Objective", "user-1", "workspace-1")
+            )
+            with self.assertRaisesRegex(ValueError, "escapes"):
+                manager.resolve_file(workspace, "../outside.txt")
+
+    def test_context_builder_includes_only_its_mission_workspace(self):
+        with tempfile.TemporaryDirectory() as directory:
+            manager = MissionWorkspaceManager(directory)
+            mission = Mission.create(
+                "One", "Objective", "user-1", "workspace-1"
+            )
+            context = ContextBuilder(manager).build(mission)
+
+            self.assertIn(mission.id, context.workspace_path)
+            self.assertIn("workspace-1", context.workspace_path)
+            self.assertTrue(Path(context.workspace_path).is_dir())
+
+    def test_worker_result_validator_accepts_normal_and_failed_results(self):
+        context = ContextBuilder().build(
+            Mission.create("Title", "Objective", "user-1", "workspace-1")
+        )
+        validator = WorkerResultValidator()
+        success = WorkerResult.create(
+            PipelineStatus.SUCCESS, "worker", context, data={"done": True}
+        )
+        failure = WorkerResult.create(
+            PipelineStatus.FAILED,
+            "worker",
+            context,
+            error="ProviderError: TimeoutError",
+        )
+
+        self.assertTrue(validator.validate(context, success).valid)
+        self.assertTrue(validator.validate(context, failure).valid)
+
+    def test_worker_result_validator_rejects_invalid_boundaries(self):
+        context = ContextBuilder().build(
+            Mission.create("Title", "Objective", "user-1", "workspace-1")
+        )
+        other_context = WorkerContext(
+            mission_id=context.mission_id,
+            workspace_id="workspace-2",
+            title=context.title,
+            objective=context.objective,
+            requested_by=context.requested_by,
+        )
+        result = WorkerResult.create(
+            PipelineStatus.SUCCESS, "worker", other_context
+        )
+
+        validation = WorkerResultValidator().validate(context, result)
+
+        self.assertFalse(validation.valid)
+        self.assertEqual("workspace_mismatch", validation.error)
+
     def test_context_builder_creates_workspace_scoped_safe_context(self):
         mission = Mission.create(
             "Release",

@@ -142,6 +142,52 @@ class ExecutionHistory:
 
         self.save()
 
+    def record_collaboration(self, mission, collaboration_result):
+        result = collaboration_result.to_dict()
+        worker_summaries = []
+        for worker_result in result.get("worker_results", []):
+            worker_summaries.append(
+                {
+                    "status": worker_result.get("status"),
+                    "worker": worker_result.get("worker"),
+                    "mission_id": worker_result.get("mission_id"),
+                    "workspace_id": worker_result.get("workspace_id"),
+                    "usage": worker_result.get("usage"),
+                    "artifacts": worker_result.get("artifacts", []),
+                    "error": worker_result.get("error"),
+                }
+            )
+        record = {
+            "task_id": mission.id,
+            "mission_id": mission.id,
+            "task": mission.title,
+            "parameters": {},
+            "workspace_id": mission.workspace_id,
+            "parent_task_id": None,
+            "retry_count": 0,
+            "max_retries": 0,
+            "timeout_seconds": None,
+            "last_error_type": None,
+            "status": result.get("status"),
+            "created_at": mission.created_at,
+            "queued_at": None,
+            "started_at": result.get("started_at"),
+            "completed_at": result.get("completed_at"),
+            "duration_seconds": self._duration_seconds(
+                result.get("started_at"), result.get("completed_at")
+            ),
+            "result": {"worker_results": worker_summaries},
+            "task_type": "COLLABORATION",
+            "pipeline": "Collaboration Orchestrator",
+        }
+        for index, existing_record in enumerate(self.records):
+            if existing_record.get("task_id") == mission.id:
+                self.records[index] = record
+                break
+        else:
+            self.records.append(record)
+        self.save()
+
 
     @staticmethod
     def _duration_seconds(started_at, completed_at):

@@ -25,6 +25,7 @@ class WorkerContext:
     objective: str
     requested_by: str
     metadata: dict[str, Any] = field(default_factory=dict)
+    workspace_path: str | None = None
 
     def __post_init__(self):
         for field_name in (
@@ -40,6 +41,10 @@ class WorkerContext:
             object.__setattr__(self, field_name, value.strip())
         if not isinstance(self.metadata, dict):
             raise ValueError("metadata must be a dictionary")
+        if self.workspace_path is not None and (
+            not isinstance(self.workspace_path, str) or not self.workspace_path.strip()
+        ):
+            raise ValueError("workspace_path must be a non-empty string or None")
         object.__setattr__(self, "metadata", dict(self.metadata))
 
     def to_dict(self):
@@ -48,6 +53,9 @@ class WorkerContext:
 
 class ContextBuilder:
     """Build the minimum safe, workspace-scoped context needed by a Worker."""
+
+    def __init__(self, workspace_manager=None):
+        self.workspace_manager = workspace_manager
 
     def build(self, mission):
         if not isinstance(mission, Mission):
@@ -61,6 +69,9 @@ class ContextBuilder:
                 and isinstance(value, (str, int, float, bool, type(None)))
             )
         }
+        workspace = (
+            self.workspace_manager.create(mission) if self.workspace_manager else None
+        )
         return WorkerContext(
             mission_id=mission.id,
             workspace_id=mission.workspace_id,
@@ -68,4 +79,5 @@ class ContextBuilder:
             objective=mission.objective,
             requested_by=mission.requested_by,
             metadata=safe_metadata,
+            workspace_path=workspace.path if workspace else None,
         )
