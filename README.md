@@ -78,3 +78,30 @@ Run it from the Automation directory:
 cd Automation
 python -m unittest discover -s tests -v
 ```
+
+## Offline creative demo
+
+Run the first integrated creative workflow with deterministic Fake providers:
+
+```powershell
+cd Automation
+python main.py creative-demo
+```
+
+The command creates lyrics and a content plan, then runs the existing Fake
+music, image, video, and YouTube stages. It prints only safe IDs, stage status,
+title, and available usage fields. Local state is written beneath the
+git-ignored `Automation/logs/creative-demo` directory.
+
+An Ollama text model can be selected only explicitly:
+
+```powershell
+$env:AICOMPANY_TEXT_MODEL = "your-installed-model"
+python main.py creative-demo --local-text
+```
+
+The endpoint must be loopback and Ollama must already be installed and running.
+There is no automatic download, account login, API key, paid-provider fallback,
+or external media call. The verified development environment did not contain
+Ollama, so the local adapter is covered with an injected Fake transport rather
+than a claimed live model result.

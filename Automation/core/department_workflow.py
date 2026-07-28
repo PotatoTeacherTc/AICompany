@@ -322,15 +322,21 @@ class DepartmentWorkflow:
             if isinstance(data, dict) and isinstance(data.get("provider_usage"), dict)
             else None
         )
+        safe_data = {
+            "provider_usage": _usage(usage),
+        } if usage is not None else {}
+        if isinstance(data, dict):
+            if isinstance(data.get("title"), str):
+                safe_data["title"] = data["title"][:200]
+            if isinstance(data.get("stages"), dict):
+                safe_data["stages"] = _safe_stages(data["stages"])
         return {
             "status": status,
             "pipeline": value.get("pipeline") or "Injected Pipeline",
             "task": "Department workflow request",
             "task_id": task.id,
             "task_type": task.task_type,
-            "data": {
-                "provider_usage": _usage(usage),
-            } if usage is not None else {},
+            "data": safe_data,
             "artifacts": [
                 {
                     key: item[key] for key in (
@@ -395,6 +401,14 @@ class DepartmentWorkflow:
                     "status": pipeline.get("status"),
                     "pipeline": pipeline.get("pipeline"),
                     "usage": DepartmentWorkflow._usage(pipeline),
+                    "title": (
+                        pipeline.get("data", {}).get("title")
+                        if isinstance(pipeline.get("data"), dict) else None
+                    ),
+                    "stages": (
+                        pipeline.get("data", {}).get("stages")
+                        if isinstance(pipeline.get("data"), dict) else None
+                    ),
                 },
                 "retry": retry,
             },
@@ -462,3 +476,19 @@ def _safe_error(value):
     ):
         return "WorkflowError: ReportedFailure"
     return f"{prefix}: {category}"
+
+
+def _safe_stages(stages):
+    result = {}
+    for name, value in stages.items():
+        if not isinstance(name, str) or not isinstance(value, dict):
+            continue
+        result[name] = {
+            key: value[key] for key in (
+                "status", "provider", "model", "generation_mode",
+                "artifact_ids",
+            ) if key in value
+        }
+        if value.get("error") is not None:
+            result[name]["error"] = _safe_error(value["error"])
+    return result

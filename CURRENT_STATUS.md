@@ -321,6 +321,18 @@ not inferred from a missing historical mission log.
   failures do not overwrite a successful result. Monitor can expose optional
   Department status snapshots. Missing usage remains missing and no request
   text, raw provider error, or path is returned.
+- Post-Mission-100 creative validation: provider-neutral text generation now
+  covers lyrics, content plans, video scripts, and title/description contracts.
+  FakeTextProvider is the default. Ollama is an explicit loopback-only local
+  adapter with injected transport tests; no installed Ollama runtime was found,
+  so no live local-model call is claimed. TextCreationPipeline persists safe
+  UTF-8 artifacts and integrates PipelineResult, Usage, ArtifactManager,
+  ExecutionHistory, and structured Logging. HybridCreativeDemo routes a single
+  Mission through the Content Department and combines text output with the
+  existing Fake music/image/video/YouTube flow. Echoed request text, sensitive
+  metadata, absolute paths, paid usage, raw errors, and provider output are not
+  exposed by the result contract. This increment has no Mission number and does
+  not begin Mission 101.
 
 ## Implemented pipelines
 
@@ -337,14 +349,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **203 tests**. Its expected command is:
+The current suite contains **222 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 100 verification result: **203 passed, 0 failed**.
+Current verification result: **222 passed, 0 failed**.
 
 ## Not implemented
 

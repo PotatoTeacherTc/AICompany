@@ -1,4 +1,10 @@
+import json
+import os
+from pathlib import Path
+import sys
+
 from agent.manager import Manager
+from application.creative_demo import build_creative_demo
 from application.automation_service import AutomationService
 from core.artifact_manager import ArtifactManager
 from core.base_pipeline import BasePipeline
@@ -107,5 +113,53 @@ def run(task_texts=None, history=None, registry=None, artifact_manager=None):
     return completed_tasks
 
 
+def run_creative_demo(request=None, use_local_text=False, root=None):
+    request = request or (
+        "이별 후 다시 일어서는 내용의 한국어 발라드 곡과 "
+        "유튜브 영상 구성을 준비해."
+    )
+    root = Path(root or Path(__file__).parent / "logs" / "creative-demo")
+    environment = None
+    if use_local_text:
+        environment = dict(os.environ)
+        environment["AICOMPANY_TEXT_PROVIDER"] = "ollama"
+    demo = build_creative_demo(root, text_environment=environment)
+    result = demo.execute(request, "default")
+    data = result.get("data") or {}
+    pipeline = data.get("pipeline") or {}
+    selection = data.get("selection") or {}
+    summary = {
+        "workspace_id": data.get("workspace_id"),
+        "mission_id": data.get("mission_id"),
+        "department_id": selection.get("department_id"),
+        "status": result.get("status"),
+        "title": pipeline.get("title"),
+        "artifact_ids": [
+            item.get("artifact_id") for item in result.get("artifacts", [])
+        ],
+        "stages": {
+            name: value.get("status")
+            for name, value in (pipeline.get("stages") or {}).items()
+        },
+        "usage": pipeline.get("usage"),
+        "text_provider_mode": (
+            "local-ollama" if use_local_text else "fake-offline"
+        ),
+        "error": result.get("error"),
+    }
+    print(json.dumps(summary, ensure_ascii=False, indent=2))
+    return result
+
+
 if __name__ == "__main__":
-    run()
+    if len(sys.argv) > 1 and sys.argv[1] == "creative-demo":
+        local = "--local-text" in sys.argv[2:]
+        request_parts = [
+            item for item in sys.argv[2:] if item != "--local-text"
+        ]
+        run_creative_demo(
+            " ".join(request_parts) if request_parts else None,
+            use_local_text=local,
+        )
+    else:
+        run()

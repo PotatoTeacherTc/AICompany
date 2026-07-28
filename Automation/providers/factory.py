@@ -9,6 +9,7 @@ from providers.content_media import (
     FakeVideoProvider,
     FakeYouTubeProvider,
 )
+from providers.text import FakeTextProvider, OllamaTextProvider
 from core.structured_logging import LogLevel, safe_log
 
 
@@ -69,6 +70,33 @@ class ProviderFactory:
         return cls._offline_selection(
             environment, "YOUTUBE", "fake", FakeYouTubeProvider
         )
+
+    @classmethod
+    def text_from_environment(cls, environment=None, transport=None):
+        environment = os.environ if environment is None else environment
+        provider_name = environment.get(
+            "AICOMPANY_TEXT_PROVIDER", "fake"
+        ).lower()
+        timeout = cls._timeout(
+            environment.get("AICOMPANY_TEXT_PROVIDER_TIMEOUT", "30")
+        )
+        model = environment.get("AICOMPANY_TEXT_MODEL")
+        if provider_name == "fake":
+            provider = FakeTextProvider()
+            model = model or "fake-creative-v1"
+        elif provider_name == "ollama":
+            if not model:
+                raise ValueError("AICOMPANY_TEXT_MODEL is required for Ollama")
+            provider = OllamaTextProvider(
+                environment.get(
+                    "AICOMPANY_OLLAMA_ENDPOINT", "http://127.0.0.1:11434"
+                ),
+                transport=transport,
+            )
+        else:
+            raise ValueError("Unsupported or disabled text provider")
+        provider = cls.ensure_provider_allowed(provider, environment)
+        return ProviderSelection(provider, model, timeout)
 
     @classmethod
     def ensure_provider_allowed(

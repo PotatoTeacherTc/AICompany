@@ -221,6 +221,21 @@ offline and deterministic; it performs no LLM, provider, network, OAuth, or
 paid operation. A general desktop agent, dynamic organization design, HR
 system, Web UI, and Mission 101+ SaaS backend remain outside this baseline.
 
+The first post-Mission-100 creative validation is implemented without assigning
+an undocumented Mission number. A provider-neutral text contract supports
+lyrics, content plans, video scripts, and title/description output. Its safe
+default is deterministic Fake generation; an Ollama adapter is available only
+by explicit local configuration, requires a model name, accepts loopback
+endpoints only, and was contract-tested through an injected transport because
+Ollama is not installed in the verified environment. TextCreationPipeline
+validates JSON schemas, rejects echoed request text, sensitive keys, absolute
+paths, and non-zero cost, persists UTF-8 text artifacts through the existing
+ArtifactManager, and returns PipelineResult with optional UsageMetadata. The
+HybridCreativeDemo connects one Mission and Content Department workflow to
+lyrics/content planning plus the existing Fake music/image/video/YouTube flow.
+It is runnable from the CLI, restart-persists safe artifact metadata, and makes
+no external or paid call by default. Mission 101 Backend remains unstarted.
+
 ## Development stages
 
 | Stage | Goal | Required capabilities | Completion condition |
