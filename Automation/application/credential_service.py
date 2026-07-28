@@ -17,4 +17,11 @@ class CredentialService:
 
     def verify_password(self, user_id, password):
         credential = self.repository.get(user_id)
-        return bool(credential and self.password_hasher.verify(password, credential.get("password_hash")))
+        if not credential:
+            return False
+        try:
+            return bool(
+                self.password_hasher.verify(password, credential.get("password_hash"))
+            )
+        except Exception:
+            return False

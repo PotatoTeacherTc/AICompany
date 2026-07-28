@@ -714,7 +714,8 @@ class TaskTests(unittest.TestCase):
             self.assertTrue(rotated)
             self.assertNotIn(token, Path(directory,'sessions.json').read_text())
             self.assertTrue(sessions.revoke(rotated[0]['session_id'],'user'))
-            self.assertEqual(2,len(sessions.list('user')))
+            self.assertEqual(1,len(sessions.list('user')))
+            self.assertEqual(2, sessions.list('user')[0]['revision'])
     def test_login_service_issues_minimal_token_and_rejects_bad_credentials(self):
         users = UserService()
         user = users.create("login@example.com")

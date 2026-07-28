@@ -8,7 +8,7 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 103
+## Current baseline: Mission 104
 
 The verified implementation currently provides a Task/Queue/Worker execution
 path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,
@@ -272,6 +272,25 @@ authorized access, new Membership operations, and new Task submission without
 deleting existing data or exposing tenant existence beyond the established
 policy. Reactivation, deletion, transfer, quotas, and Mission 104 Auth changes
 remain outside this scope.
+
+Mission 104 is the Phase D Auth boundary. It hardens the existing Mission
+63-66 credential, login, signed-access-token, refresh-session, and audit
+implementation instead of duplicating it. Access tokens now validate an
+internal version, access-token type, issuer, audience, issued time, expiry,
+signature, subject, and optional session identifier. The payload contains no
+email, role, Workspace, credential, or other profile data. Login and every
+authenticated request re-check the current User; session-backed tokens also
+re-check the current persisted session.
+
+Refresh tokens remain opaque random values and only SHA-256 digests are stored.
+Rotation replaces the digest within the same session using a revision
+compare-and-save, so concurrent reuse has at most one winner and the previous
+token is rejected. Logout is owner-scoped and idempotent; logout-all revokes
+all current User sessions. User self-deactivation revokes all sessions.
+In-memory and JSON-file repositories restore revisions, expiry, and revocation
+state and safely ignore malformed records. Rate-limit infrastructure, email
+verification, OAuth, MFA, administrative User management, and Mission 105 RBAC
+changes remain unimplemented.
 
 ## Development stages
 

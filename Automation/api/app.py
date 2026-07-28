@@ -223,6 +223,8 @@ def create_app(
             return error_response(403, "permission_denied", "Permission denied")
         try:
             result = app.state.user_service.deactivate(user_id)
+            if app.state.session_service:
+                app.state.session_service.revoke_all(user_id)
             app.state.audit_service.record(
                 user_id=user_id,
                 action="USER_DEACTIVATED",
@@ -261,6 +263,23 @@ def create_app(
             from api.errors import error_response
             return error_response(404, "session_not_found", "Session not found")
         app.state.audit_service.record(user_id=user['user_id'],action="LOGOUT",resource_type="session",resource_id=payload.get("session_id",''))
+
+    @app.post("/auth/logout-all")
+    def logout_all(authorization: str | None = Header(default=None)):
+        user = _current_user(app, authorization)
+        if user is None:
+            return _unauthorized()
+        revoked = (
+            app.state.session_service.revoke_all(user["user_id"])
+            if app.state.session_service
+            else 0
+        )
+        app.state.audit_service.record(
+            user_id=user["user_id"],
+            action="LOGOUT_ALL",
+            resource_type="session",
+        )
+        return {"revoked_sessions": revoked}
 
     @app.get("/auth/sessions")
     def list_sessions(authorization: str | None = Header(default=None)):

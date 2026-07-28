@@ -184,5 +184,27 @@ authentication is enabled. Stale revisions return 409. An INACTIVE Workspace
 retains its records but rejects authenticated access, Membership operations,
 and new Task submission. File-backed Workspace repositories restore status and
 revision after restart, while legacy records default safely to ACTIVE revision
-0. Reactivation policy, destructive deletion, ownership transfer, quotas, and
-Mission 104 Auth changes are not included.
+0. Reactivation policy, destructive deletion, ownership transfer, and quotas
+are not included.
+
+## Authentication lifecycle
+
+Mission 104 hardens the existing local authentication services. Signed access
+tokens contain only a subject, timestamps, access-token type, schema version,
+issuer/audience, and an optional session ID. The current ACTIVE User and
+persisted session are checked on use; roles and Workspace state are not cached
+inside the token.
+
+Refresh tokens are returned only from login/refresh responses. Persistence
+stores only their SHA-256 digests. Rotation keeps the session ID, increments a
+revision, rejects reuse, and permits only one concurrent winner. Logout is
+idempotent and User-scoped, while `POST /auth/logout-all` revokes every session
+for the authenticated User. Self-deactivation also revokes all sessions.
+In-memory and JSON-file repositories support restart recovery and ignore
+malformed session records.
+
+Secrets must be injected for real deployments; no secret, password, hash,
+access token, refresh token, Authorization header, or Cookie is logged or
+stored in audit metadata. Rate-limit infrastructure, email verification,
+OAuth, MFA, administrative User management, and Mission 105 RBAC work remain
+future scope.

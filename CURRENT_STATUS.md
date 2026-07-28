@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 103**.
+Current mission baseline: **Mission 104**.
 
 ## Verified completed capabilities
 
@@ -368,7 +368,21 @@ not inferred from a missing historical mission log.
   updates require `expected_revision`, and restart restores status/revision.
   Inactive Workspaces reject authenticated access, Membership operations, and
   Task creation. Existing data is preserved; reactivation, deletion, transfer,
-  quotas, and Mission 104 Auth work are not implemented.
+  quotas were not implemented; Auth remained the next Mission at that
+  checkpoint.
+- Mission 104: Existing credential, LoginService, signed access-token,
+  SessionService, audit, and FastAPI Auth routes were reused and hardened.
+  Access tokens now validate version/type/issuer/audience/issued-at/expiry and
+  optionally bind to a persisted session without embedding email, Workspace,
+  role, or credential data. Refresh rotation keeps one session identity,
+  changes only the stored digest, and uses repository revision comparison so
+  concurrent reuse yields one winner. Logout is idempotent and User-scoped;
+  `POST /auth/logout-all` revokes all User sessions, and self-deactivation
+  revokes sessions immediately. JSON restart restores rotation and revoke
+  state while malformed records are ignored. Six focused tests plus the full
+  241-test suite pass offline. Rate limiting, OAuth, MFA, email verification,
+  administrative User management, and Mission 105 authorization changes are
+  not implemented.
 
 ## Implemented pipelines
 
