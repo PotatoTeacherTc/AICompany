@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 101**.
+Current mission baseline: **Mission 102**.
 
 ## Verified completed capabilities
 
@@ -352,6 +352,15 @@ not inferred from a missing historical mission log.
   Workspace, User, Auth, membership, and audit routes remain unchanged and are
   not reclassified as Mission 102+ work. HTTP verification uses FastAPI
   TestClient because no ASGI server runtime is installed.
+- Mission 102: The existing User domain is extended only with the missing
+  ACTIVE/INACTIVE lifecycle contract. New and legacy records normalize through
+  UserService, deactivation persists across FileUserRepository restart, and
+  inactive Users cannot log in, retain current-user authorization, or receive
+  new Workspace memberships. Authenticated Users may deactivate only
+  themselves through the Backend API. Existing creation, normalized email,
+  duplicate protection, credential separation, login, and User endpoints came
+  from earlier Missions and were not recreated. Reactivation, administrator
+  User management, email verification, and expanded PII remain unimplemented.
 
 ## Implemented pipelines
 
@@ -368,14 +377,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **227 tests**. Its expected command is:
+The current suite contains **231 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Current verification result: **227 passed, 0 failed**.
+Current verification result: **231 passed, 0 failed**.
 
 ## Not implemented
 

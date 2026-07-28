@@ -175,6 +175,32 @@ def create_app(
             return error_response(404, "user_not_found", "User not found")
         return user
 
+    @app.patch("/users/{user_id}/deactivate")
+    def deactivate_user(
+        user_id: str,
+        authorization: str | None = Header(default=None),
+    ):
+        current = _current_user(app, authorization)
+        if current is None:
+            return _unauthorized()
+        if current["user_id"] != user_id:
+            from api.errors import error_response
+
+            return error_response(403, "permission_denied", "Permission denied")
+        try:
+            result = app.state.user_service.deactivate(user_id)
+            app.state.audit_service.record(
+                user_id=user_id,
+                action="USER_DEACTIVATED",
+                resource_type="user",
+                resource_id=user_id,
+            )
+            return result
+        except KeyError:
+            from api.errors import error_response
+
+            return error_response(404, "user_not_found", "User not found")
+
     @app.post("/auth/login")
     def login(payload: dict):
         try:

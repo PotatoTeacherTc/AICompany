@@ -8,7 +8,7 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 101
+## Current baseline: Mission 102
 
 The verified implementation currently provides a Task/Queue/Worker execution
 path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,
@@ -247,6 +247,19 @@ headers, request bodies, or exception messages. `/health` now uses this service
 while all prior routes remain backward compatible. FastAPI TestClient is the
 verified HTTP smoke boundary; no ASGI server package, external service, network
 call, new authentication claim, or Mission 102+ capability is introduced.
+
+Mission 102 is the Phase D User boundary. User creation, normalized-email
+deduplication, lookup, file persistence, credentials, login, and HTTP routes
+already existed from Missions 50-69 and were not reimplemented. The actual gap
+was lifecycle state: User records now carry ACTIVE/INACTIVE status and an
+updated timestamp, legacy persisted records safely default to ACTIVE, and
+deactivation survives file-repository restart. Inactive Users cannot log in,
+refresh/current-user authorization, or receive new Workspace memberships.
+`PATCH /users/{user_id}/deactivate` permits authenticated self-deactivation
+only; another User receives a safe 403. Passwords, hashes, sessions, tokens,
+headers, raw errors, and paths remain outside User responses. Administrative
+reactivation/deactivation, email verification, profile/PII expansion, and
+Mission 103 Workspace changes are not included.
 
 ## Development stages
 

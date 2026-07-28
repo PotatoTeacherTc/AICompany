@@ -147,3 +147,25 @@ remain available through the same app. No ASGI server runtime is installed or
 selected, so a localhost production-server command is not claimed. Media
 providers remain Fake, paid providers remain disabled, and Mission 102+ is not
 part of this foundation.
+
+## User lifecycle
+
+Mission 102 adds lifecycle state to the existing User implementation rather
+than replacing its repositories, credentials, login, or API:
+
+- New and legacy Users are normalized to `ACTIVE`.
+- Self-deactivation changes the state to `INACTIVE` and persists it locally.
+- Inactive Users cannot log in or receive a new Workspace membership.
+- Passwords, hashes, access/refresh tokens, Authorization, and Cookie values
+  are never returned in User data.
+
+Authenticated self-deactivation uses:
+
+```text
+PATCH /users/{user_id}/deactivate
+```
+
+The endpoint does not trust a body-supplied User ID and returns 403 when the
+authenticated principal targets another User. Administrative lifecycle
+management, reactivation, and email verification remain future work. Mission
+103 Workspace behavior is unchanged.

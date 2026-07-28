@@ -774,7 +774,10 @@ class TaskTests(unittest.TestCase):
             reloaded = UserService(FileUserRepository(repository_file)).get(created["user_id"])
 
         self.assertEqual(created, reloaded)
-        self.assertEqual({"user_id", "email", "created_at"}, set(reloaded))
+        self.assertEqual(
+            {"user_id", "email", "created_at", "status", "updated_at"},
+            set(reloaded),
+        )
 
     def test_workspace_membership_roles_and_last_owner_protection(self):
         users = UserService()
