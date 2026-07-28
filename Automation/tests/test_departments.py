@@ -6,6 +6,7 @@ from pathlib import Path
 from core.collaboration_worker import FunctionWorker
 from core.department import DepartmentManager, WorkerDirectory
 from core.persistence import InMemoryStateRepository, JsonStateRepository
+from core.monitor import WorkspaceMonitor
 from core.status import PipelineStatus
 from core.structured_logging import InMemoryLogger
 from core.worker_result import WorkerResult
@@ -204,6 +205,16 @@ class DepartmentTests(unittest.TestCase):
         )
         self.assertEqual("research", department.department_id)
         self.assertIsNotNone(manager.get("research", "workspace-a"))
+
+    def test_monitor_reads_department_status_without_duplicate_storage(self):
+        self.create()
+        monitor = WorkspaceMonitor(
+            None, None, None, None, None, department_manager=self.manager
+        )
+        snapshot = monitor.departments("workspace-a")[0]
+        self.assertEqual("DEPARTMENT", snapshot["entity_type"])
+        self.assertEqual("ENABLED", snapshot["status"])
+        self.assertEqual(1, snapshot["summary"]["worker_count"])
 
 
 if __name__ == "__main__":

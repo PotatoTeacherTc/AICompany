@@ -8,7 +8,7 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 99
+## Current baseline: Mission 100
 
 The verified implementation currently provides a Task/Queue/Worker execution
 path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,
@@ -201,6 +201,25 @@ Workers exist, so no fictional completed capability is created. Sensitive
 text, paths, duplicate/foreign Workers, unsupported task types, invalid leads,
 and stale revisions are rejected. Mission 100 workflow selection and execution
 remain unimplemented at this checkpoint.
+Mission 100 is the roadmap's Personal Operating System checkpoint, but no
+broader Personal OS completion contract is defined in the repository. Its
+verified scope is therefore the requested Department Workflow Integration:
+DepartmentSelector deterministically chooses an explicit or task-type-matched
+enabled Department with available same-Workspace Workers, placing the lead
+first and returning only a safe selection reason. DepartmentWorkflow composes
+those existing Worker instances through CollaborationOrchestrator, then calls
+an injected Pipeline executor and reuses RetryExecutor, WorkspaceSettings
+RetryPolicy, ExecutionHistory, structured Logging, UsageEngine, PipelineResult,
+and safe Artifact metadata. Worker/collaboration failure stops the Pipeline;
+transient Pipeline failure can recover through the existing Retry contract;
+history, logging, and usage recording failures are isolated from a successful
+core result. Workspace mismatch, missing/disabled Departments, missing Workers,
+invalid results, foreign/path-bearing artifacts, raw errors, and absent usage
+are handled safely. WorkspaceMonitor optionally exposes Department
+enabled/disabled snapshots without adding storage. Selection is entirely
+offline and deterministic; it performs no LLM, provider, network, OAuth, or
+paid operation. A general desktop agent, dynamic organization design, HR
+system, Web UI, and Mission 101+ SaaS backend remain outside this baseline.
 
 ## Development stages
 

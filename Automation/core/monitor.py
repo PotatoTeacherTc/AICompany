@@ -40,12 +40,14 @@ class WorkspaceMonitor:
         scheduler,
         artifact_manager,
         execution_history,
+        department_manager=None,
     ):
         self.state_repository = state_repository
         self.job_queue = job_queue
         self.scheduler = scheduler
         self.artifact_manager = artifact_manager
         self.execution_history = execution_history
+        self.department_manager = department_manager
 
     def workspace_summary(self, workspace_id, history_limit=10):
         try:
@@ -58,6 +60,7 @@ class WorkspaceMonitor:
             batches = self.batches(workspace_id)
             artifacts = self.artifacts(workspace_id)
             history = self.history(workspace_id, limit=history_limit)
+            departments = self.departments(workspace_id)
             retry_waiting = sum(
                 1 for job in self.job_queue.list(workspace_id)
                 if (job.retry_state or {}).get("retryable")
@@ -91,6 +94,7 @@ class WorkspaceMonitor:
                     "missing_artifacts": missing,
                     "retry_waiting": retry_waiting,
                     "history": len(history),
+                    "departments": len(departments),
                 },
                 "usage": self._aggregate_usage(history),
                 "entities": {
@@ -99,6 +103,7 @@ class WorkspaceMonitor:
                     "batches": batches,
                     "artifacts": artifacts,
                     "history": history,
+                    "departments": departments,
                 },
             }
         except Exception as error:
@@ -217,6 +222,29 @@ class WorkspaceMonitor:
                     "artifact_type": artifact.get("artifact_type"),
                     "filename": artifact.get("filename"),
                     "internal_ref": artifact.get("internal_ref"),
+                },
+            ).to_dict())
+        return values
+
+    def departments(self, workspace_id):
+        self._validate_workspace(workspace_id)
+        if self.department_manager is None:
+            return []
+        values = []
+        for department in self.department_manager.list(workspace_id):
+            values.append(Snapshot(
+                workspace_id,
+                "DEPARTMENT",
+                department.department_id,
+                "ENABLED" if department.enabled else "DISABLED",
+                department.updated_at,
+                summary={
+                    "department_type": department.department_type,
+                    "worker_count": len(department.worker_ids),
+                    "supported_task_types": list(
+                        department.supported_task_types
+                    ),
+                    "revision": department.revision,
                 },
             ).to_dict())
         return values

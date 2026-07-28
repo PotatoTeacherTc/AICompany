@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 99**.
+Current mission baseline: **Mission 100**.
 
 ## Verified completed capabilities
 
@@ -309,6 +309,18 @@ not inferred from a missing historical mission log.
   departments are created only where real registered Workers and task types
   match. Cross-Workspace, duplicate, stale, sensitive, path-like, and corrupt
   data are safely rejected or ignored.
+- Mission 100: The roadmap Personal Operating System checkpoint is implemented
+  only to its defined Department Workflow Integration scope. DepartmentSelector
+  uses deterministic explicit/task-type rules and excludes disabled, empty,
+  missing-Worker, unsupported, or foreign-Workspace Departments.
+  DepartmentWorkflow orders the lead first, composes existing Workers through
+  CollaborationOrchestrator, invokes an injected Pipeline executor, and reuses
+  WorkspaceSettings RetryPolicy, ExecutionHistory, Logging, UsageEngine,
+  PipelineResult, and safe Artifact contracts. Worker failure stops Pipeline
+  execution; transient Pipeline failures may recover; History/Logger/Usage
+  failures do not overwrite a successful result. Monitor can expose optional
+  Department status snapshots. Missing usage remains missing and no request
+  text, raw provider error, or path is returned.
 
 ## Implemented pipelines
 
@@ -325,14 +337,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **191 tests**. Its expected command is:
+The current suite contains **203 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 99 verification result: **191 passed, 0 failed**.
+Mission 100 verification result: **203 passed, 0 failed**.
 
 ## Not implemented
 
@@ -353,11 +365,12 @@ Mission 99 verification result: **191 passed, 0 failed**.
 - Real image/video providers, YouTube OAuth, and real YouTube upload. Paid
   providers remain disabled and no content-generation network call is made.
 - Distributed locking, OS cron, Celery/Redis/message-broker infrastructure,
-  external databases/cloud storage, and Mission 100+ product/SaaS services.
+  external databases/cloud storage, and Mission 101+ Backend/SaaS services.
 - Web Dashboard, external APM/Prometheus/Grafana/Sentry integrations,
   distributed monitoring, real-time WebSocket updates, remote log shipping,
   distributed tracing, log retention/rotation, model pricing, credit/billing
-  ledgers and Mission 100 Department Workflow Integration.
+  ledgers, a general desktop/OS agent, dynamic LLM organization design, HR
+  workflows, and Mission 101+ Backend expansion.
 - A default registered NOT_IMPLEMENTED pipeline is not present; `StubPipeline`
   remains available for future unavailable capabilities.
 
