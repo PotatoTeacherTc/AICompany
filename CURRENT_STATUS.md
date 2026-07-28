@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 71**.
+Current mission baseline: **Mission 74**.
 
 ## Verified completed capabilities
 
@@ -172,6 +172,17 @@ not inferred from a missing historical mission log.
   for that owner, and reject acquisition or release by another owner without
   exposing submitted identities. Operations return new Mission values rather
   than mutating the frozen contract.
+- Mission 72: ContextBuilder derives a serializable WorkerContext from the
+  Mission contract, preserving mission and workspace identity while excluding
+  credential/token/prompt keys, nested values, and other unsafe metadata.
+- Mission 73: WorkerResult provides a timezone-stamped, workspace-scoped
+  terminal result contract. It reuses PipelineStatus values, the established
+  provider usage fields, and artifact dictionaries without changing
+  PipelineResult or ExecutionHistory.
+- Mission 74: BaseWorker defines the collaboration worker interface.
+  FunctionWorker is an injected local/fake implementation that enforces
+  WorkerResult worker, Mission, and Workspace identities and converts handler
+  exceptions to sanitized type-only FAILED results.
 
 ## Implemented pipelines
 
@@ -186,14 +197,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **94 tests**. Its expected command is:
+The current suite contains **100 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 71 verification result: **94 passed, 0 failed**.
+Mission 72-74 verification result: **100 passed, 0 failed**.
 
 ## Not implemented
 
@@ -207,8 +218,8 @@ Mission 71 verification result: **94 passed, 0 failed**.
 - Passwords, authentication tokens, login, and request authorization. The User domain
   deliberately contains no credential or secret fields.
 - UI and interactive goal-submission layer.
-- Repository-backed/distributed Mission locking, worker assignment, context
-  building, validation, and collaboration orchestration.
+- Repository-backed/distributed Mission locking, worktree isolation,
+  validation, provider-specific workers, and collaboration orchestration.
 - A default registered NOT_IMPLEMENTED pipeline is not present; `StubPipeline`
   remains available for future unavailable capabilities.
 

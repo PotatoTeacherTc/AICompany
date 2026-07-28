@@ -8,7 +8,7 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 71
+## Current baseline: Mission 74
 
 The verified implementation currently provides a Task/Queue/Worker execution
 path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,
@@ -71,8 +71,14 @@ for representing a requested unit of work with explicit requester and
 workspace ownership. Missions now follow validated PENDING, IN_PROGRESS, and
 terminal state transitions and support an exclusive, owner-checked,
 timezone-stamped collaboration lock. These immutable contract operations do
-not yet provide repository-backed distributed locking, worker execution,
-context building, or collaboration orchestration.
+not yet provide repository-backed distributed locking. A ContextBuilder now
+derives a minimum workspace-scoped WorkerContext from Mission while excluding
+sensitive and non-scalar metadata. WorkerResult standardizes terminal worker
+outcomes with existing PipelineStatus values, provider usage fields, and
+artifact metadata. BaseWorker and the injected FunctionWorker establish a
+testable worker boundary with sanitized handler failures and strict
+mission/workspace/result identity checks. Provider-specific workers, worktrees,
+validation, and collaboration orchestration are not implemented.
 
 ## Development stages
 

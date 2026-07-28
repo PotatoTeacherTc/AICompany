@@ -28,6 +28,7 @@ from core.history_analyzer import HistoryAnalyzer
 from core.history_pipeline import HistoryPipeline
 from core.music_pipeline import MusicPipeline
 from core.mission import Mission, MissionState
+from core.collaboration_worker import BaseWorker, FunctionWorker
 from core.pipeline import AIPipeline
 from core.registry import PipelineRegistry
 from core.result import PipelineResult
@@ -37,6 +38,8 @@ from core.stub_pipelines import StubPipeline
 from core.task import Task
 from core.task_queue import TaskQueue
 from core.worker import TaskWorker
+from core.worker_context import ContextBuilder, WorkerContext
+from core.worker_result import WorkerResult
 from core.workspace_repository import FileWorkspaceRepository, InMemoryWorkspaceRepository
 from core.user_repository import FileUserRepository
 from core.workspace_membership import ADMIN, MEMBER, OWNER
@@ -105,6 +108,122 @@ class PipelineTestCase(unittest.TestCase):
 
 
 class TaskTests(unittest.TestCase):
+    def test_context_builder_creates_workspace_scoped_safe_context(self):
+        mission = Mission.create(
+            "Release",
+            "Prepare the release candidate",
+            "user-1",
+            "workspace-1",
+            metadata={
+                "priority": "high",
+                "api_key": "secret-value",
+                "prompt": "raw private prompt",
+                "nested": {"unsafe": True},
+            },
+        )
+
+        context = ContextBuilder().build(mission)
+
+        self.assertIsInstance(context, WorkerContext)
+        self.assertEqual(mission.id, context.mission_id)
+        self.assertEqual("workspace-1", context.workspace_id)
+        self.assertEqual({"priority": "high"}, context.metadata)
+        self.assertNotIn("secret-value", str(context.to_dict()))
+        self.assertNotIn("raw private prompt", str(context.to_dict()))
+
+    def test_context_builder_rejects_non_mission_without_echoing_input(self):
+        sensitive = "raw-private-prompt"
+        with self.assertRaises(ValueError) as raised:
+            ContextBuilder().build(sensitive)
+        self.assertNotIn(sensitive, str(raised.exception))
+
+    def test_worker_result_reuses_status_usage_and_workspace_contracts(self):
+        context = ContextBuilder().build(
+            Mission.create("Title", "Objective", "user-1", "workspace-1")
+        )
+        usage = {
+            "provider": "mock",
+            "model": "mock-default",
+            "input_tokens": 2,
+            "output_tokens": 3,
+            "total_tokens": 5,
+            "estimated_cost_usd": 0.0,
+        }
+        result = WorkerResult.create(
+            PipelineStatus.SUCCESS,
+            "fake-worker",
+            context,
+            data={"summary": "done"},
+            artifacts=[{"artifact_id": "artifact-1", "workspace_id": "workspace-1"}],
+            usage=usage,
+        )
+
+        serialized = result.to_dict()
+        self.assertEqual(PipelineStatus.SUCCESS, serialized["status"])
+        self.assertEqual(context.mission_id, serialized["mission_id"])
+        self.assertEqual("workspace-1", serialized["workspace_id"])
+        self.assertEqual(usage, serialized["usage"])
+        self.assertIsNotNone(datetime.fromisoformat(result.created_at).utcoffset())
+
+    def test_worker_result_defaults_are_isolated_and_validation_is_safe(self):
+        context = ContextBuilder().build(
+            Mission.create("Title", "Objective", "user-1", "workspace-1")
+        )
+        first = WorkerResult.create(PipelineStatus.SUCCESS, "worker", context)
+        second = WorkerResult.create(PipelineStatus.SUCCESS, "worker", context)
+        first.data["local"] = True
+        self.assertEqual({}, second.data)
+
+        sensitive = "private-token-value"
+        with self.assertRaises(ValueError) as raised:
+            WorkerResult.create(
+                "UNKNOWN",
+                sensitive,
+                context,
+            )
+        self.assertNotIn(sensitive, str(raised.exception))
+
+    def test_function_worker_executes_fake_and_checks_result_boundaries(self):
+        context = ContextBuilder().build(
+            Mission.create("Title", "Objective", "user-1", "workspace-1")
+        )
+        worker = FunctionWorker(
+            "fake-worker",
+            lambda value: WorkerResult.create(
+                PipelineStatus.SUCCESS,
+                "fake-worker",
+                value,
+                data={"handled": True},
+            ),
+        )
+
+        result = worker.execute(context)
+
+        self.assertIsInstance(worker, BaseWorker)
+        self.assertEqual({"handled": True}, result.data)
+        mismatched = FunctionWorker(
+            "fake-worker",
+            lambda value: WorkerResult.create(
+                PipelineStatus.SUCCESS, "other-worker", value
+            ),
+        )
+        with self.assertRaisesRegex(ValueError, "identity mismatch"):
+            mismatched.execute(context)
+
+    def test_function_worker_sanitizes_handler_failures(self):
+        context = ContextBuilder().build(
+            Mission.create("Title", "Objective", "user-1", "workspace-1")
+        )
+
+        def fail(_context):
+            raise RuntimeError("raw prompt and api key")
+
+        result = FunctionWorker("fake-worker", fail).execute(context)
+
+        self.assertEqual(PipelineStatus.FAILED, result.status)
+        self.assertEqual("WorkerError: RuntimeError", result.error)
+        self.assertNotIn("raw prompt", str(result.to_dict()))
+
     def test_mission_creation_and_serialization(self):
         mission = Mission.create(
             title="Prepare release",
