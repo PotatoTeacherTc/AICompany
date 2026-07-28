@@ -37,7 +37,9 @@ class MusicPipeline(BasePipeline):
         selection = provider_selection
         if selection is None and provider is None:
             selection = ProviderFactory.music_from_environment()
-        selected_provider = provider or selection.provider
+        selected_provider = ProviderFactory.ensure_provider_allowed(
+            provider or selection.provider
+        )
         self.provider = (
             selected_provider
             if isinstance(selected_provider, MusicProvider)

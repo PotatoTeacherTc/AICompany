@@ -243,6 +243,44 @@ class ExecutionHistory:
             self.records.append(record)
         self.save()
 
+    def record_content_stage(self, task, pipeline_result, task_type):
+        data = pipeline_result.get("data") or {}
+        record = {
+            "task_id": f"{getattr(task, 'id', '')}:{task_type}",
+            "mission_id": data.get("mission_id"),
+            "task": f"{task_type.title()} generation",
+            "parameters": {},
+            "workspace_id": data.get("workspace_id", getattr(task, "workspace_id", "default")),
+            "parent_task_id": None,
+            "retry_count": 0,
+            "max_retries": 0,
+            "timeout_seconds": None,
+            "last_error_type": None,
+            "status": pipeline_result.get("status"),
+            "created_at": getattr(task, "created_at", None),
+            "queued_at": None,
+            "started_at": None,
+            "completed_at": datetime.now().isoformat(),
+            "duration_seconds": None,
+            "result": {
+                "provider": data.get("provider"),
+                "model": data.get("model"),
+                "usage": data.get("provider_usage"),
+                "artifacts": pipeline_result.get("artifacts", []),
+                "stages": data.get("stages"),
+                "error": pipeline_result.get("error"),
+            },
+            "task_type": task_type,
+            "pipeline": pipeline_result.get("pipeline"),
+        }
+        for index, existing in enumerate(self.records):
+            if existing.get("task_id") == record["task_id"]:
+                self.records[index] = record
+                break
+        else:
+            self.records.append(record)
+        self.save()
+
 
     @staticmethod
     def _duration_seconds(started_at, completed_at):

@@ -47,6 +47,9 @@ the workflow; `run()` is the explicit entry point.
 | AI provider boundary | `providers/base.py`, `providers/models.py`, `providers/mock_provider.py`, `providers/factory.py`, `providers/pipeline_utils.py` | Provider-neutral request/response and usage metadata. The shared utility normalizes absent or partial usage and formats provider errors without raw messages. MockProvider is the offline default; CONTENT, RESEARCH, and MUSIC can receive an injected provider and persist only provider/model/token/cost metadata through PipelineResult and ExecutionHistory, never API keys. |
 | Music provider boundary | `providers/music.py`, `providers/factory.py` | MusicProvider defines `generate_music(MusicGenerationRequest) -> MusicGenerationResult` with generated artifact and optional shared UsageMetadata contracts. FakeMusicProvider is the deterministic offline selection; GenericMusicProviderAdapter keeps existing AIProvider injection compatible. Internal generated artifacts carry paths only for registration, while their default serialization omits paths. No external music service or API key is built in. |
 | Music execution and history | `core/music_pipeline.py`, `core/artifact_manager.py`, `core/execution_history.py` | MusicPipeline writes only below its configured `workspace_id` directory, validates Mission scope IDs and provider artifacts, normalizes missing usage, and maps timeout/provider errors to safe PipelineResult values. ArtifactManager retains internal paths in its repository, but Music PipelineResult exposes only standard safe metadata. Optional `record_music` upserts one MUSIC record with workspace, mission, provider, model, status, usage, and safe artifacts; it records neither task text nor absolute paths, and history failures do not override generation status. |
+| Image/video provider boundary | `providers/content_media.py`, `providers/factory.py` | Provider-neutral image/video requests and results reuse UsageMetadata and carry internal artifact paths only until ArtifactManager registration. FakeImageProvider and FakeVideoProvider are deterministic defaults. ProviderFactory rejects non-Fake environment selections and any injected adapter marked paid while `ALLOW_PAID_PROVIDER` is false. |
+| Image/video execution | `core/media_pipeline.py` | ImagePipeline and VideoPipeline share validation, workspace/mission output isolation, path-escape checks, usage normalization, safe PipelineResult conversion, and optional safe history recording. Video accepts only path-free, same-workspace artifact metadata as references. |
+| YouTube and content E2E | `providers/content_media.py`, `core/content_orchestrator.py`, `core/execution_history.py` | YouTubeProvider defines title, description, tags, visibility, and artifact-reference upload contracts. FakeYouTubeProvider simulates uploads without OAuth, tokens, accounts, network access, or publication. ContentOrchestrator composes injected Music/Image/Video pipelines and the Fake upload boundary, stops after intermediate failure, returns safe stage summaries, and records safe stage/E2E history. Scheduler, retry, and recovery are outside this boundary. |
 
 ## Current pipeline behavior
 
@@ -54,6 +57,12 @@ the workflow; `run()` is the explicit entry point.
 - MUSIC: uses an injected provider-neutral music generator, with an offline
   FakeMusicProvider default, and returns workspace-scoped safe artifact
   metadata.
+- IMAGE: uses FakeImageProvider by default and returns only workspace-scoped
+  safe artifact metadata.
+- VIDEO: uses FakeVideoProvider by default and validates safe, same-workspace
+  input artifact references.
+- CONTENT E2E: composes MUSIC, IMAGE, VIDEO, and simulated YouTube upload with
+  no external calls. The existing local ContentPipeline remains compatible.
 - CONTENT: creates a local content-project scaffold with a review checklist;
   content type, title prefix, and tags can be supplied through validated Task
   parameters.

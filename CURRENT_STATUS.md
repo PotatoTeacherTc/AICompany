@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 83**.
+Current mission baseline: **Mission 87**.
 
 ## Verified completed capabilities
 
@@ -219,6 +219,19 @@ not inferred from a missing historical mission log.
   mission, provider, model, status, safe artifact metadata, and usage but omit
   original prompts and absolute paths. History write failures do not change a
   successful generation result.
+- Mission 84: ImagePipeline provides a provider-neutral, workspace-scoped
+  image contract with deterministic Fake generation, safe artifacts, usage
+  normalization, timeout/error mapping, and optional ExecutionHistory.
+- Mission 85: VideoPipeline uses the same contract and can reference safe
+  image/music artifact metadata while rejecting cross-workspace references.
+- Mission 86: YouTubeProvider defines upload metadata and FakeYouTubeProvider
+  returns simulated results only; OAuth, tokens, and real uploads are absent.
+- Mission 87: ContentOrchestrator completes the Fake Music → Image → Video →
+  YouTube flow, aggregates stage failures, retains artifact references, and
+  records safe stage/E2E history.
+- Development provider policy defaults to `ALLOW_PAID_PROVIDER=false`.
+  Image, video, and YouTube factories select Fake providers only and reject
+  paid providers before their methods can execute.
 
 ## Implemented pipelines
 
@@ -226,21 +239,23 @@ not inferred from a missing historical mission log.
 |---|---|---|
 | FILE | Automation Pipeline | Organizes supported files and returns SUCCESS/FAILED. |
 | MUSIC | Music Pipeline | Creates local music project artifacts. |
-| CONTENT | Content Pipeline | Creates local YouTube-content project artifacts. |
+| CONTENT | Content Pipeline / Content End-to-End | Preserves the local scaffold and provides an injected Fake media E2E flow. |
+| IMAGE | Image Pipeline | Creates workspace-scoped Fake image artifacts. |
+| VIDEO | Video Pipeline | Creates workspace-scoped Fake video artifacts with safe input references. |
 | RESEARCH | Research Pipeline | Creates local structured research artifacts without external sources. |
 | HISTORY | Execution History Pipeline | Returns recent records. |
 | FAIL | Failing Test Pipeline | Intentionally returns FAILED for verification. |
 
 ## Test status
 
-The current suite contains **115 tests**. Its expected command is:
+The current suite contains **123 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 81-83 verification result: **115 passed, 0 failed**.
+Mission 84-87 verification result: **123 passed, 0 failed**.
 
 ## Not implemented
 
@@ -258,6 +273,8 @@ Mission 81-83 verification result: **115 passed, 0 failed**.
   Claude/Gemini provider adapters and credentials, in-flight call
   interruption, human approval, and collaboration commit/push automation.
 - Real external music providers and binary audio generation.
+- Real image/video providers, YouTube OAuth, and real YouTube upload. Paid
+  providers remain disabled and no content-generation network call is made.
 - A default registered NOT_IMPLEMENTED pipeline is not present; `StubPipeline`
   remains available for future unavailable capabilities.
 

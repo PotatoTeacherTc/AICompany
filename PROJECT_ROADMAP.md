@@ -8,7 +8,7 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 83
+## Current baseline: Mission 87
 
 The verified implementation currently provides a Task/Queue/Worker execution
 path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,
@@ -101,6 +101,15 @@ paths, and safely maps provider failures. Its optional ExecutionHistory
 integration records one workspace/mission-scoped MUSIC summary without
 creating a duplicate repository. No external music service is configured or
 called.
+ImagePipeline and VideoPipeline now extend the same safe artifact and
+PipelineResult conventions with provider-neutral requests, optional usage,
+workspace/mission isolation, and deterministic Fake providers. Video inputs
+reference safe image/music artifact metadata by ID. The YouTube boundary
+supports upload metadata through FakeYouTubeProvider only; it performs no
+OAuth flow or upload. ContentOrchestrator completes the offline Music → Image
+→ Video → simulated YouTube flow, records stage outcomes, and stops safely
+when an intermediate stage fails. Paid providers are disabled by the shared
+`ALLOW_PAID_PROVIDER=false` policy and are rejected before invocation.
 
 ## Development stages
 

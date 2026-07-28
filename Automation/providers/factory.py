@@ -1,8 +1,14 @@
 import os
 from dataclasses import dataclass
 
+from config.settings import ALLOW_PAID_PROVIDER
 from providers.mock_provider import MockProvider
 from providers.music import FakeMusicProvider
+from providers.content_media import (
+    FakeImageProvider,
+    FakeVideoProvider,
+    FakeYouTubeProvider,
+)
 
 
 @dataclass(frozen=True)
@@ -44,6 +50,51 @@ class ProviderFactory:
                 timeout_seconds=timeout_seconds,
             )
         raise ValueError(f"Unsupported music provider: {provider_name}")
+
+    @classmethod
+    def image_from_environment(cls, environment=None):
+        return cls._offline_selection(
+            environment, "IMAGE", "fake", FakeImageProvider
+        )
+
+    @classmethod
+    def video_from_environment(cls, environment=None):
+        return cls._offline_selection(
+            environment, "VIDEO", "fake", FakeVideoProvider
+        )
+
+    @classmethod
+    def youtube_from_environment(cls, environment=None):
+        return cls._offline_selection(
+            environment, "YOUTUBE", "fake", FakeYouTubeProvider
+        )
+
+    @classmethod
+    def ensure_provider_allowed(cls, provider, environment=None):
+        environment = os.environ if environment is None else environment
+        allow_paid = (
+            ALLOW_PAID_PROVIDER
+            and str(environment.get("ALLOW_PAID_PROVIDER", "false")).lower() == "true"
+        )
+        if getattr(provider, "is_paid", False) and not allow_paid:
+            raise ValueError("Paid provider is disabled by policy")
+        return provider
+
+    @classmethod
+    def _offline_selection(cls, environment, kind, default, provider_type):
+        environment = os.environ if environment is None else environment
+        provider_name = environment.get(f"AICOMPANY_{kind}_PROVIDER", default).lower()
+        timeout = cls._timeout(
+            environment.get(f"AICOMPANY_{kind}_PROVIDER_TIMEOUT", "30")
+        )
+        if provider_name != "fake":
+            raise ValueError(f"Unsupported or disabled {kind.lower()} provider")
+        provider = cls.ensure_provider_allowed(provider_type(), environment)
+        return ProviderSelection(
+            provider,
+            environment.get(f"AICOMPANY_{kind}_PROVIDER_MODEL"),
+            timeout,
+        )
 
     @staticmethod
     def _timeout(value):

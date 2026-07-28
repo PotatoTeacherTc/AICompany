@@ -5,6 +5,10 @@ APP_NAME = "AICompany Automation"
 
 VERSION = "1.0.0"
 
+# Development safety policy. Paid providers must remain disabled unless an
+# operator explicitly changes this setting in a future mission.
+ALLOW_PAID_PROVIDER = False
+
 
 from pathlib import Path
 
