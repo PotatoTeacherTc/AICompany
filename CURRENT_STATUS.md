@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 94**.
+Current mission baseline: **Mission 95**.
 
 ## Verified completed capabilities
 
@@ -261,6 +261,15 @@ not inferred from a missing historical mission log.
 - Mission 94: BatchManager groups persisted Jobs with Workspace isolation,
   item limits and idempotency keys. Batch summaries preserve per-item success,
   failure, and retry state; partial failure does not discard successful jobs.
+- Mission 95: WorkspaceMonitor is a read-only observation facade over the
+  existing StateRepository, PersistentJobQueue, Scheduler, ArtifactManager,
+  Batch records, and ExecutionHistory. Snapshot contracts cover Mission,
+  Schedule, Job/Retry, Batch progress/partial failure, Artifact
+  AVAILABLE/MISSING state, and recent Pipeline history. Workspace summaries
+  aggregate status counts and only usage fields that exist. Recursive read
+  redaction removes prompts, objectives, credentials, raw errors, and absolute
+  paths without removing standard token-count usage fields. Monitoring never
+  runs, cancels, retries, or mutates Jobs.
 
 ## Implemented pipelines
 
@@ -277,14 +286,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **142 tests**. Its expected command is:
+The current suite contains **151 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 91-94 verification result: **142 passed, 0 failed**.
+Mission 95 verification result: **151 passed, 0 failed**.
 
 ## Not implemented
 
@@ -305,7 +314,9 @@ Mission 91-94 verification result: **142 passed, 0 failed**.
 - Real image/video providers, YouTube OAuth, and real YouTube upload. Paid
   providers remain disabled and no content-generation network call is made.
 - Distributed locking, OS cron, Celery/Redis/message-broker infrastructure,
-  external databases/cloud storage, and Mission 95+ monitoring/SaaS services.
+  external databases/cloud storage, and Mission 96+ operational/SaaS services.
+- Web Dashboard, external APM/Prometheus/Grafana/Sentry integrations,
+  distributed monitoring, real-time WebSocket updates, and Mission 96 Logging.
 - A default registered NOT_IMPLEMENTED pipeline is not present; `StubPipeline`
   remains available for future unavailable capabilities.
 

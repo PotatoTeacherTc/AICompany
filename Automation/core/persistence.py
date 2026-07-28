@@ -7,6 +7,7 @@ from pathlib import Path
 
 SCHEMA_VERSION = 1
 _SENSITIVE = ("prompt", "objective", "api_key", "oauth", "token", "password", "secret")
+_USAGE_KEYS = {"input_tokens", "output_tokens", "total_tokens"}
 _ABSOLUTE_PATH = re.compile(r"^(?:[A-Za-z]:[\\/]|/)")
 
 
@@ -122,7 +123,10 @@ def _sanitize(value):
             key: _sanitize(item)
             for key, item in value.items()
             if isinstance(key, str)
-            and not any(token in key.lower() for token in _SENSITIVE)
+            and (
+                key.lower() in _USAGE_KEYS
+                or not any(token in key.lower() for token in _SENSITIVE)
+            )
         }
     if isinstance(value, (list, tuple)):
         return [_sanitize(item) for item in value]
@@ -131,6 +135,11 @@ def _sanitize(value):
             return "[internal reference omitted]"
         return value
     raise ValueError("payload contains a non-serializable value")
+
+
+def sanitize_for_read(value):
+    """Return a recursively redacted copy for read-only external contracts."""
+    return _sanitize(value)
 
 
 def _valid_record(record):

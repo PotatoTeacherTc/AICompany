@@ -8,7 +8,7 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 94
+## Current baseline: Mission 95
 
 The verified implementation currently provides a Task/Queue/Worker execution
 path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,
@@ -133,7 +133,18 @@ back to PENDING, enforces claim ownership, and supports injected in-process
 targets. BatchManager reuses that queue and repository, applies idempotency
 keys and item limits, preserves successful items when peers fail, and reflects
 retry transitions. The local JSON location is application-injected; no
-external database, broker, cloud storage, or Monitor functionality exists.
+external database, broker, or cloud storage exists.
+WorkspaceMonitor now provides the read-only Mission 95 observation boundary.
+It composes the existing StateRepository, PersistentJobQueue, Scheduler,
+ArtifactManager, and ExecutionHistory without creating storage or changing
+execution state. Workspace summaries expose safe snapshots for Missions,
+Schedules, Jobs, Batches, Pipeline history, Retry state, and Artifacts,
+including partial failures, retry waiting, and MISSING artifacts. Usage totals
+include only fields actually present and preserve provider/model groupings.
+The same recursive redaction used at persistence boundaries is applied again
+on reads, with standard token-count fields explicitly retained. In-memory and
+JSON restart scenarios are supported. No dashboard, APM, Prometheus, Grafana,
+Sentry, WebSocket, execution control, or network/provider call is included.
 
 ## Development stages
 
