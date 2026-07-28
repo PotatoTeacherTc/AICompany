@@ -8,7 +8,7 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 87
+## Current baseline: Mission 90
 
 The verified implementation currently provides a Task/Queue/Worker execution
 path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,
@@ -110,6 +110,17 @@ OAuth flow or upload. ContentOrchestrator completes the offline Music → Image
 → Video → simulated YouTube flow, records stage outcomes, and stops safely
 when an intermediate stage fails. Paid providers are disabled by the shared
 `ALLOW_PAID_PROVIDER=false` policy and are rejected before invocation.
+The personal offline composition baseline is now complete. InMemoryScheduler
+represents timezone-aware one-time and interval-recurring work with an
+injectable FakeClock, workspace queries, disabled-state enforcement, and
+per-occurrence duplicate protection; it does not start an OS or distributed
+scheduler. RetryExecutor classifies safe failure categories, bounds attempts,
+and exposes backoff timing without sleeping or adding infrastructure.
+Content recovery resumes from the failed stage and reuses only path-free
+artifacts belonging to the same workspace. PersonalAICompany composes Mission,
+CollaborationOrchestrator, immediate or scheduled execution, the Fake content
+flow, retry/recovery, artifacts, and history. This is an in-process personal
+baseline, not Mission 91 persistence or later SaaS infrastructure.
 
 ## Development stages
 

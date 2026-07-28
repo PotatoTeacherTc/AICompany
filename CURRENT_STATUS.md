@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 87**.
+Current mission baseline: **Mission 90**.
 
 ## Verified completed capabilities
 
@@ -232,6 +232,20 @@ not inferred from a missing historical mission log.
 - Development provider policy defaults to `ALLOW_PAID_PROVIDER=false`.
   Image, video, and YouTube factories select Fake providers only and reject
   paid providers before their methods can execute.
+- Mission 88: InMemoryScheduler provides timezone-aware one-time and
+  interval-recurring schedules, workspace isolation, enable/disable behavior,
+  target registration, duplicate-run protection, safe metadata filtering, and
+  an injectable FakeClock. It starts no external scheduler process.
+- Mission 89: RetryPolicy/RetryState/RetryExecutor provide bounded attempts,
+  safe failure categories, and next-backoff timestamps. Timeout, transient
+  provider, and history failures are retryable; validation, workspace, cost
+  policy, and authentication failures are not. Content recovery reuses only
+  safe same-workspace artifacts from successful prior stages and resumes at
+  the first failed stage.
+- Mission 90: PersonalAICompany composes Mission creation, collaboration
+  locking/workers/validation, immediate or scheduled execution, Fake content
+  generation, retry/recovery, ArtifactManager, ExecutionHistory, and safe
+  results for an offline personal workflow.
 
 ## Implemented pipelines
 
@@ -248,14 +262,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **123 tests**. Its expected command is:
+The current suite contains **131 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 84-87 verification result: **123 passed, 0 failed**.
+Mission 88-90 verification result: **131 passed, 0 failed**.
 
 ## Not implemented
 
@@ -265,7 +279,7 @@ Mission 84-87 verification result: **123 passed, 0 failed**.
   usage/cost metadata exist without requiring an API key.
 - Automatic natural-language multi-step planning from a user goal. Structured
   goal-step input can now be validated and represented as executable Tasks.
-- Retry/recovery policy and persistent long-running queue.
+- Persistent long-running queue and restart-safe retry/recovery.
 - Passwords, authentication tokens, login, and request authorization. The User domain
   deliberately contains no credential or secret fields.
 - UI and interactive goal-submission layer.
@@ -275,6 +289,8 @@ Mission 84-87 verification result: **123 passed, 0 failed**.
 - Real external music providers and binary audio generation.
 - Real image/video providers, YouTube OAuth, and real YouTube upload. Paid
   providers remain disabled and no content-generation network call is made.
+- Durable schedules, process restart recovery, distributed locking, OS cron,
+  Celery/Redis infrastructure, and Mission 91+ SaaS persistence.
 - A default registered NOT_IMPLEMENTED pipeline is not present; `StubPipeline`
   remains available for future unavailable capabilities.
 

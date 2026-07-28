@@ -30,27 +30,33 @@ class ContentOrchestrator:
         self.youtube_timeout = getattr(selection, "timeout_seconds", 30.0)
         self.execution_history = execution_history
 
-    def run(self, task):
-        stages = {}
-        artifacts = []
+    def run(self, task, recovery=None):
+        stages, artifacts = self._recovery(recovery, task.workspace_id)
         for name, pipeline, references in (
             ("music", self.music_pipeline, ()),
             ("image", self.image_pipeline, ()),
         ):
+            if stages.get(name, {}).get("status") == PipelineStatus.SUCCESS:
+                continue
             result = pipeline.run(task)
             stages[name] = self._safe_stage(result)
             if result["status"] != PipelineStatus.SUCCESS:
                 return self._result(task, stages, artifacts, PipelineStatus.FAILED)
             artifacts.extend(result["artifacts"])
 
-        video = self.video_pipeline.run(task, input_artifacts=artifacts)
-        stages["video"] = self._safe_stage(video)
-        if video["status"] != PipelineStatus.SUCCESS:
-            return self._result(task, stages, artifacts, PipelineStatus.FAILED)
-        artifacts.extend(video["artifacts"])
+        if stages.get("video", {}).get("status") != PipelineStatus.SUCCESS:
+            video = self.video_pipeline.run(task, input_artifacts=artifacts)
+            stages["video"] = self._safe_stage(video)
+            if video["status"] != PipelineStatus.SUCCESS:
+                return self._result(task, stages, artifacts, PipelineStatus.FAILED)
+            artifacts.extend(video["artifacts"])
+        video_artifacts = [
+            artifact for artifact in artifacts
+            if artifact.get("producer_pipeline") == "Video Pipeline"
+        ]
 
         try:
-            video_artifact = video["artifacts"][0]
+            video_artifact = video_artifacts[0]
             started = time.monotonic()
             upload = self.youtube_provider.upload(
                 YouTubeUploadRequest(
@@ -84,6 +90,41 @@ class ContentOrchestrator:
             }
             status = PipelineStatus.FAILED
         return self._result(task, stages, artifacts, status)
+
+    @staticmethod
+    def _recovery(recovery, workspace_id):
+        if recovery is None:
+            return {}, []
+        data = recovery.get("data") if isinstance(recovery, dict) else None
+        if not isinstance(data, dict) or data.get("workspace_id") != workspace_id:
+            raise ValueError("recovery workspace mismatch")
+        stages = data.get("stages")
+        artifacts = recovery.get("artifacts")
+        if not isinstance(stages, dict) or not isinstance(artifacts, list):
+            raise ValueError("invalid recovery state")
+        for artifact in artifacts:
+            if (
+                not isinstance(artifact, dict)
+                or artifact.get("workspace_id") != workspace_id
+                or "path" in artifact
+            ):
+                raise ValueError("recovery artifact workspace mismatch")
+        completed = {}
+        for name in ("music", "image", "video"):
+            stage = stages.get(name)
+            if isinstance(stage, dict) and stage.get("status") == PipelineStatus.SUCCESS:
+                completed[name] = dict(stage)
+        reusable = [
+            dict(artifact)
+            for artifact in artifacts
+            if artifact.get("producer_pipeline")
+            in {
+                "Music Pipeline" if "music" in completed else "",
+                "Image Pipeline" if "image" in completed else "",
+                "Video Pipeline" if "video" in completed else "",
+            }
+        ]
+        return completed, reusable
 
     def _result(self, task, stages, artifacts, status):
         result = PipelineResult(
