@@ -167,5 +167,22 @@ PATCH /users/{user_id}/deactivate
 
 The endpoint does not trust a body-supplied User ID and returns 403 when the
 authenticated principal targets another User. Administrative lifecycle
-management, reactivation, and email verification remain future work. Mission
-103 Workspace behavior is unchanged.
+management, reactivation, and email verification remain future work.
+
+## Workspace lifecycle
+
+Mission 103 adds lifecycle and optimistic concurrency to the existing
+Workspace implementation:
+
+```text
+PATCH /workspaces/{workspace_id}
+```
+
+The request may contain `name` or `status` plus the required
+`expected_revision`. OWNER or ADMIN authorization is required when
+authentication is enabled. Stale revisions return 409. An INACTIVE Workspace
+retains its records but rejects authenticated access, Membership operations,
+and new Task submission. File-backed Workspace repositories restore status and
+revision after restart, while legacy records default safely to ACTIVE revision
+0. Reactivation policy, destructive deletion, ownership transfer, quotas, and
+Mission 104 Auth changes are not included.

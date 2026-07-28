@@ -101,6 +101,9 @@ def create_app(
             if response.get("workspace") == "not_found":
                 from api.errors import error_response
                 return error_response(404, "workspace_not_found", "Workspace not found")
+            if response.get("workspace") == "inactive":
+                from api.errors import error_response
+                return error_response(409, "workspace_inactive", "Workspace is inactive")
             return response
         except (TypeError, ValueError):
             from api.errors import error_response
@@ -151,6 +154,37 @@ def create_app(
             from api.errors import error_response
             return error_response(404, "workspace_not_found", "Workspace not found")
         return workspace
+
+    @app.patch("/workspaces/{workspace_id}")
+    def update_workspace(
+        workspace_id: str,
+        payload: dict,
+        authorization: str | None = Header(default=None),
+    ):
+        denied = _authorize_workspace(
+            app, workspace_id, authorization, {"OWNER", "ADMIN"}
+        )
+        if denied:
+            return denied
+        try:
+            return app.state.workspace_service.update(
+                workspace_id,
+                name=payload.get("name"),
+                status=payload.get("status"),
+                expected_revision=payload.get("expected_revision"),
+            )
+        except KeyError:
+            from api.errors import error_response
+
+            return error_response(404, "workspace_not_found", "Workspace not found")
+        except ValueError as error:
+            from api.errors import error_response
+
+            if str(error) == "revision_conflict":
+                return error_response(
+                    409, "revision_conflict", "Workspace revision conflict"
+                )
+            return error_response(400, "invalid_request", "Invalid workspace request")
 
     @app.post("/users", status_code=201)
     def create_user(payload: dict):
@@ -408,6 +442,9 @@ def _authorize_workspace(app, workspace_id, authorization, roles):
     if app.state.workspace_service.get(workspace_id) is None:
         from api.errors import error_response
         return error_response(404, "workspace_not_found", "Workspace not found")
+    if not app.state.workspace_service.is_active(workspace_id):
+        from api.errors import error_response
+        return error_response(403, "workspace_inactive", "Permission denied")
     membership = app.state.membership_service.repository.get(workspace_id, user["user_id"])
     if membership is None or membership["role"] not in roles:
         from api.errors import error_response

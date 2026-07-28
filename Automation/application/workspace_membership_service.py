@@ -45,6 +45,8 @@ class WorkspaceMembershipService:
     def _require_workspace(self, workspace_id):
         if self.workspace_service.get(workspace_id) is None:
             raise KeyError("workspace_not_found")
+        if not self.workspace_service.is_active(workspace_id):
+            raise ValueError("inactive_workspace")
 
     def _require_user(self, user_id):
         user = self.user_service.get(user_id)

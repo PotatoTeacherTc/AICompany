@@ -16,8 +16,11 @@ class TaskApi:
 
     def create_task(self, request):
         request = self._create_request(request)
-        if self.workspace_service and request.workspace_id and not self.workspace_service.get(request.workspace_id):
-            return {"workspace": "not_found"}
+        if self.workspace_service and request.workspace_id:
+            if not self.workspace_service.get(request.workspace_id):
+                return {"workspace": "not_found"}
+            if not self.workspace_service.is_active(request.workspace_id):
+                return {"workspace": "inactive"}
         task = self.automation_service.submit_text(
             request.task_text,
             parameters=request.parameters,

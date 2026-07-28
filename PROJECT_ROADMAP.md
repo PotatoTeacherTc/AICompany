@@ -8,7 +8,7 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 102
+## Current baseline: Mission 103
 
 The verified implementation currently provides a Task/Queue/Worker execution
 path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,
@@ -260,6 +260,18 @@ only; another User receives a safe 403. Passwords, hashes, sessions, tokens,
 headers, raw errors, and paths remain outside User responses. Administrative
 reactivation/deactivation, email verification, profile/PII expansion, and
 Mission 103 Workspace changes are not included.
+
+Mission 103 is the Phase D Workspace boundary. Workspace creation, lookup,
+listing, file persistence, membership ownership, and role enforcement already
+existed and were not reimplemented. Workspace records now add ACTIVE/INACTIVE
+state, update timestamp, and optimistic revision. Legacy records safely
+normalize to ACTIVE revision 0; name/status updates require the exact expected
+revision and stale requests return 409. Authenticated OWNER/ADMIN principals
+may use `PATCH /workspaces/{workspace_id}`. Inactive Workspaces reject
+authorized access, new Membership operations, and new Task submission without
+deleting existing data or exposing tenant existence beyond the established
+policy. Reactivation, deletion, transfer, quotas, and Mission 104 Auth changes
+remain outside this scope.
 
 ## Development stages
 

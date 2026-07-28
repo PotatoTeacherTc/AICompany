@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 102**.
+Current mission baseline: **Mission 103**.
 
 ## Verified completed capabilities
 
@@ -361,6 +361,14 @@ not inferred from a missing historical mission log.
   duplicate protection, credential separation, login, and User endpoints came
   from earlier Missions and were not recreated. Reactivation, administrator
   User management, email verification, and expanded PII remain unimplemented.
+- Mission 103: Existing Workspace creation, repositories, Membership ownership,
+  and RBAC are extended with the missing lifecycle and concurrency boundary.
+  Workspace records now carry ACTIVE/INACTIVE state, timestamps, and an
+  optimistic revision. Legacy file records normalize to ACTIVE revision 0,
+  updates require `expected_revision`, and restart restores status/revision.
+  Inactive Workspaces reject authenticated access, Membership operations, and
+  Task creation. Existing data is preserved; reactivation, deletion, transfer,
+  quotas, and Mission 104 Auth work are not implemented.
 
 ## Implemented pipelines
 
@@ -377,14 +385,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **231 tests**. Its expected command is:
+The current suite contains **235 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Current verification result: **231 passed, 0 failed**.
+Current verification result: **235 passed, 0 failed**.
 
 ## Not implemented
 
