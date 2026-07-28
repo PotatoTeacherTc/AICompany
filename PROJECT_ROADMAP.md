@@ -8,7 +8,7 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 97
+## Current baseline: Mission 98
 
 The verified implementation currently provides a Task/Queue/Worker execution
 path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,
@@ -173,6 +173,19 @@ Invalid or corrupt records are rejected or ignored safely. Optional structured
 logging is failure-isolated from usage recording. This is offline accounting
 metadata only: it does not price models, infer missing usage, call providers,
 manage credits, bill users, or introduce Mission 98 Settings.
+Mission 98 adds a Workspace-scoped SettingsManager over the existing
+StateRepository rather than expanding the process-level constants into a
+second configuration stack. WorkspaceSettings persists only an allowlisted
+set of offline provider choices, bounded timeouts, retry/backoff, Batch size,
+and structured log level. It uses safe defaults, revision-checked updates,
+Workspace-qualified storage IDs, in-memory or JSON restart recovery, and
+failure-isolated structured logging. SettingsManager produces the existing
+ProviderFactory environment contract and RetryPolicy through dependency
+injection. `ALLOW_PAID_PROVIDER` remains false and cannot be enabled through
+Workspace settings; unknown, sensitive, path-like, paid, or out-of-range
+values are rejected before persistence. It stores no prompts, credentials, or
+arbitrary metadata. Mission 99 AI Departments and Mission 100 Personal
+Operating System remain separate product-composition work.
 
 ## Development stages
 

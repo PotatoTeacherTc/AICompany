@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 97**.
+Current mission baseline: **Mission 98**.
 
 ## Verified completed capabilities
 
@@ -289,6 +289,15 @@ not inferred from a missing historical mission log.
   provider/model distributions. Repository and Logger failures have safe
   boundaries. It performs no provider call, pricing, credit, billing, or
   Settings management.
+- Mission 98: SettingsManager persists a bounded allowlist of Workspace
+  operational settings through the shared StateRepository. Safe defaults cover
+  offline Fake/Mock providers, provider timeouts, Retry attempts/backoff,
+  Batch limits, INFO logging, and the immutable disabled paid-provider policy.
+  Revision checks prevent stale writes, Workspace-qualified IDs prevent tenant
+  collisions, JSON persistence supports restart recovery, and optional logging
+  failure does not change an update. ProviderFactory environment dictionaries
+  and RetryPolicy objects are derived through explicit methods. Sensitive,
+  arbitrary, path-like, paid, and out-of-range settings are rejected.
 
 ## Implemented pipelines
 
@@ -305,14 +314,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **171 tests**. Its expected command is:
+The current suite contains **181 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Mission 97 verification result: **171 passed, 0 failed**.
+Mission 98 verification result: **181 passed, 0 failed**.
 
 ## Not implemented
 
@@ -333,11 +342,12 @@ Mission 97 verification result: **171 passed, 0 failed**.
 - Real image/video providers, YouTube OAuth, and real YouTube upload. Paid
   providers remain disabled and no content-generation network call is made.
 - Distributed locking, OS cron, Celery/Redis/message-broker infrastructure,
-  external databases/cloud storage, and Mission 98+ operational/SaaS services.
+  external databases/cloud storage, and Mission 99+ product/SaaS services.
 - Web Dashboard, external APM/Prometheus/Grafana/Sentry integrations,
   distributed monitoring, real-time WebSocket updates, remote log shipping,
   distributed tracing, log retention/rotation, model pricing, credit/billing
-  ledgers, and Mission 98 Settings.
+  ledgers, Mission 99 AI Departments, and Mission 100 Personal Operating
+  System.
 - A default registered NOT_IMPLEMENTED pipeline is not present; `StubPipeline`
   remains available for future unavailable capabilities.
 
