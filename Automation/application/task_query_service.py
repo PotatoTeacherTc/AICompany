@@ -81,6 +81,7 @@ class TaskQueryService:
             "id": record.get("task_id"),
             "task": record.get("task"),
             "parameters": dict(record.get("parameters") or {}),
+            "workspace_id": record.get("workspace_id", "default"),
             "parent_task_id": record.get("parent_task_id"),
             "retry_count": record.get("retry_count", 0),
             "max_retries": record.get("max_retries", 0),

@@ -222,3 +222,28 @@ cross-Workspace access are rejected through safe responses.
 Authentication remains opt-in for legacy API compatibility. Custom roles,
 resource-level policy, organization-wide permissions, and Mission 106 API
 expansion are not implemented.
+
+## Authenticated API context
+
+Mission 106 completes the current opt-in authentication integration for the
+existing API adapter:
+
+```text
+GET /auth/me
+GET /workspaces
+GET /tasks?workspace_id={workspace_id}
+POST /tasks/{task_id}/cancel
+POST /tasks/{task_id}/retry
+```
+
+When `auth_required=True`, current-User data is self-only, Workspace
+collections contain only active Workspaces with a current Membership, Task
+collections require and filter an authorized Workspace, and Task controls
+authorize the Workspace stored on the Task. Supplying another Workspace ID
+does not expose its records. Authorization and Cookie values are never
+returned. The default `auth_required=False` behavior remains for existing
+local clients.
+
+API versioning, an external ASGI deployment, signup/email verification,
+administrator User management, and Mission 107 Artifact work remain future
+scope.

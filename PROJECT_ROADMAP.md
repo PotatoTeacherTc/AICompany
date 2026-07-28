@@ -8,7 +8,7 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 105
+## Current baseline: Mission 106
 
 The verified implementation currently provides a Task/Queue/Worker execution
 path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,
@@ -304,6 +304,19 @@ Workspace authorization helper delegates to this service while preserving
 legacy opt-in authentication behavior and existing safe HTTP responses.
 Custom policy storage, resource-level permissions, organization-wide roles,
 and Mission 106 API expansion remain unimplemented.
+
+Mission 106 is the Phase D API authentication-context integration. It closes
+the remaining authenticated collection and control-route gaps without adding
+a second API layer. With `auth_required=True`, `GET /auth/me` resolves the
+current persisted principal, direct User lookup is self-only, Workspace
+listing returns only current active Memberships, Task listing requires and
+filters by an authorized Workspace, and Task cancellation/retry derives the
+stored Task Workspace before authorizing. Authorization/Cookie values are
+never reflected. The WorkspaceMembershipRepository adds only the missing
+user-scoped query needed for collection filtering, including JSON-file
+implementations. The historical `auth_required=False` default remains for
+backward compatibility. API versioning, public server deployment, signup,
+admin User APIs, and Mission 107 Artifact expansion remain unimplemented.
 
 ## Development stages
 

@@ -151,7 +151,26 @@ def create_app(
             return error_response(400, "invalid_request", "Invalid workspace request")
 
     @app.get("/workspaces")
-    def list_workspaces(): return {"items": app.state.workspace_service.list()}
+    def list_workspaces(authorization: str | None = Header(default=None)):
+        if not app.state.auth_required:
+            return {"items": app.state.workspace_service.list()}
+        user = _current_user(app, authorization)
+        if user is None:
+            return _unauthorized()
+        workspace_ids = {
+            item["workspace_id"]
+            for item in app.state.membership_service.repository.list_by_user(
+                user["user_id"]
+            )
+        }
+        return {
+            "items": [
+                workspace
+                for workspace in app.state.workspace_service.list()
+                if workspace["workspace_id"] in workspace_ids
+                and app.state.workspace_service.is_active(workspace["workspace_id"])
+            ]
+        }
 
     @app.get("/workspaces/{workspace_id}")
     def get_workspace(workspace_id: str, authorization: str | None = Header(default=None)):
@@ -210,12 +229,25 @@ def create_app(
         if user_id == "me":
             user = _current_user(app, authorization)
             return user if user else _unauthorized()
+        if app.state.auth_required:
+            current = _current_user(app, authorization)
+            if current is None:
+                return _unauthorized()
+            if current["user_id"] != user_id:
+                from api.errors import error_response
+
+                return error_response(403, "permission_denied", "Permission denied")
         user = app.state.user_service.get(user_id)
         if user is None:
             from api.errors import error_response
 
             return error_response(404, "user_not_found", "User not found")
         return user
+
+    @app.get("/auth/me")
+    def auth_me(authorization: str | None = Header(default=None)):
+        user = _current_user(app, authorization)
+        return user if user else _unauthorized()
 
     @app.patch("/users/{user_id}/deactivate")
     def deactivate_user(
@@ -359,6 +391,7 @@ def create_app(
 
     @app.get("/tasks")
     def list_tasks(
+        workspace_id: str | None = None,
         status: str | None = None,
         pipeline: str | None = None,
         task_type: str | None = None,
@@ -366,9 +399,25 @@ def create_app(
         end_at: str | None = None,
         limit: int | None = None,
         offset: int = 0,
+        authorization: str | None = Header(default=None),
     ):
+        if app.state.auth_required:
+            if not workspace_id:
+                from api.errors import error_response
+
+                return error_response(
+                    400, "workspace_required", "Workspace is required"
+                )
+            denied = _authorize_workspace(
+                app,
+                workspace_id,
+                authorization,
+                {"OWNER", "ADMIN", "MEMBER"},
+            )
+            if denied:
+                return denied
         try:
-            return app.state.task_api.list_tasks(
+            response = app.state.task_api.list_tasks(
                 {
                     "status": status,
                     "pipeline": pipeline,
@@ -379,17 +428,30 @@ def create_app(
                     "offset": offset,
                 }
             )
+            if workspace_id:
+                response["items"] = [
+                    item
+                    for item in response["items"]
+                    if (item.get("task") or {}).get("workspace_id") == workspace_id
+                ]
+            return response
         except ValueError:
             from api.errors import error_response
 
             return error_response(400, "invalid_request", "Invalid task query")
 
     @app.post("/tasks/{task_id}/cancel")
-    def cancel_task(task_id: str):
+    def cancel_task(task_id: str, authorization: str | None = Header(default=None)):
+        denied = _authorize_task_control(app, task_id, authorization)
+        if denied:
+            return denied
         return _control_endpoint(app.state.task_api.cancel_task(task_id))
 
     @app.post("/tasks/{task_id}/retry")
-    def retry_task(task_id: str):
+    def retry_task(task_id: str, authorization: str | None = Header(default=None)):
+        denied = _authorize_task_control(app, task_id, authorization)
+        if denied:
+            return denied
         return _control_endpoint(app.state.task_api.retry_task(task_id))
 
     return app
@@ -427,6 +489,23 @@ def _control_endpoint(response):
 
         return error_response(409, "task_state_conflict", "Task cannot be controlled in its current state")
     return response
+
+
+def _authorize_task_control(app, task_id, authorization):
+    if not app.state.auth_required:
+        return None
+    response = app.state.task_api.get_task(task_id)
+    if not response.get("found"):
+        from api.errors import error_response
+
+        return error_response(404, "task_not_found", "Task not found")
+    workspace_id = (response.get("task") or {}).get("workspace_id")
+    return _authorize_workspace(
+        app,
+        workspace_id,
+        authorization,
+        {"OWNER", "ADMIN", "MEMBER"},
+    )
 
 
 def _membership_not_found(error):

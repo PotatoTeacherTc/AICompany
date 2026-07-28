@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 105**.
+Current mission baseline: **Mission 106**.
 
 ## Verified completed capabilities
 
@@ -392,7 +392,18 @@ not inferred from a missing historical mission log.
   and Workspace deactivation apply immediately to existing tokens. Three
   focused authorization tests, 15 related API/lifecycle tests, and the full
   244-test suite pass offline. Resource-level policy, custom roles, and Mission
-  106 API expansion remain unimplemented.
+  106 API expansion was not part of that checkpoint.
+- Mission 106: The existing FastAPI adapter now applies authenticated context
+  to collection and Task-control routes that previously remained open when
+  authentication was enabled. `GET /auth/me` returns the current persisted
+  User; direct User reads are self-only; Workspace lists contain only active
+  current Memberships; Task lists require and filter an authorized
+  `workspace_id`; cancel/retry authorize the stored Task Workspace before
+  control. Membership repositories gained a user-scoped query rather than a
+  duplicate index/store. Four focused API-context tests, 18 related tests, and
+  the full 248-test suite pass offline. The unauthenticated legacy default is
+  unchanged. API versioning, deployment, signup/admin APIs, and Mission 107
+  Artifact work remain unimplemented.
 
 ## Implemented pipelines
 

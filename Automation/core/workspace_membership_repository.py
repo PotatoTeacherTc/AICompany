@@ -16,6 +16,9 @@ class WorkspaceMembershipRepository(ABC):
     @abstractmethod
     def list_by_workspace(self, workspace_id):
         pass
+    @abstractmethod
+    def list_by_user(self, user_id):
+        pass
 
     @abstractmethod
     def delete(self, workspace_id, user_id):
@@ -41,6 +44,12 @@ class InMemoryWorkspaceMembershipRepository(WorkspaceMembershipRepository):
         return [
             dict(item) for item in self.items.values()
             if item["workspace_id"] == workspace_id
+        ]
+
+    def list_by_user(self, user_id):
+        return [
+            dict(item) for item in self.items.values()
+            if item["user_id"] == user_id
         ]
 
     def delete(self, workspace_id, user_id):
