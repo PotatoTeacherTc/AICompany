@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 104**.
+Current mission baseline: **Mission 105**.
 
 ## Verified completed capabilities
 
@@ -381,8 +381,18 @@ not inferred from a missing historical mission log.
   revokes sessions immediately. JSON restart restores rotation and revoke
   state while malformed records are ignored. Six focused tests plus the full
   241-test suite pass offline. Rate limiting, OAuth, MFA, email verification,
-  administrative User management, and Mission 105 authorization changes are
-  not implemented.
+  administrative User management, and Mission 105 authorization changes were
+  not part of that checkpoint.
+- Mission 105: Existing OWNER/ADMIN/MEMBER roles and Workspace Membership
+  repositories remain the RBAC source of truth. The new injected
+  AuthorizationService centralizes the current User, session, Workspace,
+  Membership, and allowed-role decision formerly embedded in the FastAPI
+  helper. It stores no duplicate permissions and trusts no role claim in an
+  access token. Role changes, Membership removal, User/session invalidation,
+  and Workspace deactivation apply immediately to existing tokens. Three
+  focused authorization tests, 15 related API/lifecycle tests, and the full
+  244-test suite pass offline. Resource-level policy, custom roles, and Mission
+  106 API expansion remain unimplemented.
 
 ## Implemented pipelines
 

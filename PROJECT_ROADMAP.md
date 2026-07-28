@@ -8,7 +8,7 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 104
+## Current baseline: Mission 105
 
 The verified implementation currently provides a Task/Queue/Worker execution
 path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,
@@ -291,6 +291,19 @@ In-memory and JSON-file repositories restore revisions, expiry, and revocation
 state and safely ignore malformed records. Rate-limit infrastructure, email
 verification, OAuth, MFA, administrative User management, and Mission 105 RBAC
 changes remain unimplemented.
+
+Mission 105 is the Phase D RBAC boundary. The existing OWNER, ADMIN, MEMBER,
+WorkspaceMembershipService, and repositories remain the source of truth.
+AuthorizationService now provides one dependency-injected decision boundary
+for authenticated Workspace operations. It re-checks the current User,
+session, Workspace lifecycle, Membership, and allowed role on every decision;
+no role or Workspace permission is trusted from an access-token claim. Role
+changes, Membership removal, User/session invalidation, and Workspace
+deactivation therefore affect existing tokens immediately. The FastAPI
+Workspace authorization helper delegates to this service while preserving
+legacy opt-in authentication behavior and existing safe HTTP responses.
+Custom policy storage, resource-level permissions, organization-wide roles,
+and Mission 106 API expansion remain unimplemented.
 
 ## Development stages
 

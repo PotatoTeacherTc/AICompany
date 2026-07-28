@@ -17,6 +17,7 @@ def create_app(
     session_service=None,
     audit_service=None,
     audit_query_service=None,
+    authorization_service=None,
     health_service=None,
     auth_required=False,
 ):
@@ -71,6 +72,13 @@ def create_app(
     app.state.membership_service = membership_service
     app.state.login_service = login_service
     app.state.session_service = session_service
+    if authorization_service is None:
+        from application.authorization_service import AuthorizationService
+
+        authorization_service = AuthorizationService(
+            login_service, workspace_service, membership_service
+        )
+    app.state.authorization_service = authorization_service
     if audit_service is None:
         from application.audit_service import AuditService
         audit_service = AuditService()
@@ -455,17 +463,23 @@ def _unauthorized():
 def _authorize_workspace(app, workspace_id, authorization, roles):
     if not app.state.auth_required:
         return None
-    user = _current_user(app, authorization)
-    if user is None:
+    token = (
+        authorization[7:]
+        if isinstance(authorization, str) and authorization.startswith("Bearer ")
+        else None
+    )
+    decision = app.state.authorization_service.authorize_workspace(
+        token, workspace_id, set(roles)
+    )
+    if decision.allowed:
+        return None
+    if decision.code == "authentication_required":
         return _unauthorized()
-    if app.state.workspace_service.get(workspace_id) is None:
+    if decision.code == "workspace_not_found":
         from api.errors import error_response
         return error_response(404, "workspace_not_found", "Workspace not found")
-    if not app.state.workspace_service.is_active(workspace_id):
+    if decision.code == "workspace_inactive":
         from api.errors import error_response
         return error_response(403, "workspace_inactive", "Permission denied")
-    membership = app.state.membership_service.repository.get(workspace_id, user["user_id"])
-    if membership is None or membership["role"] not in roles:
-        from api.errors import error_response
-        return error_response(403, "permission_denied", "Permission denied")
-    return None
+    from api.errors import error_response
+    return error_response(403, "permission_denied", "Permission denied")

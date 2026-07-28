@@ -72,6 +72,7 @@ class BackendDependencies:
     session_service: object | None = None
     audit_service: object | None = None
     audit_query_service: object | None = None
+    authorization_service: object | None = None
     health_service: BackendHealthService | None = None
     auth_required: bool = False
 
@@ -93,6 +94,7 @@ def create_backend_app(dependencies=None):
         session_service=dependencies.session_service,
         audit_service=dependencies.audit_service,
         audit_query_service=dependencies.audit_query_service,
+        authorization_service=dependencies.authorization_service,
         health_service=health_service,
         auth_required=dependencies.auth_required,
     )

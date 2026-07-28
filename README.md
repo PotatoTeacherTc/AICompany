@@ -208,3 +208,17 @@ access token, refresh token, Authorization header, or Cookie is logged or
 stored in audit metadata. Rate-limit infrastructure, email verification,
 OAuth, MFA, administrative User management, and Mission 105 RBAC work remain
 future scope.
+
+## Workspace authorization
+
+Mission 105 reuses OWNER, ADMIN, MEMBER, and the existing Workspace Membership
+repositories through one injected `AuthorizationService`. Every protected
+Workspace operation re-checks the current User and session, Workspace status,
+Membership, and required role. Access tokens do not carry trusted roles, so a
+role change or Membership removal takes effect immediately without waiting for
+token expiry. Inactive Users, revoked sessions, inactive Workspaces, and
+cross-Workspace access are rejected through safe responses.
+
+Authentication remains opt-in for legacy API compatibility. Custom roles,
+resource-level policy, organization-wide permissions, and Mission 106 API
+expansion are not implemented.
