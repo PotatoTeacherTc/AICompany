@@ -8,7 +8,7 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 100
+## Current baseline: Mission 101
 
 The verified implementation currently provides a Task/Queue/Worker execution
 path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,
@@ -234,7 +234,19 @@ ArtifactManager, and returns PipelineResult with optional UsageMetadata. The
 HybridCreativeDemo connects one Mission and Content Department workflow to
 lyrics/content planning plus the existing Fake music/image/video/YouTube flow.
 It is runnable from the CLI, restart-persists safe artifact metadata, and makes
-no external or paid call by default. Mission 101 Backend remains unstarted.
+no external or paid call by default.
+
+Mission 101 establishes the Backend application foundation without replacing
+the existing FastAPI routes or Automation Engine. `BackendDependencies`
+provides one explicit composition contract for the existing application
+services, and tests can replace each service without global mutable state.
+`BackendHealthService` aggregates injected persistence, queue, and monitor
+probes into safe states and reports that paid providers are disabled. Probe and
+Logger failures are isolated and never expose environment values, paths,
+headers, request bodies, or exception messages. `/health` now uses this service
+while all prior routes remain backward compatible. FastAPI TestClient is the
+verified HTTP smoke boundary; no ASGI server package, external service, network
+call, new authentication claim, or Mission 102+ capability is introduced.
 
 ## Development stages
 

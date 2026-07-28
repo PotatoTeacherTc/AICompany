@@ -121,3 +121,29 @@ video, and YouTube remain deterministic Fake stages. The verified run reported
 zero estimated cost. A failed explicit Ollama run returns failure and never
 falls back to Fake. Model installation, updates, and downloads remain explicit
 user actions.
+
+## Backend application foundation
+
+Mission 101 provides an explicitly dependency-injected FastAPI application:
+
+```python
+from application.backend import BackendDependencies, create_backend_app
+
+app = create_backend_app(BackendDependencies())
+```
+
+The verified HTTP smoke command does not open a network port:
+
+```powershell
+cd Automation
+python -m unittest tests.test_backend_foundation -v
+```
+
+`GET /health` reports only service/schema status, safe
+persistence/queue/monitor availability, and whether paid providers are enabled.
+It never returns environment values, paths, headers, prompts, or raw errors.
+Existing task, Workspace, User, authentication, membership, and audit routes
+remain available through the same app. No ASGI server runtime is installed or
+selected, so a localhost production-server command is not claimed. Media
+providers remain Fake, paid providers remain disabled, and Mission 102+ is not
+part of this foundation.

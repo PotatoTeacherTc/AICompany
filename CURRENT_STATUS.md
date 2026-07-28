@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 100**.
+Current mission baseline: **Mission 101**.
 
 ## Verified completed capabilities
 
@@ -341,7 +341,17 @@ not inferred from a missing historical mission log.
   Reported estimated cost was 0. The adapter now supplies an exact task-specific
   JSON shape and safely preserves nonconforming local output inside a normalized
   internal artifact. Automated tests continue to use injected transports and
-  do not require Ollama. Mission 101 remains unstarted.
+  do not require Ollama.
+- Mission 101: Backend application foundation is complete. The existing
+  FastAPI API and Automation services are composed through an immutable
+  `BackendDependencies` boundary, allowing repositories and services to be
+  replaced per app instance. `BackendHealthService` safely reports schema
+  version, persistence/queue/monitor probe availability, and the false
+  paid-provider flag. Probe and Logger errors degrade health without exposing
+  raw exceptions, headers, paths, prompts, or secrets. Existing task,
+  Workspace, User, Auth, membership, and audit routes remain unchanged and are
+  not reclassified as Mission 102+ work. HTTP verification uses FastAPI
+  TestClient because no ASGI server runtime is installed.
 
 ## Implemented pipelines
 
@@ -358,14 +368,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **223 tests**. Its expected command is:
+The current suite contains **227 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Current verification result: **223 passed, 0 failed**.
+Current verification result: **227 passed, 0 failed**.
 
 ## Not implemented
 

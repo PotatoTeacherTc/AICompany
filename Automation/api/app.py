@@ -17,6 +17,7 @@ def create_app(
     session_service=None,
     audit_service=None,
     audit_query_service=None,
+    health_service=None,
     auth_required=False,
 ):
     """Create the HTTP application without starting a server."""
@@ -79,13 +80,16 @@ def create_app(
         audit_query_service = AuditQueryService(audit_service)
     app.state.audit_query_service = audit_query_service
     app.state.auth_required = auth_required
+    app.state.health_service = health_service
     app.state.task_api = TaskApi(automation_service, task_query_service, workspace_service)
     for exception_type, handler in HANDLED_EXCEPTIONS.items():
         app.add_exception_handler(exception_type, handler)
 
     @app.get("/health")
     def health_check():
-        return {"status": "ok"}
+        if app.state.health_service is None:
+            return {"status": "ok"}
+        return app.state.health_service.snapshot()
 
     @app.post("/tasks", status_code=201)
     def create_task(payload: dict, authorization: str | None = Header(default=None)):
