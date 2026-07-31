@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from config.settings import ALLOW_PAID_PROVIDER
 from core.structured_logging import LogLevel, safe_log
 from core.security import InMemoryRateLimiter, SecuritySettings
+from core.operational_metrics import InMemoryOperationalMetrics
+from core.structured_logging import NullLogger
 
 
 BACKEND_SCHEMA_VERSION = "1"
@@ -17,11 +19,13 @@ class BackendHealthService:
         queue_probe=None,
         monitor_probe=None,
         logger=None,
+        metrics=None,
     ):
         self.persistence_probe = persistence_probe
         self.queue_probe = queue_probe
         self.monitor_probe = monitor_probe
         self.logger = logger
+        self.metrics = metrics
 
     def snapshot(self):
         checks = {
@@ -30,6 +34,9 @@ class BackendHealthService:
             "monitor": self._probe(self.monitor_probe),
         }
         healthy = all(value != "unavailable" for value in checks.values())
+        if self.metrics is not None:
+            for name, status in checks.items():
+                self.metrics.health_observed(name, status)
         if not healthy:
             safe_log(
                 self.logger,
@@ -107,6 +114,8 @@ class BackendDependencies:
     )
     security_settings: SecuritySettings | None = None
     rate_limiter: object | None = None
+    logger: object | None = None
+    metrics: object | None = None
 
 
 def create_backend_app(dependencies=None):
@@ -114,7 +123,11 @@ def create_backend_app(dependencies=None):
     from api.app import create_app
 
     dependencies = dependencies or BackendDependencies()
-    health_service = dependencies.health_service or BackendHealthService()
+    logger = dependencies.logger or NullLogger()
+    metrics = dependencies.metrics or InMemoryOperationalMetrics()
+    health_service = dependencies.health_service or BackendHealthService(
+        logger=logger, metrics=metrics
+    )
     security = dependencies.security_settings or SecuritySettings.from_environment()
     rate_limiter = dependencies.rate_limiter or InMemoryRateLimiter(
         security.rate_limit_requests,
@@ -153,4 +166,6 @@ def create_backend_app(dependencies=None):
         ),
         security_settings=security,
         rate_limiter=rate_limiter,
+        logger=logger,
+        metrics=metrics,
     )

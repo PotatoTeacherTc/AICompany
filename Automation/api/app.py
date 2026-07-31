@@ -38,6 +38,8 @@ def create_app(
     ),
     security_settings=None,
     rate_limiter=None,
+    logger=None,
+    metrics=None,
 ):
     """Create the HTTP application without starting a server."""
     if automation_service is None:
@@ -60,11 +62,20 @@ def create_app(
             allow_origins=list(allowed_origins),
             allow_credentials=False,
             allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
-            allow_headers=["Authorization", "Content-Type", "X-Correlation-ID"],
+            allow_headers=[
+                "Authorization", "Content-Type",
+                "X-Correlation-ID", "X-Request-ID",
+            ],
         )
     @app.middleware("http")
     async def correlation_middleware(request: Request, call_next):
-        context=RequestContext.create(request.headers.get("X-Correlation-ID")); token=set_context(context); started=time.perf_counter()
+        context=RequestContext.create(
+            request.headers.get("X-Correlation-ID"),
+            request.headers.get("X-Request-ID"),
+        )
+        token=set_context(context); started=time.perf_counter()
+        if metrics is not None:
+            metrics.request_started()
         try:
             if rate_limiter is not None:
                 client = request.client.host if request.client else "unknown"
@@ -77,6 +88,7 @@ def create_app(
                         getattr(rate_limiter, "window_seconds", 60)
                     )
                     response.headers["X-Correlation-ID"] = context.correlation_id
+                    response.headers["X-Request-ID"] = context.request_id
                     from core.security import security_headers
                     production = bool(
                         security_settings
@@ -84,11 +96,44 @@ def create_app(
                     )
                     for name, value in security_headers(production).items():
                         response.headers[name] = value
-                    return response
-            response=await call_next(request)
+                else:
+                    response=await call_next(request)
+            else:
+                response=await call_next(request)
+        except Exception as error:
+            duration_ms = (time.perf_counter() - started) * 1000
+            if metrics is not None:
+                metrics.request_finished(
+                    500, duration_ms, type(error).__name__
+                )
+            from core.structured_logging import LogLevel, safe_log
+            safe_log(
+                logger, "HTTP_REQUEST_FAILED", "BackendAPI",
+                level=LogLevel.ERROR, status="FAILED",
+                duration_ms=duration_ms,
+                metadata={
+                    "request_id": context.request_id,
+                    "correlation_id": context.correlation_id,
+                },
+            )
+            raise
         finally:
             reset_context(token)
+        duration_ms = (time.perf_counter() - started) * 1000
+        if metrics is not None:
+            metrics.request_finished(response.status_code, duration_ms)
+        from core.structured_logging import LogLevel, safe_log
+        safe_log(
+            logger, "HTTP_REQUEST_COMPLETED", "BackendAPI",
+            level=LogLevel.INFO if response.status_code < 400 else LogLevel.WARNING,
+            status=str(response.status_code), duration_ms=duration_ms,
+            metadata={
+                "request_id": context.request_id,
+                "correlation_id": context.correlation_id,
+            },
+        )
         response.headers["X-Correlation-ID"]=context.correlation_id
+        response.headers["X-Request-ID"]=context.request_id
         from core.security import harden_set_cookie, security_headers
         production = bool(
             security_settings
@@ -181,6 +226,7 @@ def create_app(
     app.state.audit_query_service = audit_query_service
     app.state.auth_required = auth_required
     app.state.health_service = health_service
+    app.state.metrics = metrics
     app.state.task_api = TaskApi(automation_service, task_query_service, workspace_service)
     for exception_type, handler in HANDLED_EXCEPTIONS.items():
         app.add_exception_handler(exception_type, handler)
@@ -196,6 +242,15 @@ def create_app(
         if app.state.health_service is None:
             return {"status": "not_ready"}
         return app.state.health_service.readiness()
+
+    @app.get("/health/metrics")
+    def health_metrics():
+        if app.state.metrics is None:
+            return {"status": "not_configured"}
+        return {
+            "status": "ok",
+            "metrics": app.state.metrics.snapshot(),
+        }
 
     @app.post("/tasks", status_code=201)
     def create_task(payload: dict, authorization: str | None = Header(default=None)):

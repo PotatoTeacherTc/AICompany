@@ -559,6 +559,14 @@ not inferred from a missing historical mission log.
   single-process, not distributed. Five focused tests, Auth/Foundation
   regressions, Backend 317 tests, Frontend two tests, and build pass.
 
+- Mission 124: the Backend now injects process-local aggregate operational
+  metrics and structured request logging. Safe request and correlation IDs
+  connect events without recording headers, query values, or bodies.
+  `/health/metrics` exposes request/status/duration, bounded error, and
+  dependency-health aggregates only. Logger failure is isolated from HTTP
+  results. External monitoring, durable metrics, tracing, and alerting remain
+  unimplemented. Five focused tests and the Backend 322-test suite pass.
+
 ## Implemented pipelines
 
 | Type | Pipeline | Current result |
@@ -574,14 +582,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current Backend suite contains **317 tests**. Its expected command is:
+The current Backend suite contains **322 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Current verification result: **317 passed, 0 failed**.
+Current verification result: **322 passed, 0 failed**.
 
 ## Not implemented
 

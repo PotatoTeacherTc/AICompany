@@ -671,9 +671,23 @@ today/7-day/30-day filter is invented.
   rate limiting, CORS denial, Auth regression, Backend 317 tests, Frontend
   tests, and production build.
 
+### Mission 124 — Monitoring (Complete, Process-Local)
+
+- Goal: provide safe operational visibility without replacing ExecutionHistory
+  or the existing Workspace Monitor.
+- Scope: injected aggregate request metrics, request and correlation IDs,
+  structured request completion/failure events, health-probe metrics, bounded
+  error summaries, and the read-only `/health/metrics` endpoint.
+- Excludes: external monitoring SaaS, Prometheus exporters, distributed
+  tracing, durable metric storage, alerting, and cloud monitoring.
+- Completion: metrics and structured events contain only safe aggregates and
+  identifiers; logger failure cannot change an HTTP result.
+- Prerequisites: Mission 123.
+- Tests: five focused tests and Backend 322 tests.
+
 ## Longer-term phases
 
-- Missions 124-130 remain production monitoring/recovery,
+- Missions 125-130 remain production recovery,
   distributed execution,
   security-hardening, Workflow Builder, Marketplace, Enterprise, and v1.0
   phases; no such feature is implemented by Mission 120.

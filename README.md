@@ -274,6 +274,22 @@ safety boundary, not a distributed quota service. TLS certificates, HTTPS
 termination, cloud WAF/firewall, distributed limiting, and secret management
 remain external deployment responsibilities.
 
+## Local monitoring foundation
+
+Mission 124 adds process-local operational metrics and structured HTTP event
+logging through dependency injection. Every response carries an independent
+`X-Request-ID` and a reusable `X-Correlation-ID`; unsafe incoming values are
+replaced. The read-only `GET /health/metrics` response contains request counts,
+status counts, average duration, safe error categories, and dependency-health
+aggregates only.
+
+This layer does not record request bodies, query values, credentials, raw
+errors, or absolute paths. Logging failures do not alter HTTP results.
+ExecutionHistory remains the user execution record, while WorkspaceMonitor
+continues to observe persisted product state. Metrics are in-memory and
+single-process; external monitoring, durable time series, distributed tracing,
+alerting, and cloud services are not implemented.
+
 ## User lifecycle
 
 Mission 102 adds lifecycle state to the existing User implementation rather
