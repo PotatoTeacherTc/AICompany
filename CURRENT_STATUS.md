@@ -2,15 +2,15 @@
 
 ## Mission
 
-Official current baseline: **Mission 131**.
+Official current baseline: **Mission 132**.
 
 Current product status: **Local/Fake SaaS Beta + Production Foundation**.
 
-Mission 1-131 completion means only that each Mission's bounded Contract,
+Mission 1-132 completion means only that each Mission's bounded Contract,
 Foundation, Fake/Offline, or Local Integration scope is complete. Project APEX
 as a whole is not Production Ready. The official next Mission is undefined.
 
-Current verification baseline: Backend 359 tests, Frontend two tests,
+Current verification baseline: Backend 365 tests, Frontend two tests,
 Frontend production build, and a healthy four-service Docker development
 stack.
 
@@ -46,6 +46,13 @@ candidate. Enterprise and AICompany v1.0 remain unimplemented.
 
 The following status is based on the current source tree and automated tests,
 not inferred from a missing historical mission log.
+
+- Mission 132: production composition can select a Redis FIFO Job transport
+  while PostgreSQL remains authoritative for the existing Job record. Pending
+  and processing keys are Workspace/namespace scoped, reserve is bounded,
+  acknowledge is explicit, and safe failures omit Redis URLs. API-submitted
+  pending Jobs remain queryable after Backend restart. Distributed Lock and
+  external Worker execution are not yet implemented.
 
 - Mission 131: the existing shared StateRepository now selects memory, JSON,
   or PostgreSQL from the environment. PostgreSQL uses psycopg, an additive
@@ -677,14 +684,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current Backend suite contains **359 tests**. Its expected command is:
+The current Backend suite contains **365 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Current verification result: **359 passed, 0 failed** (one Docker PostgreSQL
+Current verification result: **365 passed, 0 failed** (one Docker PostgreSQL
 integration test is conditionally skipped outside the integration environment
 and passed against Compose PostgreSQL).
 

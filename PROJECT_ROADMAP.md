@@ -8,16 +8,15 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 131
+## Current baseline: Mission 132
 
-Mission 1-131 completion means completion of each Mission's explicitly bounded
+Mission 1-132 completion means completion of each Mission's explicitly bounded
 Contract, Foundation, Fake/Offline, or Local Integration scope. It does not
 mean that Project APEX as a whole is Production Ready.
 
 Current product status: **Local/Fake SaaS Beta + Production Foundation with a
 bounded PostgreSQL Production Integration**. Mission 121-130 are Foundation
-work. The official next Mission and Phase after Mission 131 are **not defined**
-and require user approval.
+work. Mission 132 begins the approved Production Execution Layer.
 
 ### Completion level vocabulary
 
@@ -847,6 +846,18 @@ today/7-day/30-day filter is invented.
   Backend 359 tests, Frontend tests/build, and healthy Compose verification.
 - Completion level: **bounded PostgreSQL Production Integration** for the
   shared StateRepository only. Project APEX remains not Production Ready.
+
+### Mission 132 — Redis Queue Integration (Complete, bounded Production Integration)
+
+- Reuses the existing Job and `StateRepository` contracts while Redis stores
+  only Workspace-namespaced FIFO pending/processing Job IDs.
+- `memory` remains the default; production Compose explicitly selects Redis.
+- Bounded blocking reserve, acknowledge, safe connection errors, namespace
+  isolation, PostgreSQL-backed restart reads, and Job API submission are
+  verified. Distributed locking and external Worker consumption remain
+  Mission 133 and Mission 134.
+- Tests: six focused tests, Backend 365 tests, and real Docker Redis restart
+  verification.
 
 ### Unnumbered next-Phase candidates
 

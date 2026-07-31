@@ -593,12 +593,18 @@ Execution, Artifact, Usage/Quota, Plan, Department, and Worker data. Summary
 aggregation is bounded to 100 records; recent lists accept 1–20 items. No
 analytics database, WebSocket, or control operation is part of this endpoint.
 
-The official Mission after 131 is undefined. Before implementation, the user
-must approve the next production bottleneck: Redis Queue/Lock/Broker and
-distributed Workers; real Object Storage integration; deployment/TLS/Secret
-Manager; or real Billing/approved Media Provider integration. These candidates
-have no Mission numbers. Workflow, Plugin, and Marketplace expansion is not a
-current priority candidate.
+Mission 132 adds an environment-selected Redis Job Queue while preserving the
+existing Job contract and PostgreSQL state. Use
+`AICOMPANY_QUEUE_BACKEND=redis`, `REDIS_URL`, and an optional
+`AICOMPANY_QUEUE_NAMESPACE`; memory remains the safe default. Redis contains
+Workspace-scoped pending/processing IDs only. Distributed locking and an
+external Worker are not part of Mission 132.
+
+The approved next Mission is Mission 133 Distributed Lock. Later approved
+Production Execution Layer work covers distributed Workers, recovery/DLQ, and
+multi-instance validation. Object Storage, deployment/TLS/Secret Manager, and
+real Billing/approved Media Provider integration remain outside this bundle.
+Workflow, Plugin, and Marketplace expansion is not a current priority.
 
 The initial Web Dashboard is in `Web/`. Run `npm.cmd install`, set
 `VITE_API_BASE_URL` to the Backend loopback URL, then use `npm.cmd run dev`.
