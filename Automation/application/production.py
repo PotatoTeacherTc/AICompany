@@ -1,6 +1,7 @@
 """Environment-driven production composition without import-time I/O."""
 
 import os
+import socket
 
 from application.backend import BackendDependencies, BackendHealthService, create_backend_app
 from application.plan_service import PlanApplicationService
@@ -72,6 +73,7 @@ def create_production_app(environment=None):
         health_service=BackendHealthService(
             persistence_probe=repository.health,
             queue_probe=queue.health if hasattr(queue, "health") else lambda: True,
+            instance_id=values.get("AICOMPANY_INSTANCE_ID") or socket.gethostname(),
         ),
         infrastructure_resources=resources,
     ))

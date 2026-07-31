@@ -1,8 +1,8 @@
 # AICompany
 
-Official baseline: **Mission 131**. Current product status:
-**Local/Fake SaaS Beta + Production Foundation with bounded PostgreSQL
-Production Integration**. Completion through Mission 131 is limited to each Mission's documented Contract, Foundation,
+Official baseline: **Mission 136**. Current product status:
+**Local/Fake SaaS Beta + Production Foundation with bounded PostgreSQL/Redis
+local multi-instance validation**. Completion through Mission 136 is limited to each Mission's documented Contract, Foundation,
 Fake/Offline, or Local Integration scope; Project APEX is not Production Ready.
 The official next Mission is undefined and requires user approval.
 
@@ -521,7 +521,7 @@ this feature.
 
 ## Current Backend scope and next work
 
-The official baseline is Mission 131. Mission 1-131 completion means completion
+The official baseline is Mission 136. Mission 1-136 completion means completion
 of each Mission's bounded Contract, Foundation, Fake/Offline, or Local
 Integration scope; Project APEX is not Production Ready. The current product
 state is **Local/Fake SaaS Beta + Production Foundation**.
@@ -607,8 +607,19 @@ Compose starts it beside Backend. It consumes only the deterministic
 `offline-success` target and writes Job History/Usage to PostgreSQL. The
 Mission 135 adds bounded exponential-backoff retries, persisted attempt state,
 Workspace-scoped Redis delayed/DLQ structures, and crashed-Worker recovery.
-The approved next Mission is Mission 136 multi-instance validation. Object
-Storage, deployment/TLS/Secret Manager, and
+Mission 136 validates two local Backend and two Worker containers over shared
+PostgreSQL/Redis. The loopback API port is owned by a small Nginx gateway;
+Backend health includes its safe container instance ID, and Redis enforces
+cross-Backend idempotent submission. Run the validated topology with:
+
+```powershell
+$env:AICOMPANY_WORKER_WORKSPACES="default,workspace-b"
+docker compose up -d --scale backend=2 --scale worker=2
+```
+
+This is single-node local Docker validation, not Cloud HA. `/ready` remains
+`not_ready` until the existing Monitor probe is composed. No Mission after 136
+is defined. Object Storage, deployment/TLS/Secret Manager, and
 real Billing/approved Media Provider integration remain outside this bundle.
 Workflow, Plugin, and Marketplace expansion is not a current priority.
 

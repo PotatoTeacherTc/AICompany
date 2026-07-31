@@ -1,8 +1,12 @@
 """Redis transport for the existing persistent Job contract."""
 
 import os
+import time
+import uuid
+from datetime import datetime, timezone
 
-from core.task_queue import JobStatus, PersistentJobQueue
+from core.structured_logging import safe_log
+from core.task_queue import Job, JobStatus, PersistentJobQueue
 
 
 class QueueConfig:
@@ -70,9 +74,34 @@ class RedisJobQueue(PersistentJobQueue):
                 restored = self._restore(value)
                 if restored is not None and restored.idempotency_key == idempotency_key:
                     self._jobs[restored.job_id] = restored
+                    self.redis.set(self._idempotency(workspace_id, idempotency_key), restored.job_id, nx=True)
                     return restored
-            job = super().enqueue(workspace_id, mission_id, target_id, idempotency_key, retry_state)
+            job_id = uuid.uuid4().hex
+            key = self._idempotency(workspace_id, idempotency_key)
+            if not self.redis.set(key, job_id, nx=True, px=5000):
+                existing = self.redis.get(key)
+                existing_id = existing.decode("utf-8") if isinstance(existing, bytes) else str(existing)
+                for _ in range(20):
+                    value = self.repository.get("job", existing_id, workspace_id)
+                    restored = self._restore(value) if value else None
+                    if restored is not None:
+                        self._jobs[restored.job_id] = restored
+                        return restored
+                    time.sleep(0.01)
+                raise RuntimeError("redis_queue_submission_in_progress")
+            job = Job(
+                job_id, workspace_id, mission_id, target_id, JobStatus.PENDING,
+                datetime.now(timezone.utc).isoformat(), idempotency_key, retry_state,
+            )
+            self._jobs[job.job_id] = job
+            self._save(job)
             self.redis.rpush(self._pending(workspace_id), job.job_id)
+            self.redis.set(key, job.job_id)
+            safe_log(
+                self.logger, "QUEUE_ENQUEUED", "RedisJobQueue",
+                workspace_id=workspace_id, mission_id=mission_id,
+                job_id=job.job_id, status=job.status,
+            )
             return job
         except (TypeError, ValueError):
             raise
@@ -195,6 +224,9 @@ class RedisJobQueue(PersistentJobQueue):
 
     def _processing(self, workspace_id):
         return f"{self.namespace}:queue:{workspace_id}:processing"
+
+    def _idempotency(self, workspace_id, idempotency_key):
+        return f"{self.namespace}:queue:{workspace_id}:idempotency:{idempotency_key}"
 
 
 def connect_redis(redis_url):

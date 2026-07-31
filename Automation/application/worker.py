@@ -2,6 +2,8 @@
 
 import os
 import signal
+import socket
+import time
 
 from application.persistent_execution_service import PersistentExecutionService
 from application.production import create_state_repository_from_environment
@@ -34,7 +36,7 @@ def build_worker(environment=None):
     )
     worker = DistributedJobWorker(
         queue, RedisDistributedLock(client, config.namespace),
-        values.get("AICOMPANY_WORKER_ID", "worker"),
+        values.get("AICOMPANY_WORKER_ID") or socket.gethostname(),
         int(values.get("AICOMPANY_WORKER_LOCK_TTL", "30")), recovery,
     )
     history = ExecutionHistory(state_repository=repository)
@@ -69,12 +71,21 @@ def main():
     signal.signal(signal.SIGINT, stop)
     try:
         while running["value"]:
-            for workspace_id in workspaces:
-                service.run_once(workspace_id)
+            if not run_worker_cycle(service, workspaces):
+                time.sleep(1)
     finally:
         resources.close()
         close = getattr(service.queue, "close", None)
         if close: close()
+
+
+def run_worker_cycle(service, workspaces):
+    try:
+        for workspace_id in workspaces:
+            service.run_once(workspace_id)
+        return True
+    except RuntimeError:
+        return False
 
 
 if __name__ == "__main__": main()

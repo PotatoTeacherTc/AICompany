@@ -1,4 +1,5 @@
 import json
+import threading
 import unittest
 
 from core.persistence import InMemoryStateRepository
@@ -10,6 +11,8 @@ class FakeRedis:
     def __init__(self, fail=False):
         self.lists = {}
         self.sorted = {}
+        self.strings = {}
+        self.lock = threading.Lock()
         self.fail = fail
         self.closed = False
 
@@ -19,6 +22,17 @@ class FakeRedis:
 
     def rpush(self, key, value):
         self._check(); self.lists.setdefault(key, []).append(value)
+
+    def set(self, key, value, nx=False, px=None):
+        self._check()
+        with self.lock:
+            if nx and key in self.strings:
+                return False
+            self.strings[key] = value
+            return True
+
+    def get(self, key):
+        self._check(); return self.strings.get(key)
 
     def blmove(self, source, destination, timeout, src, dest):
         self._check()
@@ -81,6 +95,20 @@ class RedisJobQueueTests(unittest.TestCase):
         self.assertEqual(job.job_id, second.get(job.job_id, "ws-a").job_id)
         self.assertEqual([job.job_id], [value.job_id for value in second.list("ws-a")])
         self.assertEqual(job.job_id, second.claim("ws-a", "worker").job_id)
+
+    def test_two_instances_submit_one_job_for_same_idempotency_key(self):
+        repository = InMemoryStateRepository(); redis = FakeRedis()
+        queues = [RedisJobQueue(repository, redis, namespace="shared") for _ in range(2)]
+        barrier = threading.Barrier(2); results = []
+        def submit(queue):
+            barrier.wait()
+            results.append(queue.enqueue("ws", "m", "target", "same"))
+        threads = [threading.Thread(target=submit, args=(queue,)) for queue in queues]
+        for thread in threads: thread.start()
+        for thread in threads: thread.join()
+        self.assertEqual(1, len({job.job_id for job in results}))
+        self.assertEqual(1, len(repository.list("job", "ws")))
+        self.assertEqual(1, len(redis.lists["shared:queue:ws:pending"]))
 
     def test_namespace_isolation(self):
         repository = InMemoryStateRepository()

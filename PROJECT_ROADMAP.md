@@ -8,9 +8,9 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 135
+## Current baseline: Mission 136
 
-Mission 1-135 completion means completion of each Mission's explicitly bounded
+Mission 1-136 completion means completion of each Mission's explicitly bounded
 Contract, Foundation, Fake/Offline, or Local Integration scope. It does not
 mean that Project APEX as a whole is Production Ready.
 
@@ -895,6 +895,24 @@ today/7-day/30-day filter is invented.
   verification for three-attempt backoff/DLQ plus crashed-Worker recovery.
 - Excludes multi-instance validation, which remains Mission 136.
 
+### Mission 136 — Multi-instance Execution Validation (Complete, local Docker validation)
+
+- Validates two Backend and two external Worker containers against one
+  PostgreSQL and one Redis instance. A local Nginx gateway provides a stable
+  loopback API endpoint and re-resolves scaled Backend containers.
+- Redis idempotency ownership closes the concurrent cross-Backend submission
+  race while PostgreSQL remains authoritative. Backend health exposes a safe
+  container instance ID; Worker IDs default to container hostnames.
+- Tests and Docker E2E cover one completion for concurrent duplicate submits,
+  multiple Jobs in two Workspaces, both Worker containers consuming work,
+  Backend and Worker loss, restart persistence, and Redis reconnect without
+  terminating Workers.
+- Memory/JSON/local modes remain compatible. This is local single-node
+  validation, not Cloud deployment or Production Ready status. `/ready`
+  remains `not_ready` until the existing Monitor probe is composed.
+- Excludes Kubernetes, leader election, Redis Cluster, new Broker/framework,
+  Cloud/TLS/Secret Manager, and work after Mission 136.
+
 ### Unnumbered next-Phase candidates
 
 No candidate below is an approved Phase or Mission:
@@ -909,9 +927,8 @@ before a Mission number or implementation scope is assigned.
 
 ## Longer-term phases
 
-- Mission 136 is the approved multi-instance validation boundary. Work after
-  Mission 136 remains undefined and must be scoped from actual code and the
-  roadmap before development.
+- Work after Mission 136 remains undefined and must be scoped from actual code
+  and the roadmap before development.
 - Historical Phase F themes included cloud/storage/broker choices, CI/CD,
   security hardening, Workflow Builder, Marketplace, Enterprise, and
   AICompany v1.0. Missions 121-130 implemented only their documented

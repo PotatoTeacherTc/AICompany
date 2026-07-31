@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import re
 
 from config.settings import ALLOW_PAID_PROVIDER
 from core.structured_logging import LogLevel, safe_log
@@ -8,6 +9,7 @@ from core.structured_logging import NullLogger
 
 
 BACKEND_SCHEMA_VERSION = "1"
+_INSTANCE_ID = re.compile(r"^[A-Za-z0-9_.-]{1,128}$")
 
 
 class BackendHealthService:
@@ -20,12 +22,18 @@ class BackendHealthService:
         monitor_probe=None,
         logger=None,
         metrics=None,
+        instance_id=None,
     ):
         self.persistence_probe = persistence_probe
         self.queue_probe = queue_probe
         self.monitor_probe = monitor_probe
         self.logger = logger
         self.metrics = metrics
+        self.instance_id = (
+            instance_id
+            if isinstance(instance_id, str) and _INSTANCE_ID.fullmatch(instance_id)
+            else None
+        )
 
     def snapshot(self):
         probes = {
@@ -57,6 +65,8 @@ class BackendHealthService:
         }
         if details:
             result["details"] = details
+        if self.instance_id:
+            result["instance_id"] = self.instance_id
         return result
 
     def readiness(self):
@@ -70,6 +80,7 @@ class BackendHealthService:
             "schema_version": value["schema_version"],
             "checks": value["checks"],
             "paid_provider_enabled": value["paid_provider_enabled"],
+            **({"instance_id": self.instance_id} if self.instance_id else {}),
         }
 
     @staticmethod
