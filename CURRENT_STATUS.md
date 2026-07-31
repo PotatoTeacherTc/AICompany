@@ -593,6 +593,14 @@ not inferred from a missing historical mission log.
   Five focused, 16 related, all 337 Backend tests, Frontend tests/build, and
   healthy Compose verification pass.
 
+- Mission 128: immutable WorkflowDefinition and StepDefinition contracts now
+  describe dependencies, conditional targets, bounded Retry policy, and
+  parallel groups. Validation rejects duplicates, missing references, cycles,
+  malformed/oversized JSON, and invalid versions. JSON import/export is
+  deterministic. There is no UI, execution-engine change, scheduling,
+  persistence, or provider call. Five focused and all 342 Backend tests,
+  Frontend tests/build, and healthy Compose verification pass.
+
 ## Implemented pipelines
 
 | Type | Pipeline | Current result |
@@ -608,14 +616,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current Backend suite contains **337 tests**. Its expected command is:
+The current Backend suite contains **342 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Current verification result: **337 passed, 0 failed**.
+Current verification result: **342 passed, 0 failed**.
 
 ## Not implemented
 

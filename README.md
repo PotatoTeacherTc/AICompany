@@ -326,6 +326,14 @@ Workspace-qualified internal references; the signed-reference contract is
 bounded and opaque. No AWS, GCP, Azure, real bucket, credential, public URL,
 or network operation is included.
 
+## Workflow Builder foundation
+
+Mission 128 defines versioned Workflow and Step contracts with dependency DAGs,
+conditional branches, bounded Retry policy, and parallel-group labels.
+Definitions validate and round-trip through deterministic JSON. This is not a
+workflow runtime: UI, execution, scheduling, persistence, and provider calls
+are intentionally absent.
+
 ## User lifecycle
 
 Mission 102 adds lifecycle state to the existing User implementation rather

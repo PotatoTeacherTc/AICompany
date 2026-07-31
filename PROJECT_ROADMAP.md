@@ -730,10 +730,22 @@ today/7-day/30-day filter is invented.
 - Tests: five focused tests, 16 related tests, Backend 337 tests, Frontend
   tests/build, and healthy Compose verification.
 
+### Mission 128 — Workflow Builder Foundation (Complete, Definition-Only)
+
+- Goal: define portable workflows without expanding runtime execution.
+- Scope: versioned Workflow and Step definitions, conditional branches,
+  bounded retry policy, parallel-group contract, DAG validation, and
+  deterministic JSON import/export.
+- Excludes: UI, execution, scheduling, persistence, plugin resolution, and
+  provider calls.
+- Completion: duplicates, unknown references, cycles, invalid retry values,
+  malformed JSON, and oversized definitions are rejected.
+- Tests: five focused tests, Backend 342 tests, Frontend tests/build, and
+  healthy Compose verification.
+
 ## Longer-term phases
 
-- Missions 128-130 remain Workflow Builder, Plugin SDK, and Marketplace
-  foundation work,
+- Missions 129-130 remain Plugin SDK and Marketplace foundation work,
   distributed execution,
   security-hardening, Workflow Builder, Marketplace, Enterprise, and v1.0
   phases; no such feature is implemented by Mission 120.
