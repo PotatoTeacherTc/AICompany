@@ -566,11 +566,22 @@ today/7-day/30-day filter is invented.
   session, role restrictions, partial failure, safe rendering, and offline
   end-to-end execution.
 
+### Mission 117 — Subscription Domain (Complete)
+
+- Goal: model one Workspace product-subscription lifecycle without payment.
+- Scope: TRIALING/ACTIVE/PAST_DUE/CANCELLED/EXPIRED transitions, plan changes,
+  period-end cancellation/undo, shared local persistence, RBAC, and audit.
+- Excludes: prices, invoices, checkout, proration, refunds, payment providers,
+  and external network calls.
+- Completion: active subscriptions apply the existing Plan; cancelled or
+  expired records remain while effective entitlements fall back to FREE.
+- Prerequisites: Missions 114 and 116.
+- Tests: lifecycle, duplicate prevention, restart, Workspace isolation,
+  fallback, validation, and redaction.
+
 ## Longer-term phases
 
-- Missions 117-120: Subscription, Billing, Admin, then SaaS Beta. These remain
-  Phase-level boundaries until Mission 114 entitlements and Mission 116 user
-  flow establish their detailed contracts.
+- Missions 118-120: Billing foundation, Admin operations, then local SaaS Beta.
 - Missions 121-130: production cloud/storage/broker choices, CI/CD, security
   hardening, Workflow Builder, Marketplace, Enterprise, and AICompany v1.0.
 - Real music/image/video/YouTube adapters remain separately blocked by

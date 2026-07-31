@@ -505,6 +505,14 @@ not inferred from a missing historical mission log.
   and recent lists are configurable from 1 to 20. It adds no analytics store,
   control action, frontend, or time-period query. Three focused tests and the
   full 289-test Backend suite pass offline.
+- Mission 116: the initial React/TypeScript Web Dashboard is committed; its two
+  frontend tests and production build pass offline.
+- Mission 117: SubscriptionManager adds one restart-safe Workspace subscription
+  with validated transitions, plan changes, period-end cancellation, RBAC
+  routes, and audit integration. Active records apply existing Plans;
+  CANCELLED/EXPIRED records remain while assignment falls back to FREE. Five
+  focused tests and the full 294-test Backend suite pass offline. Pricing,
+  invoices, checkout, payments, and external billing calls remain absent.
 
 ## Implemented pipelines
 
@@ -521,14 +529,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current Backend suite contains **289 tests**. Its expected command is:
+The current Backend suite contains **294 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Current verification result: **289 passed, 0 failed**.
+Current verification result: **294 passed, 0 failed**.
 
 ## Not implemented
 
@@ -538,10 +546,8 @@ Current verification result: **289 passed, 0 failed**.
   exist without requiring an API key.
 - Automatic natural-language multi-step planning from a user goal. Structured
   goal-step input can now be validated and represented as executable Tasks.
-- Persistent Job execution composed into the Backend request boundary. The
-  persistent queue/restart contracts exist but are not connected to HTTP work
-  submission or a continuously running worker.
-- UI and interactive goal-submission layer.
+- Continuous/distributed background execution; local persistent Job execution
+  and authenticated controls remain in-process.
 - Repository-backed/distributed Mission locking, real Git worktrees, external
   Claude/Gemini provider adapters and credentials, in-flight call
   interruption, human approval, and collaboration commit/push automation.
@@ -550,7 +556,8 @@ Current verification result: **289 passed, 0 failed**.
   providers remain disabled and no content-generation network call is made.
 - Distributed locking, OS cron, Celery/Redis/message-broker infrastructure,
   external databases, and cloud storage.
-- Web Dashboard, external APM/Prometheus/Grafana/Sentry integrations,
+- Real billing/payment integration, checkout, proration, invoices, refunds,
+  external APM/Prometheus/Grafana/Sentry integrations,
   distributed monitoring, real-time WebSocket updates, remote log shipping,
   distributed tracing, log retention/rotation, model pricing, credit/billing
   ledgers, a general desktop/OS agent, dynamic LLM organization design, and HR

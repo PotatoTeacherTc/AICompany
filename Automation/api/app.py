@@ -26,6 +26,7 @@ def create_app(
     quota_service=None,
     plan_service=None,
     dashboard_service=None,
+    subscription_service=None,
     health_service=None,
     auth_required=False,
 ):
@@ -107,6 +108,7 @@ def create_app(
     app.state.quota_service = quota_service
     app.state.plan_service = plan_service
     app.state.dashboard_service = dashboard_service
+    app.state.subscription_service = subscription_service
     if audit_service is None:
         from application.audit_service import AuditService
         audit_service = AuditService()
@@ -516,6 +518,77 @@ def create_app(
             from api.errors import error_response
             return error_response(404, "workspace_not_found", "Workspace not found")
         return value
+
+    @app.get("/workspaces/{workspace_id}/subscription")
+    def current_subscription(
+        workspace_id: str,
+        authorization: str | None = Header(default=None),
+    ):
+        denied = _authorize_workspace(
+            app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"}
+        )
+        if denied:
+            return denied
+        if app.state.subscription_service is None:
+            from api.errors import error_response
+            return error_response(
+                503, "subscription_unavailable", "Subscription is unavailable"
+            )
+        value = app.state.subscription_service.current(workspace_id)
+        if value is None:
+            from api.errors import error_response
+            return error_response(
+                404, "subscription_not_found", "Subscription not found"
+            )
+        return value
+
+    @app.post("/workspaces/{workspace_id}/subscription", status_code=201)
+    def create_subscription(
+        workspace_id: str,
+        payload: dict,
+        authorization: str | None = Header(default=None),
+    ):
+        return _subscription_mutation(
+            app, workspace_id, authorization, "create", payload
+        )
+
+    @app.put("/workspaces/{workspace_id}/subscription/plan")
+    def change_subscription_plan(
+        workspace_id: str,
+        payload: dict,
+        authorization: str | None = Header(default=None),
+    ):
+        return _subscription_mutation(
+            app, workspace_id, authorization, "change_plan", payload
+        )
+
+    @app.post("/workspaces/{workspace_id}/subscription/cancel")
+    def cancel_subscription(
+        workspace_id: str,
+        authorization: str | None = Header(default=None),
+    ):
+        return _subscription_mutation(
+            app, workspace_id, authorization, "schedule_cancel"
+        )
+
+    @app.post("/workspaces/{workspace_id}/subscription/cancel/undo")
+    def undo_subscription_cancel(
+        workspace_id: str,
+        authorization: str | None = Header(default=None),
+    ):
+        return _subscription_mutation(
+            app, workspace_id, authorization, "undo_cancel"
+        )
+
+    @app.put("/workspaces/{workspace_id}/subscription/status")
+    def change_subscription_status(
+        workspace_id: str,
+        payload: dict,
+        authorization: str | None = Header(default=None),
+    ):
+        return _subscription_mutation(
+            app, workspace_id, authorization, "transition", payload
+        )
 
     @app.get("/workspaces/{workspace_id}/plans")
     def list_plans(
@@ -1089,3 +1162,35 @@ def _artifact_lifecycle_response(app, workspace_id, artifact_id, *, archive):
     if value is None:
         return error_response(404, "artifact_not_found", "Artifact not found")
     return value
+
+
+def _subscription_mutation(
+    app, workspace_id, authorization, operation_name, payload=None
+):
+    from api.errors import error_response
+
+    denied = _authorize_workspace(
+        app, workspace_id, authorization, {"OWNER", "ADMIN"}
+    )
+    if denied:
+        return denied
+    service = app.state.subscription_service
+    if service is None:
+        return error_response(
+            503, "subscription_unavailable", "Subscription is unavailable"
+        )
+    try:
+        operation = getattr(service, operation_name)
+        return (
+            operation(workspace_id)
+            if payload is None
+            else operation(workspace_id, payload)
+        )
+    except KeyError:
+        return error_response(
+            404, "subscription_not_found", "Subscription not found"
+        )
+    except (TypeError, ValueError):
+        return error_response(
+            409, "subscription_conflict", "Subscription cannot be changed"
+        )

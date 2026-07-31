@@ -81,6 +81,7 @@ class BackendDependencies:
     quota_service: object | None = None
     plan_service: object | None = None
     dashboard_service: object | None = None
+    subscription_service: object | None = None
     health_service: BackendHealthService | None = None
     auth_required: bool = False
 
@@ -111,6 +112,7 @@ def create_backend_app(dependencies=None):
         quota_service=dependencies.quota_service,
         plan_service=dependencies.plan_service,
         dashboard_service=dependencies.dashboard_service,
+        subscription_service=dependencies.subscription_service,
         health_service=health_service,
         auth_required=dependencies.auth_required,
     )

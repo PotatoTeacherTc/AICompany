@@ -149,6 +149,16 @@ providers remain Fake and paid providers remain disabled. Missions 102-108
 subsequently added the documented User, Workspace, Auth, RBAC, authenticated
 API, Artifact-read, and Usage-reporting boundaries.
 
+## Subscription lifecycle
+
+Mission 117 adds a local, Workspace-scoped subscription contract over the
+existing FREE/PRO/BUSINESS Plan catalog. Members may read it; OWNER and ADMIN
+roles may create it, change its plan, schedule or undo period-end cancellation,
+and perform validated status transitions. JSON persistence supports restart.
+Cancelled or expired records are preserved while entitlements fall back to
+FREE. There is no checkout, pricing, proration, invoice, refund, card storage,
+payment provider, or external network request.
+
 ## User lifecycle
 
 Mission 102 adds lifecycle state to the existing User implementation rather
