@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 import json
 from urllib.parse import urlparse
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from providers.models import UsageMetadata
@@ -22,6 +23,7 @@ class TextGenerationRequest:
     maximum_output_size: int = 12000
     model: str | None = None
     timeout_seconds: float = 30.0
+    response_schema: dict | None = None
 
 
 @dataclass(frozen=True)
@@ -30,6 +32,19 @@ class TextGenerationResult:
     model: str
     output_text: str
     usage: UsageMetadata | dict | None = None
+    finish_reason: str | None = None
+    response_id: str | None = None
+
+
+class TextProviderError(RuntimeError):
+    """Safe Provider failure that never includes upstream payloads or errors."""
+
+    def __init__(self, code, provider, retryable=False, correlation_id=None):
+        self.code = code
+        self.provider = provider
+        self.retryable = bool(retryable)
+        self.correlation_id = correlation_id
+        super().__init__(f"{provider} text provider failed: {code}")
 
 
 class TextProvider:
@@ -162,6 +177,118 @@ class OllamaTextProvider(TextProvider):
             return json.loads(response.read().decode("utf-8"))
 
 
+class OpenAITextProvider(TextProvider):
+    """Explicit paid OpenAI Responses API adapter with injectable transport."""
+
+    is_paid = True
+    provider_name = "openai"
+    endpoint = "https://api.openai.com/v1/responses"
+
+    def __init__(self, api_key, transport=None):
+        if not isinstance(api_key, str) or not api_key.strip():
+            raise ValueError("OpenAI API key is required")
+        self._api_key = api_key.strip()
+        self.transport = transport or self._transport
+
+    def generate_text(self, request):
+        _validate_request(request)
+        if not request.model:
+            raise ValueError("OpenAI model is required")
+        payload = {
+            "model": request.model,
+            "input": (
+                request.instruction
+                if request.output_format == "text" or request.response_schema is not None
+                else _structured_prompt(request)
+            ),
+            "max_output_tokens": min(request.maximum_output_size // 4, 4096),
+            "store": False,
+            "text": {"format": self._format(request)},
+        }
+        try:
+            response = self.transport(
+                self.endpoint,
+                payload,
+                {"Authorization": f"Bearer {self._api_key}", "Content-Type": "application/json"},
+                request.timeout_seconds,
+            )
+        except TextProviderError:
+            raise
+        except TimeoutError:
+            raise TextProviderError("timeout", self.provider_name, True) from None
+        except HTTPError as error:
+            status = error.code
+            error.close()
+            raise self._http_error(status) from None
+        except (URLError, OSError, ConnectionError):
+            raise TextProviderError("network_error", self.provider_name, True) from None
+        except Exception:
+            raise TextProviderError("provider_error", self.provider_name, False) from None
+        return self._result(response, request)
+
+    @staticmethod
+    def _format(request):
+        if request.output_format == "text":
+            return {"type": "text"}
+        if request.response_schema is None:
+            return {"type": "json_object"}
+        _validate_schema_definition(request.response_schema)
+        return {
+            "type": "json_schema",
+            "name": "aicompany_response",
+            "strict": True,
+            "schema": request.response_schema,
+        }
+
+    def _result(self, response, request):
+        if not isinstance(response, dict):
+            raise TextProviderError("malformed_response", self.provider_name)
+        output = _openai_output_text(response)
+        if not output:
+            raise TextProviderError("empty_response", self.provider_name)
+        if len(output.encode("utf-8")) > request.maximum_output_size:
+            raise TextProviderError("response_too_large", self.provider_name)
+        if request.output_format == "json":
+            try:
+                parsed = json.loads(output)
+            except (TypeError, json.JSONDecodeError):
+                raise TextProviderError("invalid_json", self.provider_name) from None
+            if request.response_schema is not None:
+                try:
+                    _validate_schema_value(parsed, request.response_schema)
+                except ValueError:
+                    raise TextProviderError("schema_validation_failed", self.provider_name) from None
+        usage = _openai_usage(response.get("usage"))
+        return TextGenerationResult(
+            self.provider_name,
+            response.get("model") if isinstance(response.get("model"), str) else request.model,
+            output,
+            usage,
+            finish_reason=_safe_identifier(response.get("status")),
+            response_id=_safe_identifier(response.get("id")),
+        )
+
+    def _http_error(self, status):
+        if status in {401, 403}:
+            return TextProviderError("authentication_failed", self.provider_name)
+        if status == 429:
+            return TextProviderError("rate_limited", self.provider_name, True)
+        if isinstance(status, int) and status >= 500:
+            return TextProviderError("provider_unavailable", self.provider_name, True)
+        return TextProviderError("request_rejected", self.provider_name)
+
+    @staticmethod
+    def _transport(url, payload, headers, timeout):
+        request = Request(
+            url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers=headers,
+            method="POST",
+        )
+        with urlopen(request, timeout=timeout) as response:
+            return json.loads(response.read().decode("utf-8"))
+
+
 def _validate_request(request):
     if not isinstance(request, TextGenerationRequest):
         raise TypeError("request must use TextGenerationRequest")
@@ -174,8 +301,12 @@ def _validate_request(request):
             raise ValueError(f"{name} must be non-empty")
     if request.task_type not in TEXT_TASK_TYPES:
         raise ValueError("unsupported text task type")
-    if request.output_format != "json":
-        raise ValueError("only json output is supported")
+    if request.output_format not in {"json", "text"}:
+        raise ValueError("output_format must be json or text")
+    if request.response_schema is not None:
+        if request.output_format != "json":
+            raise ValueError("response_schema requires json output")
+        _validate_schema_definition(request.response_schema)
     if (
         not isinstance(request.maximum_output_size, int)
         or isinstance(request.maximum_output_size, bool)
@@ -219,3 +350,110 @@ def _structured_prompt(request):
         "Write the creative content in Korean.\n"
         f"Creative instruction: {request.instruction}"
     )
+
+
+def _openai_output_text(response):
+    parts = []
+    output = response.get("output")
+    if not isinstance(output, list):
+        return None
+    for item in output:
+        if not isinstance(item, dict) or item.get("type") != "message":
+            continue
+        content = item.get("content")
+        if not isinstance(content, list):
+            continue
+        for value in content:
+            if isinstance(value, dict) and value.get("type") == "output_text":
+                text = value.get("text")
+                if isinstance(text, str) and text:
+                    parts.append(text)
+    return "".join(parts).strip() or None
+
+
+def _openai_usage(value):
+    if not isinstance(value, dict):
+        return None
+    present = any(key in value for key in ("input_tokens", "output_tokens", "total_tokens"))
+    if not present:
+        return None
+    input_tokens = _optional_non_negative(value.get("input_tokens"))
+    output_tokens = _optional_non_negative(value.get("output_tokens"))
+    total_tokens = _optional_non_negative(value.get("total_tokens"))
+    result = {
+        "estimated_cost_usd": None,
+    }
+    if input_tokens is not None:
+        result["input_tokens"] = input_tokens
+    if output_tokens is not None:
+        result["output_tokens"] = output_tokens
+    if total_tokens is not None:
+        result["total_tokens"] = total_tokens
+    elif input_tokens is not None and output_tokens is not None:
+        result["total_tokens"] = input_tokens + output_tokens
+    return result
+
+
+def _optional_non_negative(value):
+    return value if isinstance(value, int) and not isinstance(value, bool) and value >= 0 else None
+
+
+def _safe_identifier(value):
+    if (
+        isinstance(value, str)
+        and 0 < len(value) <= 128
+        and all(character.isalnum() or character in "._:-" for character in value)
+    ):
+        return value
+    return None
+
+
+def _validate_schema_definition(schema, depth=0):
+    if depth > 8:
+        raise ValueError("response schema is too deep")
+    if not isinstance(schema, dict) or schema.get("type") not in {
+        "object", "array", "string", "integer", "number", "boolean"
+    }:
+        raise ValueError("response schema is invalid")
+    if schema.get("type") == "object":
+        properties = schema.get("properties")
+        required = schema.get("required", [])
+        if not isinstance(properties, dict) or not isinstance(required, list):
+            raise ValueError("response schema is invalid")
+        if any(key not in properties for key in required):
+            raise ValueError("response schema is invalid")
+        if len(properties) > 100:
+            raise ValueError("response schema is too large")
+        for nested in properties.values():
+            _validate_schema_definition(nested, depth + 1)
+    if schema.get("type") == "array":
+        _validate_schema_definition(schema.get("items"), depth + 1)
+
+
+def _validate_schema_value(value, schema):
+    kind = schema.get("type")
+    matches = {
+        "object": lambda item: isinstance(item, dict),
+        "array": lambda item: isinstance(item, list),
+        "string": lambda item: isinstance(item, str),
+        "integer": lambda item: isinstance(item, int) and not isinstance(item, bool),
+        "number": lambda item: isinstance(item, (int, float)) and not isinstance(item, bool),
+        "boolean": lambda item: isinstance(item, bool),
+    }
+    if kind not in matches or not matches[kind](value):
+        raise ValueError("schema type mismatch")
+    if kind == "object":
+        required = schema.get("required", [])
+        if any(key not in value for key in required):
+            raise ValueError("schema required field missing")
+        properties = schema.get("properties", {})
+        for key, nested in properties.items():
+            if key in value:
+                _validate_schema_value(value[key], nested)
+        if schema.get("additionalProperties") is False and any(
+            key not in properties for key in value
+        ):
+            raise ValueError("schema additional field")
+    if kind == "array":
+        for item in value:
+            _validate_schema_value(item, schema["items"])

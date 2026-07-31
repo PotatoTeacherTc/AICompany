@@ -988,7 +988,7 @@ today/7-day/30-day filter is invented.
   Storage, managed databases, and the official next numbered Mission remain
   undefined.
 
-## Real-use connection roadmap: @1-@10 (approved, not started)
+## Real-use connection roadmap: @1-@10 (approved; @1 complete)
 
 This sequence is separate from the historical Mission numbering. Mission
 1-141 records completed Foundation and bounded Production Integration work.
@@ -1014,7 +1014,7 @@ Natural-language request
 Suno execution remains the one manual step. A future official Suno API may be
 added behind the existing Provider abstraction without changing the workflow.
 
-### @1 — Real LLM foundation
+### @1 — Real LLM foundation (Complete, Mock-verified; real smoke pending)
 
 - Goal: connect one real LLM through the existing Provider Factory while
   retaining Fake Providers and tests.
@@ -1022,6 +1022,22 @@ added behind the existing Provider abstraction without changing the workflow.
   timeout/safe errors, available Usage and estimated cost, environment or
   `_FILE` Secret input, and credential-gated smoke verification.
 - Completion: a real response is returned through existing common contracts.
+- Implemented boundary: `OpenAITextProvider` uses the official Responses API
+  behind the existing TextProvider/ProviderFactory contracts. It supports
+  text and bounded JSON Schema output, safe response metadata, partial Usage,
+  injected timeout/transport, `_FILE` Secret precedence, and safe error
+  categories. `store=false` is sent on every request.
+- Safety: Fake Text remains the default. OpenAI selection requires explicit
+  `ALLOW_PAID_PROVIDER=true`, a model, and an API key. Production configuration
+  continues to reject paid-provider enablement, so no production Compose call
+  is possible by default.
+- Verification: Mock/Fake tests cover selection, policy, Secret loading,
+  conversion, validation, Usage, and failure categories. The opt-in smoke test
+  is skipped unless all explicit paid/network/credential conditions are set.
+  No real API request was made during @1 completion.
+- Cost boundary: no verified shared pricing registry exists, so token counts
+  are recorded when present and `estimated_cost_usd` remains unavailable
+  rather than being invented.
 
 ### @2 — Music planning employee and Suno creation package
 

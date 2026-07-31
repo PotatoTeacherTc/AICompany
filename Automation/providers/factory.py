@@ -1,7 +1,6 @@
 import os
 from dataclasses import dataclass
 
-from config.settings import ALLOW_PAID_PROVIDER
 from providers.mock_provider import MockProvider
 from providers.music import FakeMusicProvider
 from providers.content_media import (
@@ -9,7 +8,8 @@ from providers.content_media import (
     FakeVideoProvider,
     FakeYouTubeProvider,
 )
-from providers.text import FakeTextProvider, OllamaTextProvider
+from providers.text import FakeTextProvider, OllamaTextProvider, OpenAITextProvider
+from core.production_config import resolve_secret_value
 from core.structured_logging import LogLevel, safe_log
 
 
@@ -18,6 +18,7 @@ class ProviderSelection:
     provider: object
     default_model: str | None
     timeout_seconds: float
+    paid_allowed: bool = False
 
 
 class ProviderFactory:
@@ -93,10 +94,26 @@ class ProviderFactory:
                 ),
                 transport=transport,
             )
+        elif provider_name == "openai":
+            cls._require_paid_provider_allowed(environment, "openai")
+            if not model:
+                raise ValueError("AICOMPANY_TEXT_MODEL is required for OpenAI")
+            api_key = resolve_secret_value(
+                environment, "OPENAI_API_KEY", prefer_file=True
+            )
+            if not api_key:
+                raise ValueError("OPENAI_API_KEY is required for OpenAI")
+            provider = OpenAITextProvider(api_key, transport=transport)
         else:
             raise ValueError("Unsupported or disabled text provider")
         provider = cls.ensure_provider_allowed(provider, environment)
-        return ProviderSelection(provider, model, timeout)
+        return ProviderSelection(
+            provider, model, timeout,
+            paid_allowed=(
+                getattr(provider, "is_paid", False)
+                and cls._paid_provider_allowed(environment)
+            ),
+        )
 
     @classmethod
     def ensure_provider_allowed(
@@ -104,10 +121,7 @@ class ProviderFactory:
         mission_id=None,
     ):
         environment = os.environ if environment is None else environment
-        allow_paid = (
-            ALLOW_PAID_PROVIDER
-            and str(environment.get("ALLOW_PAID_PROVIDER", "false")).lower() == "true"
-        )
+        allow_paid = cls._paid_provider_allowed(environment)
         if getattr(provider, "is_paid", False) and not allow_paid:
             safe_log(
                 logger, "PROVIDER_BLOCKED", "ProviderFactory",
@@ -128,6 +142,22 @@ class ProviderFactory:
             provider=provider.__class__.__name__,
         )
         return provider
+
+    @classmethod
+    def _require_paid_provider_allowed(cls, environment, provider_name):
+        if cls._paid_provider_allowed(environment):
+            return
+        safe_log(
+            None, "PROVIDER_BLOCKED", "ProviderFactory",
+            level=LogLevel.WARNING, status="BLOCKED", provider=provider_name,
+            error="ProviderError: CostPolicy",
+            metadata={"policy": "paid_provider_disabled"},
+        )
+        raise ValueError("Paid provider is disabled by policy")
+
+    @staticmethod
+    def _paid_provider_allowed(environment):
+        return str(environment.get("ALLOW_PAID_PROVIDER", "false")).lower() == "true"
 
     @classmethod
     def _offline_selection(cls, environment, kind, default, provider_type):

@@ -43,9 +43,15 @@ class TextCreationPipeline(BasePipeline):
         selection = selection or (
             ProviderFactory.text_from_environment() if provider is None else None
         )
-        self.provider = ProviderFactory.ensure_provider_allowed(
-            provider or selection.provider
-        )
+        if provider is not None:
+            self.provider = ProviderFactory.ensure_provider_allowed(provider)
+        else:
+            if (
+                getattr(selection.provider, "is_paid", False)
+                and not getattr(selection, "paid_allowed", False)
+            ):
+                raise ValueError("Paid provider is disabled by policy")
+            self.provider = selection.provider
         self.model = getattr(selection, "default_model", None)
         self.timeout_seconds = getattr(selection, "timeout_seconds", 30.0)
         self.root = Path(root).resolve()
@@ -118,9 +124,11 @@ class TextCreationPipeline(BasePipeline):
                 stage=task_type,
             )
             usage = self._usage(generated)
+            cost = usage.get("estimated_cost_usd") if usage is not None else None
             if (
-                usage is not None
-                and usage.get("estimated_cost_usd", 0) > 0
+                isinstance(cost, (int, float))
+                and cost > 0
+                and not getattr(self.provider, "is_paid", False)
             ):
                 raise ValueError("paid provider usage is disabled")
             result = self._result(
@@ -293,7 +301,8 @@ class TextCreationPipeline(BasePipeline):
                 "provider_usage": usage,
                 "title": content["title"],
                 "generation_mode": (
-                    "fake" if generated.provider == "fake-text" else "local"
+                    "fake" if generated.provider == "fake-text"
+                    else "local" if generated.provider == "ollama" else "real"
                 ),
                 "task_redacted": True,
             },

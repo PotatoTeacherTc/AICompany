@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 
 _SECRET_NAMES = (
     "AICOMPANY_SIGNING_SECRET", "DATABASE_URL", "REDIS_URL",
-    "AICOMPANY_STORAGE_SIGNING_KEY",
+    "AICOMPANY_STORAGE_SIGNING_KEY", "OPENAI_API_KEY",
 )
 _INSECURE = ("local-development-only", "changeme", "replace-me", "example-secret")
 
@@ -14,23 +14,31 @@ _INSECURE = ("local-development-only", "changeme", "replace-me", "example-secret
 def resolve_secret_files(environment):
     values = dict(environment)
     for name in _SECRET_NAMES:
-        file_name = values.get(f"{name}_FILE")
-        direct = values.get(name)
-        if file_name and direct:
-            raise ValueError("duplicate_secret_source")
-        if not file_name:
-            continue
-        try:
-            path = Path(file_name)
-            if not path.is_file() or path.stat().st_size > 4096:
-                raise ValueError
-            value = path.read_text(encoding="utf-8").strip()
-        except Exception:
-            raise ValueError("secret_file_unavailable") from None
-        if not value:
-            raise ValueError("secret_file_empty")
-        values[name] = value
+        value = resolve_secret_value(values, name)
+        if value is not None:
+            values[name] = value
     return values
+
+
+def resolve_secret_value(environment, name, prefer_file=False):
+    """Resolve one bounded Secret without returning its source or value in errors."""
+    values = dict(environment)
+    file_name = values.get(f"{name}_FILE")
+    direct = values.get(name)
+    if file_name and direct and not prefer_file:
+        raise ValueError("duplicate_secret_source")
+    if not file_name:
+        return direct
+    try:
+        path = Path(file_name)
+        if not path.is_file() or path.stat().st_size > 4096:
+            raise ValueError
+        value = path.read_text(encoding="utf-8").strip()
+    except Exception:
+        raise ValueError("secret_file_unavailable") from None
+    if not value:
+        raise ValueError("secret_file_empty")
+    return value
 
 
 def validate_production_configuration(environment):

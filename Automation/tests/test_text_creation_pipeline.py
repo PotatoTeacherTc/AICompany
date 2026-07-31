@@ -14,6 +14,7 @@ from core.text_creation_pipeline import TextCreationPipeline
 from providers.text import (
     FakeTextProvider, TextGenerationRequest, TextGenerationResult,
 )
+from providers.factory import ProviderFactory
 
 
 class PartialProvider(FakeTextProvider):
@@ -120,6 +121,38 @@ class TextCreationPipelineTests(unittest.TestCase):
             values[1],
         )
         self.assertIsNone(values[2])
+
+    def test_openai_selection_converts_to_pipeline_result_without_raw_content(self):
+        output = FakeTextProvider().generate_text(
+            TextGenerationRequest(
+                "workspace-a", "mission-a", "LYRICS", "different"
+            )
+        ).output_text
+        selection = ProviderFactory.text_from_environment({
+            "AICOMPANY_TEXT_PROVIDER": "openai",
+            "AICOMPANY_TEXT_MODEL": "test-model",
+            "ALLOW_PAID_PROVIDER": "true",
+            "OPENAI_API_KEY": "test-value",
+        }, transport=lambda *_: {
+            "id": "resp_safe", "status": "completed", "model": "test-model",
+            "output": [{"type": "message", "content": [
+                {"type": "output_text", "text": output}
+            ]}],
+            "usage": {"input_tokens": 2, "output_tokens": 3, "total_tokens": 5},
+        })
+        pipeline = TextCreationPipeline(
+            self.storage, selection=selection, artifact_manager=self.artifacts,
+            execution_history=self.history, logger=self.logger,
+        )
+        result = pipeline.run(self.task("LYRICS"))
+        self.assertEqual(PipelineStatus.SUCCESS, result["status"])
+        self.assertEqual("openai", result["data"]["provider"])
+        self.assertEqual("real", result["data"]["generation_mode"])
+        self.assertEqual(5, result["data"]["provider_usage"]["total_tokens"])
+        self.assertNotIn("private creative request", repr(result))
+        self.assertNotIn(
+            "private creative request", repr(self.logger.query("workspace-a"))
+        )
 
     def test_invalid_input_timeout_malformed_and_empty_are_safe(self):
         cases = (

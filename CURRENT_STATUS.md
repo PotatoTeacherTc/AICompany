@@ -9,11 +9,12 @@ Current product status: **Local/Fake SaaS Beta + bounded single-host Production 
 Mission 1-141 completion means only that each Mission's bounded Contract,
 Foundation, Fake/Offline, or Local Integration scope is complete. Project APEX
 as a whole is not Production Ready. The next numbered Mission is undefined.
-The separately approved real-use roadmap is `@1` through `@10`; no `@` stage
-has started. The next stage, when explicitly requested, is `@1 — Real LLM
-foundation`.
+The separately approved real-use roadmap is `@1` through `@10`. `@1 — Real LLM
+foundation` is complete at its Mock-verified Provider foundation boundary; its
+real credential smoke remains unexecuted. `@2` has not started.
 
-Current verification baseline: Backend 396 tests, Frontend two tests,
+Current verification baseline: Backend 404 tests with two conditional skips,
+Frontend two tests,
 Frontend production build, and a production-like single-host Docker stack with
 two Backends and two Workers behind a local TLS Gateway.
 
@@ -40,13 +41,22 @@ Admin; and Docker-based local execution.
 
 The approved Production Operations sequence is complete through Mission 141.
 The approved `@1`-`@10` sequence now describes real Provider and content E2E
-product completion without replacing the Mission history. `@1` is not
-implemented or in progress. Real Billing or other Media Providers remain
-unapproved candidates outside the active stage.
+product completion without replacing the Mission history. `@1` adds one
+explicit paid OpenAI adapter while preserving Fake and Ollama Text. Real
+Billing or other Media Providers remain unapproved candidates outside the
+active stage.
 Workflow, Plugin, and Marketplace expansion is not a current priority
 candidate. Enterprise and AICompany v1.0 remain unimplemented.
 
 ## Verified completed capabilities
+
+- @1: OpenAI Responses API support is registered behind the existing Text
+  Provider Factory. Selection requires explicit paid opt-in, model, and
+  environment or `_FILE` API key. General text and bounded JSON Schema output,
+  safe error categories, optional response/status identifiers, partial Usage,
+  and PipelineResult conversion are Mock-verified. Fake remains the default;
+  no real credential or API smoke was available, no automatic external call
+  occurs, and estimated cost remains absent because pricing is not verified.
 
 - Mission 141: the production-like Compose overlay injects Secrets from
   external files, gates startup on a one-shot migration, bounds resources and

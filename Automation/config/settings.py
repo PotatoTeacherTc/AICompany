@@ -1,13 +1,15 @@
 # AICompany Automation Settings
 
+import os
+
 
 APP_NAME = "AICompany Automation"
 
 VERSION = "1.0.0"
 
-# Development safety policy. Paid providers must remain disabled unless an
-# operator explicitly changes this setting in a future mission.
-ALLOW_PAID_PROVIDER = False
+# Development safety policy. Explicit opt-in is required for every process;
+# absent or malformed values remain safely disabled.
+ALLOW_PAID_PROVIDER = os.environ.get("ALLOW_PAID_PROVIDER", "false").lower() == "true"
 
 
 from pathlib import Path

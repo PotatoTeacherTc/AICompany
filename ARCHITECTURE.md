@@ -30,7 +30,7 @@ Enterprise and AICompany v1.0 are unimplemented.
 
 ## Real-use E2E reuse boundary
 
-The future `@1`-`@10` sequence must compose, not replace, the existing
+The `@1`-`@10` sequence must compose, not replace, the existing
 Dependency Injection, Provider Factory, PipelineResult, UsageMetadata,
 ExecutionHistory, ArtifactManager/Repository, Workspace isolation,
 PostgreSQL/Redis execution, Backend API, Auth/RBAC, Dashboard, configuration,
@@ -41,7 +41,7 @@ The intended flow introduces one deliberate manual boundary: Suno audio
 generation. The orchestration contract must persist `waiting_for_input`, then
 resume the same Workspace project after safe audio intake. Real LLM, image,
 publishing, and FFmpeg work belongs only to its approved `@` stage. None is
-implemented by this roadmap update.
+implemented merely by the roadmap definition.
 
 ## Current execution flow
 
@@ -90,6 +90,7 @@ the workflow; `run()` is the explicit entry point.
 | Supporting services | `agent/planner.py`, `executor.py`, `validator.py`, `reporter.py`, `scripts/` | FILE pipeline planning, execution, validation, report generation, and logging. TaskPlanner produces the execution plan; FILE adds its target folder and TaskExecutor consumes that plan rather than an independent folder argument. |
 | Tests | `Automation/tests/test_pipeline_system.py` | Standard-library unittest regression suite using temporary directories. It covers SUCCESS, FAILED, NOT_IMPLEMENTED, exception, registry, and Manager result-contract boundaries. |
 | AI provider boundary | `providers/base.py`, `providers/models.py`, `providers/mock_provider.py`, `providers/factory.py`, `providers/pipeline_utils.py` | Provider-neutral request/response and usage metadata. The shared utility normalizes absent or partial usage and formats provider errors without raw messages. MockProvider is the offline default; CONTENT, RESEARCH, and MUSIC can receive an injected provider and persist only provider/model/token/cost metadata through PipelineResult and ExecutionHistory, never API keys. |
+| Real LLM foundation | `providers/text.py`, `providers/factory.py`, `core/text_creation_pipeline.py`, `core/production_config.py` | @1 adds `OpenAITextProvider` behind the existing synchronous TextProvider contract and official Responses API endpoint. The adapter sends `store=false`, supports plain text or a caller-supplied bounded JSON Schema, converts output to TextGenerationResult/PipelineResult, retains only safe status/response IDs, and normalizes present token Usage without inventing model prices. Factory creation is blocked unless paid use is explicitly enabled and a model plus environment/`_FILE` key exist. Fake remains default, Ollama remains loopback-only, automatic fallback is absent, and the real smoke test is opt-in and unexecuted without credentials. Production composition still enforces paid-provider-off. |
 | Music provider boundary | `providers/music.py`, `providers/factory.py` | MusicProvider defines `generate_music(MusicGenerationRequest) -> MusicGenerationResult` with generated artifact and optional shared UsageMetadata contracts. FakeMusicProvider is the deterministic offline selection; GenericMusicProviderAdapter keeps existing AIProvider injection compatible. Internal generated artifacts carry paths only for registration, while their default serialization omits paths. No external music service or API key is built in. |
 | Music execution and history | `core/music_pipeline.py`, `core/artifact_manager.py`, `core/execution_history.py` | MusicPipeline writes only below its configured `workspace_id` directory, validates Mission scope IDs and provider artifacts, normalizes missing usage, and maps timeout/provider errors to safe PipelineResult values. ArtifactManager retains internal paths in its repository, but Music PipelineResult exposes only standard safe metadata. Optional `record_music` upserts one MUSIC record with workspace, mission, provider, model, status, usage, and safe artifacts; it records neither task text nor absolute paths, and history failures do not override generation status. |
 | Image/video provider boundary | `providers/content_media.py`, `providers/factory.py` | Provider-neutral image/video requests and results reuse UsageMetadata and carry internal artifact paths only until ArtifactManager registration. FakeImageProvider and FakeVideoProvider are deterministic defaults. ProviderFactory rejects non-Fake environment selections and any injected adapter marked paid while `ALLOW_PAID_PROVIDER` is false. |

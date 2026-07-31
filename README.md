@@ -5,8 +5,9 @@ Official baseline: **Mission 141**. Current product status:
 Completion through Mission 141 is limited to each Mission's documented Contract, Foundation,
 Fake/Offline, or Local Integration scope; Project APEX is not Production Ready.
 The next numbered Mission is undefined. A separate approved real-use product
-roadmap, `@1` through `@10`, starts with `@1 — Real LLM foundation`; no `@`
-stage has started, and the `@` stages are not Mission 142 onward.
+roadmap, `@1` through `@10`, has completed `@1 — Real LLM foundation` at its
+Mock-verified boundary; the real credential smoke remains pending and `@2` has
+not started. The `@` stages are not Mission 142 onward.
 
 AI 기반 자동화와 콘텐츠 제작 시스템을 연구하는 개인 AI 프로젝트 워크스페이스입니다.
 
@@ -226,7 +227,9 @@ real payment, cloud deployment, distributed Workers, Redis/broker, production
 object storage, real media providers, Workflow execution/API/UI, external
 Plugin loading, external Marketplace, Enterprise, or AICompany v1.0.
 Workflow Definition and Local/Fake Marketplace foundations exist but are not
-Production Integration. `ALLOW_PAID_PROVIDER=False` remains mandatory.
+Production Integration. `ALLOW_PAID_PROVIDER=False` remains the default and is
+mandatory for production composition; only an explicit credential-gated @1
+local smoke process may opt in.
 
 ## Docker development stack
 
@@ -674,3 +677,28 @@ payment integrations.
 
 Ollama Text remains explicit and loopback-only. Music, Image, Video, and
 YouTube remain Fake; no paid Provider or external media API is enabled.
+
+## @1 real LLM Provider foundation
+
+Fake Text remains the default. The OpenAI Responses API adapter is selected
+only with explicit local configuration:
+
+```powershell
+$env:AICOMPANY_TEXT_PROVIDER="openai"
+$env:AICOMPANY_TEXT_MODEL="<operator-selected-model>"
+$env:ALLOW_PAID_PROVIDER="true"
+$env:OPENAI_API_KEY_FILE="<untracked-secret-file>"
+$env:AICOMPANY_TEXT_PROVIDER_TIMEOUT="30"
+```
+
+`OPENAI_API_KEY` is also supported; when both inputs exist, the `_FILE` value
+takes precedence. Do not place a key in `.env.example`, logs, History, or Git.
+The adapter supports plain text and caller-supplied JSON Schema output, sends
+`store=false`, records available token counts, and leaves
+`estimated_cost_usd` unavailable because no verified pricing registry exists.
+
+The real smoke test is skipped by default. It runs only when the Provider,
+model, paid opt-in, key, and `AICOMPANY_RUN_OPENAI_SMOKE=true` are all supplied
+explicitly. Normal tests use injected Mock transports and make no network or
+paid request. Production configuration continues to require
+`ALLOW_PAID_PROVIDER=False`; @1 does not enable OpenAI in production Compose.
