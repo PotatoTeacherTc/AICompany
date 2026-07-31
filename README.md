@@ -364,10 +364,15 @@ current plan and OWNER/ADMIN can assign an active plan. Artifact archive is the
 current enforced feature entitlement. Subscription, pricing, invoices,
 payments, and Billing are not implemented.
 
+`GET /workspaces/{workspace_id}/dashboard` provides the authenticated,
+read-only Dashboard API. It combines existing Workspace, persistent Job and
+Execution, Artifact, Usage/Quota, Plan, Department, and Worker data. Summary
+aggregation is bounded to 100 records; recent lists accept 1–20 items. No
+analytics database, WebSocket, or control operation is part of this endpoint.
+
 The next defined sequence is:
 
-1. Mission 115 — Dashboard API
-2. Mission 116 — Web Dashboard
+1. Mission 116 — Web Dashboard
 
 Ollama Text remains explicit and loopback-only. Music, Image, Video, and
 YouTube remain Fake; no paid Provider or external media API is enabled.

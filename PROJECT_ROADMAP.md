@@ -528,7 +528,7 @@ existing unlimited fallback when neither is composed. Artifact archive is the
 single enforced feature entitlement. No price, purchase, subscription,
 invoice, trial, or payment state exists.
 
-### Mission 115 — Dashboard API
+### Mission 115 — Dashboard API (Complete)
 
 - Goal: provide a stable Backend read model for a future Web Dashboard.
 - Scope: authenticated Workspace overview combining Monitor, recent Jobs and
@@ -539,6 +539,12 @@ invoice, trial, or payment state exists.
 - Completion: one safe read-only response supports the primary dashboard
   state without replacing Monitor or duplicating repositories.
 - Prerequisites: Missions 110, 112, 113, and 114.
+
+Mission 115 adds one authenticated, read-only Workspace overview assembled
+from existing Workspace, Job/Execution, Artifact, Usage/Quota, Plan, and
+Organization application services. It creates no repository or analytics
+store. Current aggregation is bounded to the latest 100 records; no general
+today/7-day/30-day filter is invented.
 - Tests: empty/partial/full state, pagination, stale/missing records, Usage
   omission, read-only behavior, RBAC, restart recovery, and
   cross-Workspace denial.

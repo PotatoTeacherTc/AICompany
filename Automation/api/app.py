@@ -25,6 +25,7 @@ def create_app(
     organization_service=None,
     quota_service=None,
     plan_service=None,
+    dashboard_service=None,
     health_service=None,
     auth_required=False,
 ):
@@ -105,6 +106,7 @@ def create_app(
     app.state.organization_service = organization_service
     app.state.quota_service = quota_service
     app.state.plan_service = plan_service
+    app.state.dashboard_service = dashboard_service
     if audit_service is None:
         from application.audit_service import AuditService
         audit_service = AuditService()
@@ -485,6 +487,34 @@ def create_app(
             from api.errors import error_response
 
             return error_response(409, "artifact_missing", "Artifact content is missing")
+        return value
+
+    @app.get("/workspaces/{workspace_id}/dashboard")
+    def workspace_dashboard(
+        workspace_id: str,
+        recent_limit: int = 5,
+        authorization: str | None = Header(default=None),
+    ):
+        denied = _authorize_workspace(
+            app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"}
+        )
+        if denied:
+            return denied
+        if app.state.dashboard_service is None:
+            from api.errors import error_response
+            return error_response(
+                503, "dashboard_unavailable", "Dashboard is unavailable"
+            )
+        try:
+            value = app.state.dashboard_service.overview(
+                workspace_id, recent_limit=recent_limit
+            )
+        except (TypeError, ValueError):
+            from api.errors import error_response
+            return error_response(400, "invalid_request", "Invalid dashboard request")
+        if value is None:
+            from api.errors import error_response
+            return error_response(404, "workspace_not_found", "Workspace not found")
         return value
 
     @app.get("/workspaces/{workspace_id}/plans")
