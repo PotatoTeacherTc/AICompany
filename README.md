@@ -342,6 +342,14 @@ declared capabilities, and sanitizes request metadata. The bundled Fake Plugin
 is offline. Filesystem discovery, dynamic import, arbitrary external code,
 Marketplace download, networking, credentials, and payment are absent.
 
+## Local Marketplace foundation
+
+Mission 130 adds local Package and Dependency metadata with semantic version
+compatibility. A LocalMarketplaceRegistry supports Workspace-isolated Fake
+install/list/remove and prevents removal of packages still required by an
+installed package. There is no external registry, download, package execution,
+publishing, review, licensing, pricing, checkout, payment, or network access.
+
 ## User lifecycle
 
 Mission 102 adds lifecycle state to the existing User implementation rather

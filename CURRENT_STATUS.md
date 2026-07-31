@@ -609,6 +609,14 @@ not inferred from a missing historical mission log.
   Marketplace, download, network call, or secret. Five focused and all 347
   Backend tests, Frontend tests/build, and healthy Compose verification pass.
 
+- Mission 130: Marketplace now provides validated local Package/Dependency
+  metadata, compatible version resolution, and Workspace-isolated Fake
+  install/list/remove. Required packages install first and cannot be removed
+  while depended on. There is no external registry, package download, code
+  execution, publishing, review, license, pricing, checkout, or payment.
+  Six focused, 11 related, all 353 Backend tests, Frontend tests/build, and
+  healthy Compose verification pass.
+
 ## Implemented pipelines
 
 | Type | Pipeline | Current result |
@@ -624,14 +632,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current Backend suite contains **347 tests**. Its expected command is:
+The current Backend suite contains **353 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Current verification result: **347 passed, 0 failed**.
+Current verification result: **353 passed, 0 failed**.
 
 ## Not implemented
 

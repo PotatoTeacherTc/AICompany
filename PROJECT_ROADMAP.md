@@ -756,9 +756,24 @@ today/7-day/30-day filter is invented.
 - Tests: five focused tests, Backend 347 tests, Frontend tests/build, and
   healthy Compose verification.
 
+### Mission 130 — Marketplace Foundation (Complete, Local/Fake)
+
+- Goal: manage compatible package metadata without download or payment.
+- Scope: Package and Dependency contracts, semantic compatibility,
+  LocalMarketplaceRegistry, dependency resolution, Workspace-isolated Fake
+  install/list/remove, and dependent-removal protection.
+- Excludes: external registry, package bytes, download, code execution,
+  publishing, reviews, licensing, pricing, checkout, and payment.
+- Completion: local dependencies resolve deterministically; incompatible SDK,
+  missing versions, cycles, duplicates, cross-Workspace state, and unsafe
+  removal are rejected.
+- Tests: six focused tests, 11 related tests, Backend 353 tests, Frontend
+  tests/build, and healthy Compose verification.
+
 ## Longer-term phases
 
-- Mission 130 remains Marketplace foundation work,
+- Missions after 130 remain undefined implementation work and must be scoped
+  from the actual code and roadmap before development,
   distributed execution,
   security-hardening, Workflow Builder, Marketplace, Enterprise, and v1.0
   phases; no such feature is implemented by Mission 120.
