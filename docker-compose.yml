@@ -67,6 +67,8 @@ services:
       AICOMPANY_QUEUE_BLOCKING_TIMEOUT: 1
       AICOMPANY_WORKER_ID: worker-1
       AICOMPANY_WORKER_WORKSPACES: default
+      AICOMPANY_WORKER_MAX_ATTEMPTS: 3
+      AICOMPANY_WORKER_BACKOFF_SECONDS: 1
       DATABASE_URL: postgresql://aicompany:${POSTGRES_PASSWORD:-local-development-only}@postgres:5432/aicompany
       REDIS_URL: redis://redis:6379/0
     networks:

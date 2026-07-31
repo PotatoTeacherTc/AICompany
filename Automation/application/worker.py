@@ -8,9 +8,11 @@ from application.production import create_state_repository_from_environment
 from core.artifact_manager import ArtifactManager
 from core.distributed_lock import RedisDistributedLock
 from core.distributed_worker import DistributedJobWorker
+from core.distributed_recovery import DistributedRecovery
 from core.execution_history import ExecutionHistory
 from core.redis_job_queue import QueueConfig, QueueFactory, connect_redis
 from core.status import PipelineStatus
+from core.retry_recovery import RetryPolicy
 from core.usage_engine import UsageEngine
 
 
@@ -23,10 +25,17 @@ def build_worker(environment=None):
         raise RuntimeError("distributed_worker_requires_redis")
     client = connect_redis(config.redis_url)
     queue = QueueFactory.create(config, repository, redis_client=client)
+    recovery = DistributedRecovery(
+        queue, client, config.namespace,
+        RetryPolicy(
+            int(values.get("AICOMPANY_WORKER_MAX_ATTEMPTS", "3")),
+            float(values.get("AICOMPANY_WORKER_BACKOFF_SECONDS", "1")),
+        ),
+    )
     worker = DistributedJobWorker(
         queue, RedisDistributedLock(client, config.namespace),
         values.get("AICOMPANY_WORKER_ID", "worker"),
-        int(values.get("AICOMPANY_WORKER_LOCK_TTL", "30")),
+        int(values.get("AICOMPANY_WORKER_LOCK_TTL", "30")), recovery,
     )
     history = ExecutionHistory(state_repository=repository)
     service = PersistentExecutionService(
@@ -39,6 +48,14 @@ def build_worker(environment=None):
         "data": {"provider_usage": {"provider": "fake", "model": "offline", "estimated_cost_usd": 0}},
         "artifacts": [],
         "error": None,
+    })
+    service.register_target("offline-failure", lambda _job: {
+        "status": PipelineStatus.FAILED,
+        "pipeline": "Offline Distributed Pipeline",
+        "task_type": "JOB",
+        "data": {"retry": {"retryable": True, "failure_category": "provider_transient", "last_safe_error": "RetryError: provider_transient"}},
+        "artifacts": [],
+        "error": "ProviderError: ConnectionError",
     })
     return service, repository_resources
 

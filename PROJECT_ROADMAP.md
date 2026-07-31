@@ -8,9 +8,9 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 134
+## Current baseline: Mission 135
 
-Mission 1-134 completion means completion of each Mission's explicitly bounded
+Mission 1-135 completion means completion of each Mission's explicitly bounded
 Contract, Foundation, Fake/Offline, or Local Integration scope. It does not
 mean that Project APEX as a whole is Production Ready.
 
@@ -881,14 +881,27 @@ today/7-day/30-day filter is invented.
 - Tests: four focused tests, Backend 373 tests, and real Backend→Redis→Worker→
   PostgreSQL→Backend Docker verification.
 
+### Mission 135 — Retry, Recovery, and DLQ (Complete, bounded Production Integration)
+
+- Adds bounded exponential-backoff retry scheduling in a Redis sorted set and
+  a Workspace-scoped Redis dead-letter list while PostgreSQL remains the
+  authoritative Job and retry-state store.
+- Retry attempts preserve their count across Worker executions. Terminal
+  failures are no longer requeued; abandoned RUNNING Jobs whose Lock is absent
+  are returned to pending and can be completed after Worker restart.
+- Failure categories and messages remain sanitized, retry promotion is
+  bounded, and no infinite retry or external Provider call is introduced.
+- Tests: five focused recovery tests, Backend 378 tests, and real Docker Redis
+  verification for three-attempt backoff/DLQ plus crashed-Worker recovery.
+- Excludes multi-instance validation, which remains Mission 136.
+
 ### Unnumbered next-Phase candidates
 
 No candidate below is an approved Phase or Mission:
 
-1. Redis-backed Queue/Lock/Broker and distributed Workers.
-2. Real Object Storage integrated with Artifact lifecycle.
-3. Deployment, TLS, and Secret Manager integration.
-4. Real Billing and approved Media Provider integrations.
+1. Real Object Storage integrated with Artifact lifecycle.
+2. Deployment, TLS, and Secret Manager integration.
+3. Real Billing and approved Media Provider integrations.
 
 Workflow, Plugin, and Marketplace expansion are not current priority
 candidates. The first production bottleneck requires explicit user approval
@@ -896,8 +909,9 @@ before a Mission number or implementation scope is assigned.
 
 ## Longer-term phases
 
-- Missions after 131 remain undefined implementation work and must be scoped
-  from the actual code and roadmap before development.
+- Mission 136 is the approved multi-instance validation boundary. Work after
+  Mission 136 remains undefined and must be scoped from actual code and the
+  roadmap before development.
 - Historical Phase F themes included cloud/storage/broker choices, CI/CD,
   security hardening, Workflow Builder, Marketplace, Enterprise, and
   AICompany v1.0. Missions 121-130 implemented only their documented

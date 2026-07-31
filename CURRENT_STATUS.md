@@ -2,15 +2,16 @@
 
 ## Mission
 
-Official current baseline: **Mission 134**.
+Official current baseline: **Mission 135**.
 
 Current product status: **Local/Fake SaaS Beta + Production Foundation**.
 
-Mission 1-134 completion means only that each Mission's bounded Contract,
+Mission 1-135 completion means only that each Mission's bounded Contract,
 Foundation, Fake/Offline, or Local Integration scope is complete. Project APEX
-as a whole is not Production Ready. The official next Mission is undefined.
+as a whole is not Production Ready. The approved next Mission is Mission 136
+multi-instance validation.
 
-Current verification baseline: Backend 373 tests, Frontend two tests,
+Current verification baseline: Backend 378 tests, Frontend two tests,
 Frontend production build, and a healthy four-service Docker development
 stack.
 
@@ -20,7 +21,7 @@ stack.
 |---|---|---|
 | SaaS Beta | Local/Fake SaaS Beta | Production deployment and acceptance |
 | Cloud Foundation | Docker-based Local Development Foundation | Cloud runtime composition |
-| Production Infrastructure | Bounded PostgreSQL Production Integration | Non-StateRepository domains, Redis execution, cloud deployment, and operations |
+| Production Infrastructure | Bounded PostgreSQL/Redis Production Integration | Non-StateRepository domains, multi-instance validation, cloud deployment, and operations |
 | Object Storage | Local/Fake Provider Foundation | Real cloud Object Storage |
 | Workflow Builder | Definition/Validation Foundation | Execution, Persistence, API, and UI |
 | Plugin SDK | Local/Fake Contract Foundation | External discovery, download, and isolated execution |
@@ -35,8 +36,8 @@ Usage and Quota; Department and Worker contracts; explicit loopback Ollama
 Text; Fake media; Dashboard reads; Local/Fake Subscription, Billing, and
 Admin; and Docker-based local execution.
 
-The official next Mission is undefined. Unnumbered production-bottleneck
-candidates are Redis-backed Queue/Lock/Broker and distributed Workers; real Object Storage
+Mission 136 multi-instance validation is the approved next boundary.
+Unnumbered later production-bottleneck candidates are real Object Storage
 and Artifact integration; deployment/TLS/Secret Manager; and real Billing or
 approved Media Providers. These are candidates only and require user approval.
 Workflow, Plugin, and Marketplace expansion is not a current priority
@@ -47,12 +48,18 @@ candidate. Enterprise and AICompany v1.0 remain unimplemented.
 The following status is based on the current source tree and automated tests,
 not inferred from a missing historical mission log.
 
+- Mission 135: Redis sorted-set delay scheduling now applies bounded
+  exponential backoff and preserves attempt counts across external Worker
+  executions. Exhausted/non-retryable Jobs enter a Workspace-scoped DLQ while
+  PostgreSQL retains authoritative retry state. Docker verification covered
+  three-attempt terminal failure and recovery of a RUNNING Job after a crashed
+  claimant. Multi-instance validation remains Mission 136.
+
 - Mission 134: a separate production Worker entrypoint consumes Redis Jobs,
   acquires the Mission 133 Lock, and reuses PersistentExecutionService for
   PipelineResult, PostgreSQL ExecutionHistory, and Usage. Compose separates
   Backend and Worker; polling and shutdown are bounded. The only built-in
-  target is deterministic Fake/Offline. Retry/DLQ expansion remains Mission
-  135.
+  target is deterministic Fake/Offline. Retry/DLQ is supplied by Mission 135.
 
 - Mission 133: owner-token and mandatory TTL Lock leases now have memory and
   Redis implementations. Redis uses atomic NX/PX acquisition and owner-checked

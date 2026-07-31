@@ -9,6 +9,7 @@ from core.task_queue import JobStatus, PersistentJobQueue
 class FakeRedis:
     def __init__(self, fail=False):
         self.lists = {}
+        self.sorted = {}
         self.fail = fail
         self.closed = False
 
@@ -34,6 +35,12 @@ class FakeRedis:
         self.lists[key] = [item for item in values if item != value]
     def lrange(self, key, start, end):
         self._check(); return list(self.lists.get(key, []))
+    def zadd(self, key, mapping):
+        self._check(); self.sorted.setdefault(key, {}).update(mapping); return len(mapping)
+    def zrangebyscore(self, key, minimum, maximum):
+        self._check(); return [item for item, score in self.sorted.get(key, {}).items() if score <= float(maximum)]
+    def zrem(self, key, value):
+        self._check(); return 1 if self.sorted.setdefault(key, {}).pop(value, None) is not None else 0
 
     def ping(self): self._check(); return True
     def close(self): self.closed = True
