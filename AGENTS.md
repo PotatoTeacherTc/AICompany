@@ -347,6 +347,45 @@ Never pretend work is finished.
 
 ---
 
+# Real-use Product Roadmap
+
+Mission 1-141 is the completed Foundation and bounded Production Integration
+history. The separately approved `@1` through `@10` sequence is the real
+Provider and content E2E product-completion roadmap; an `@` stage must never be
+renumbered as Mission 142 or described as complete before implementation and
+real verification.
+
+The approved v1 target flow is:
+
+User request -> LLM-generated music/Suno package -> manual Suno creation ->
+safe audio intake and project resume -> shared content brief -> real image ->
+blog package -> FFmpeg video -> private YouTube upload and supported blog draft
+-> Artifact, Usage, ExecutionHistory, and Dashboard verification.
+
+Suno execution remains manual. Every `@` stage must reuse existing DI,
+Provider Factory, PipelineResult, UsageMetadata, ExecutionHistory,
+ArtifactManager, Persistence, Queue, Workspace isolation, API, Dashboard,
+security, and Fake/Mock tests. Real credentials, accounts, network calls, or
+cost require the stage's explicit authorization and must never be inferred.
+
+Before completion, verify that the work:
+
+1. directly advances the `@1`-`@10` target;
+2. stays within the current `@` stage;
+3. reuses the Mission 1-141 Foundation;
+4. neither duplicates nor breaks contracts or data;
+5. preserves multi-user Workspace isolation;
+6. preserves Fake/Mock automation and explicit real-integration boundaries;
+7. exposes no Secret, personal data, prompt text, or absolute path;
+8. completes implementation, tests, docs, diff/status review, and commit;
+9. does not claim unimplemented work; and
+10. measurably moves the product toward the real `@10` E2E.
+
+The complete stage definitions and acceptance criteria are authoritative in
+`PROJECT_ROADMAP.md`.
+
+---
+
 # Git
 
 Before work:

@@ -8,7 +8,10 @@ Current product status: **Local/Fake SaaS Beta + bounded single-host Production 
 
 Mission 1-141 completion means only that each Mission's bounded Contract,
 Foundation, Fake/Offline, or Local Integration scope is complete. Project APEX
-as a whole is not Production Ready. The official next Mission is undefined.
+as a whole is not Production Ready. The next numbered Mission is undefined.
+The separately approved real-use roadmap is `@1` through `@10`; no `@` stage
+has started. The next stage, when explicitly requested, is `@1 — Real LLM
+foundation`.
 
 Current verification baseline: Backend 396 tests, Frontend two tests,
 Frontend production build, and a production-like single-host Docker stack with
@@ -36,7 +39,10 @@ Text; Fake media; Dashboard reads; Local/Fake Subscription, Billing, and
 Admin; and Docker-based local execution.
 
 The approved Production Operations sequence is complete through Mission 141.
-Real Billing or approved Media Providers remain unnumbered candidates.
+The approved `@1`-`@10` sequence now describes real Provider and content E2E
+product completion without replacing the Mission history. `@1` is not
+implemented or in progress. Real Billing or other Media Providers remain
+unapproved candidates outside the active stage.
 Workflow, Plugin, and Marketplace expansion is not a current priority
 candidate. Enterprise and AICompany v1.0 remain unimplemented.
 

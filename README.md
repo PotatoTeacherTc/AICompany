@@ -4,7 +4,9 @@ Official baseline: **Mission 141**. Current product status:
 **Local/Fake SaaS Beta + bounded single-host Production Integration**.
 Completion through Mission 141 is limited to each Mission's documented Contract, Foundation,
 Fake/Offline, or Local Integration scope; Project APEX is not Production Ready.
-The official next Mission is undefined.
+The next numbered Mission is undefined. A separate approved real-use product
+roadmap, `@1` through `@10`, starts with `@1 — Real LLM foundation`; no `@`
+stage has started, and the `@` stages are not Mission 142 onward.
 
 AI 기반 자동화와 콘텐츠 제작 시스템을 연구하는 개인 AI 프로젝트 워크스페이스입니다.
 

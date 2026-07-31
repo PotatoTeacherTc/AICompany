@@ -24,7 +24,24 @@ Metadata/Fake Install Marketplace Foundation. Mission 131 is a bounded
 PostgreSQL Production Integration for the shared StateRepository. Billing
 remains Manual/Fake.
 
-No later Mission is defined. Enterprise and AICompany v1.0 are unimplemented.
+No later numbered Mission is defined. The approved `@1`-`@10` roadmap is a
+separate product-completion sequence and is not an implementation claim.
+Enterprise and AICompany v1.0 are unimplemented.
+
+## Real-use E2E reuse boundary
+
+The future `@1`-`@10` sequence must compose, not replace, the existing
+Dependency Injection, Provider Factory, PipelineResult, UsageMetadata,
+ExecutionHistory, ArtifactManager/Repository, Workspace isolation,
+PostgreSQL/Redis execution, Backend API, Auth/RBAC, Dashboard, configuration,
+Gateway, and readiness boundaries. Fake/Mock paths remain the deterministic
+regression suite while real integrations stay explicit and credential-gated.
+
+The intended flow introduces one deliberate manual boundary: Suno audio
+generation. The orchestration contract must persist `waiting_for_input`, then
+resume the same Workspace project after safe audio intake. Real LLM, image,
+publishing, and FFmpeg work belongs only to its approved `@` stage. None is
+implemented by this roadmap update.
 
 ## Current execution flow
 

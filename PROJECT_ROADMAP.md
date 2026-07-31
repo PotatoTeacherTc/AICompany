@@ -985,9 +985,161 @@ today/7-day/30-day filter is invented.
   validation data remains in Git or the running Docker environment.
 - This is a single-host local Production Integration, not Cloud HA or a
   Production Ready declaration. Public TLS/DNS, Secret Manager, real Object
-  Storage, managed databases, and the official next Mission remain undefined.
+  Storage, managed databases, and the official next numbered Mission remain
+  undefined.
 
-### Unnumbered next-Phase candidates
+## Real-use connection roadmap: @1-@10 (approved, not started)
+
+This sequence is separate from the historical Mission numbering. Mission
+1-141 records completed Foundation and bounded Production Integration work.
+`@1`-`@10` defines the approved real Provider and content E2E product-completion
+sequence and must not be renamed Mission 142 or marked complete in advance.
+
+The v1 target is:
+
+```text
+Natural-language request
+-> music plan and Suno input package
+-> user performs the manual Suno generation
+-> completed audio intake and project resume
+-> shared content brief
+-> real image generation
+-> blog package
+-> FFmpeg video
+-> YouTube publication package and private upload
+-> supported blog draft publication
+-> Artifact, Usage, ExecutionHistory, and Dashboard verification
+```
+
+Suno execution remains the one manual step. A future official Suno API may be
+added behind the existing Provider abstraction without changing the workflow.
+
+### @1 — Real LLM foundation
+
+- Goal: connect one real LLM through the existing Provider Factory while
+  retaining Fake Providers and tests.
+- Scope: real and structured response validation, PipelineResult conversion,
+  timeout/safe errors, available Usage and estimated cost, environment or
+  `_FILE` Secret input, and credential-gated smoke verification.
+- Completion: a real response is returned through existing common contracts.
+
+### @2 — Music planning employee and Suno creation package
+
+- Goal: use the real LLM to produce everything required immediately before
+  manual Suno execution.
+- Scope: plan, title candidates, genre/mood, BPM/key suggestions, instruments,
+  vocals, song structure, full lyrics, Suno and style prompts, exclusions,
+  recommended settings, creation notes, and Artifact storage.
+- Completion: the user can copy the package into Suno and create the audio.
+
+### @3 — Completed audio intake and project connection
+
+- Goal: safely discover user-produced `mp3`, `wav`, `flac`, or `m4a` audio in
+  a Workspace input boundary and attach it to the music project.
+- Scope: name/project-ID discovery; missing, duplicate, unsupported, and
+  damaged-file handling; Workspace isolation; path-escape prevention; no
+  source mutation; duration/basic metadata; Artifact and Music Project links.
+- Completion: a user command selects the correct audio for the next Pipeline.
+
+### @4 — Content brief and project orchestration
+
+- Goal: make music, image, blog, video, and YouTube outputs share one project
+  and content brief.
+- Scope: audience, message, emotion/mood, visual/video/blog direction, SEO
+  terms, platform guidance, prohibited expressions, Workspace checks,
+  stage input/output references, failure records, successful-stage reuse,
+  `waiting_for_input` for manual Suno, and same-project resume after intake.
+- Completion: every downstream Pipeline consumes the same brief/project
+  contract.
+
+### @5 — Real image generation and image package
+
+- Goal: connect one real image Provider through the existing abstraction.
+- Scope: hero image, source thumbnail, video background, and blog images;
+  purpose-specific prompt/aspect ratio; file validation; safe prompt/Provider
+  metadata; partial failure; Artifact registration; Fake tests; and a
+  credential-gated real smoke test.
+- Completion: real image files are registered in the content project.
+
+### @6 — Blog package with images
+
+- Goal: create a directly reviewable and publishable package from the shared
+  brief and generated images.
+- Scope: SEO title/keywords, summary, introduction, headings/body, image
+  placement, captions/alt text, conclusion, tags, Markdown, HTML, hero image,
+  and metadata.
+- Completion: a complete package is produced without missing image references.
+
+### @7 — FFmpeg video and YouTube publication package
+
+- Goal: produce a playable MP4 from the completed audio and images plus all
+  YouTube publication material.
+- Scope: FFmpeg availability, audio-based duration, default 1920x1080,
+  bounded zoom/fade, audio/video duration match, timeout/exit/output checks,
+  safe logs, Artifact registration, title, description, hashtags/tags,
+  category, visibility recommendation, pinned comment, thumbnail, and upload
+  manifest.
+- Completion: a playable MP4 and complete upload package are available.
+
+### @8 — Real publishing Providers
+
+- Goal: place external publication behind common Provider boundaries.
+- YouTube scope: OAuth, private-first upload, title/description/tags/thumbnail,
+  upload ID/result metadata, duplicate prevention, and local-result retention
+  on failure.
+- Blog scope: one stable official API selected for repository/user fit,
+  HTML/image upload, draft-first publication, publication ID, and isolated
+  platform implementation.
+- Completion: a real private YouTube upload and supported blog draft succeed.
+- Gate: stop for explicit user approval before using a real account or any
+  external cost.
+
+### @9 — Real-use E2E and Dashboard integration
+
+- Goal: join request, manual input, resumed automation, and result inspection.
+- Scope: request start, music package, `waiting_for_input`, audio resume,
+  image/blog/video/YouTube packages, optional publishing, stage status,
+  error/retry/idempotency, Usage/cost, History, Artifact preview/download,
+  Workspace isolation, and Dashboard exposure.
+- Completion: the user starts work in the Dashboard, supplies audio, and
+  inspects the completed results there.
+
+### @10 — Real integration verification and v1 decision
+
+- Goal: validate the product with real connections while retaining the full
+  Fake automated suite.
+- Required success path: real LLM Suno package, user audio intake, project
+  resume, real image, blog package, FFmpeg MP4, private YouTube upload,
+  supported blog draft, and Dashboard verification of status, Usage, History,
+  and Artifacts.
+- Required failure path: missing/duplicate/damaged audio, Provider timeout and
+  errors, FFmpeg failure, OAuth/publication failure, stage retry, duplicate
+  execution, cross-Workspace access, safe Secret/prompt/path handling, and
+  real Usage/cost recording.
+- Completion: one real-account content E2E succeeds and all Fake automation
+  still passes.
+
+### @ stage constitutional verification
+
+Before an `@` stage is complete, verify in order that it:
+
+1. directly contributes to the `@1`-`@10` target;
+2. implements only the current stage's completion condition;
+3. reuses Mission 1-141 Foundation contracts;
+4. does not destroy or duplicate contracts or data;
+5. retains multi-user and Workspace isolation;
+6. retains Fake/Mock automation and explicit real-integration boundaries;
+7. exposes no Secret, personal data, prompt text, or absolute path;
+8. completes implementation, tests, docs, diff/status review, and commit;
+9. does not mark unimplemented work complete; and
+10. moves the product measurably closer to the real `@10` E2E.
+
+Each stage must finish its target tests, Backend regression, relevant
+Frontend/build and Docker/smoke checks, documents, diff/status review, and
+local commit before the next stage starts. Push remains prohibited unless
+explicitly requested.
+
+### Other unapproved next-Phase candidates
 
 No candidate below is an approved Phase or Mission:
 
@@ -996,16 +1148,18 @@ No candidate below is an approved Phase or Mission:
 3. Real Billing and approved Media Provider integrations.
 
 Workflow, Plugin, and Marketplace expansion are not current priority
-candidates. Any work after Mission 141 requires explicit user approval before
-a Mission number or implementation scope is assigned.
+candidates. Any numbered Mission after Mission 141 requires explicit user
+approval. The separately approved `@1`-`@10` sequence above is authoritative
+for real-use product completion.
 
 ## Longer-term phases
 
 - The constitution audit approved the dependent Production Operations sequence:
   Mission 138 Artifact Object Storage Integration, Mission 139 Production
   Configuration Security, Mission 140 TLS and Gateway Security Foundation,
-  and Mission 141 Single-host Production Deployment Validation. Work after
-  Mission 141 remains undefined.
+  and Mission 141 Single-host Production Deployment Validation. A later
+  numbered Mission remains undefined; the approved `@1`-`@10` product sequence
+  is tracked separately.
 - Historical Phase F themes included cloud/storage/broker choices, CI/CD,
   security hardening, Workflow Builder, Marketplace, Enterprise, and
   AICompany v1.0. Missions 121-130 implemented only their documented
