@@ -655,9 +655,25 @@ today/7-day/30-day filter is invented.
 - Tests: workflow safety contract, AST syntax lint, Backend 312 tests,
   Frontend two tests, `tsc --noEmit`, and production build.
 
+### Mission 123 — Production Security (Complete, Single-Process)
+
+- Goal: harden the current HTTP boundary and reject unsafe production
+  configuration before serving requests.
+- Scope: CSP and standard response headers, HSTS preparation, secure-cookie
+  normalization, strict CORS, injected in-memory rate limiting, environment
+  validation, and production signing-secret validation/injection.
+- Excludes: certificates, TLS termination, cloud firewall/WAF, distributed
+  rate limiting, external identity services, and secret storage.
+- Completion: production requires HTTPS origins and a strong injected secret;
+  safe 429 responses and security headers do not expose request data.
+- Prerequisites: Mission 122.
+- Tests: environment/secret/origin validation, headers/CSP/HSTS, Cookie policy,
+  rate limiting, CORS denial, Auth regression, Backend 317 tests, Frontend
+  tests, and production build.
+
 ## Longer-term phases
 
-- Missions 123-130 remain production security/monitoring/recovery,
+- Missions 124-130 remain production monitoring/recovery,
   distributed execution,
   security-hardening, Workflow Builder, Marketplace, Enterprise, and v1.0
   phases; no such feature is implemented by Mission 120.

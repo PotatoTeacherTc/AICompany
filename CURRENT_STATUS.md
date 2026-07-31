@@ -550,6 +550,14 @@ not inferred from a missing historical mission log.
   build is uploaded for seven days. There is no deploy step, write permission,
   secret reference, cloud credential, or registry publication. Two focused
   tests, Backend 312 tests, Frontend two tests, lint, and build pass locally.
+- Mission 123: SecuritySettings validates environment, origin, rate-limit, and
+  signing-secret configuration. Production accepts HTTPS origins only and
+  injects the validated secret into the existing SignedAccessTokenProvider.
+  FastAPI and Nginx emit restrictive CSP and standard security headers; HSTS
+  and Secure/HttpOnly/SameSite Cookie normalization are production policies.
+  An injected in-memory limiter returns safe 429 responses. It is explicitly
+  single-process, not distributed. Five focused tests, Auth/Foundation
+  regressions, Backend 317 tests, Frontend two tests, and build pass.
 
 ## Implemented pipelines
 
@@ -566,14 +574,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current Backend suite contains **312 tests**. Its expected command is:
+The current Backend suite contains **317 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Current verification result: **312 passed, 0 failed**.
+Current verification result: **317 passed, 0 failed**.
 
 ## Not implemented
 

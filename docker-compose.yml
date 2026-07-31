@@ -5,11 +5,12 @@ services:
     build:
       context: ./Automation
     environment:
-      AICOMPANY_ENV: production
+      AICOMPANY_ENV: ${AICOMPANY_ENV:-development}
       ALLOW_PAID_PROVIDER: "False"
       AICOMPANY_STATE_ROOT: /data
       DATABASE_URL: postgresql://aicompany:${POSTGRES_PASSWORD:-local-development-only}@postgres:5432/aicompany
       REDIS_URL: redis://redis:6379/0
+      AICOMPANY_ALLOWED_ORIGINS: ${AICOMPANY_ALLOWED_ORIGINS:-http://127.0.0.1:5173,http://localhost:5173}
     ports:
       - "127.0.0.1:${AICOMPANY_API_PORT:-8000}:8000"
     volumes:

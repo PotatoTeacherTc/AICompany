@@ -260,6 +260,20 @@ The workflow uses read-only repository permissions, pip/npm caches, and a
 seven-day static Web build artifact. It does not deploy, publish images, read
 cloud secrets, or change a production environment.
 
+## Production security boundary
+
+Mission 123 validates production configuration before application composition.
+Production requires HTTPS CORS origins and an injected, non-placeholder signing
+secret of at least 32 characters. The secret is used by the existing signed
+access-token provider and is never returned, logged, or persisted.
+
+FastAPI and Nginx apply restrictive CSP and standard security headers. HSTS and
+Secure/HttpOnly/SameSite Cookie normalization activate for production policy.
+The default rate limiter is injected and single-process; it is suitable as a
+safety boundary, not a distributed quota service. TLS certificates, HTTPS
+termination, cloud WAF/firewall, distributed limiting, and secret management
+remain external deployment responsibilities.
+
 ## User lifecycle
 
 Mission 102 adds lifecycle state to the existing User implementation rather

@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 from config.settings import ALLOW_PAID_PROVIDER
 from core.structured_logging import LogLevel, safe_log
+from core.security import InMemoryRateLimiter, SecuritySettings
 
 
 BACKEND_SCHEMA_VERSION = "1"
@@ -104,6 +105,8 @@ class BackendDependencies:
         "http://127.0.0.1:5173",
         "http://localhost:5173",
     )
+    security_settings: SecuritySettings | None = None
+    rate_limiter: object | None = None
 
 
 def create_backend_app(dependencies=None):
@@ -112,6 +115,11 @@ def create_backend_app(dependencies=None):
 
     dependencies = dependencies or BackendDependencies()
     health_service = dependencies.health_service or BackendHealthService()
+    security = dependencies.security_settings or SecuritySettings.from_environment()
+    rate_limiter = dependencies.rate_limiter or InMemoryRateLimiter(
+        security.rate_limit_requests,
+        security.rate_limit_window_seconds,
+    )
     return create_app(
         automation_service=dependencies.automation_service,
         task_query_service=dependencies.task_query_service,
@@ -138,5 +146,11 @@ def create_backend_app(dependencies=None):
         onboarding_service=dependencies.onboarding_service,
         health_service=health_service,
         auth_required=dependencies.auth_required,
-        allowed_origins=dependencies.allowed_origins,
+        allowed_origins=(
+            dependencies.allowed_origins
+            if dependencies.security_settings is None
+            else security.allowed_origins
+        ),
+        security_settings=security,
+        rate_limiter=rate_limiter,
     )

@@ -36,6 +36,8 @@ def create_app(
         "http://127.0.0.1:5173",
         "http://localhost:5173",
     ),
+    security_settings=None,
+    rate_limiter=None,
 ):
     """Create the HTTP application without starting a server."""
     if automation_service is None:
@@ -64,10 +66,39 @@ def create_app(
     async def correlation_middleware(request: Request, call_next):
         context=RequestContext.create(request.headers.get("X-Correlation-ID")); token=set_context(context); started=time.perf_counter()
         try:
+            if rate_limiter is not None:
+                client = request.client.host if request.client else "unknown"
+                if not rate_limiter.allow(f"{client}:{request.url.path}"):
+                    from api.errors import error_response
+                    response = error_response(
+                        429, "rate_limit_exceeded", "Too many requests"
+                    )
+                    response.headers["Retry-After"] = str(
+                        getattr(rate_limiter, "window_seconds", 60)
+                    )
+                    response.headers["X-Correlation-ID"] = context.correlation_id
+                    from core.security import security_headers
+                    production = bool(
+                        security_settings
+                        and security_settings.environment == "production"
+                    )
+                    for name, value in security_headers(production).items():
+                        response.headers[name] = value
+                    return response
             response=await call_next(request)
         finally:
             reset_context(token)
         response.headers["X-Correlation-ID"]=context.correlation_id
+        from core.security import harden_set_cookie, security_headers
+        production = bool(
+            security_settings
+            and security_settings.environment == "production"
+        )
+        for name, value in security_headers(production).items():
+            response.headers[name] = value
+        cookie = response.headers.get("set-cookie")
+        if cookie and security_settings and security_settings.secure_cookies:
+            response.headers["set-cookie"] = harden_set_cookie(cookie)
         return response
     app.state.automation_service = automation_service
     app.state.task_query_service = task_query_service
@@ -89,9 +120,20 @@ def create_app(
     if login_service is None:
         from application.login_service import LoginService
         from application.session_service import SessionService
+        from core.access_token_provider import SignedAccessTokenProvider
 
         session_service = session_service or SessionService()
-        login_service = LoginService(user_service, credential_service, session_service=session_service)
+        token_provider = (
+            SignedAccessTokenProvider(secret=security_settings.signing_secret)
+            if security_settings and security_settings.signing_secret
+            else None
+        )
+        login_service = LoginService(
+            user_service,
+            credential_service,
+            token_provider=token_provider,
+            session_service=session_service,
+        )
     session_service = session_service or login_service.session_service
     app.state.workspace_service = workspace_service
     app.state.user_service = user_service
