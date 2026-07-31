@@ -685,9 +685,24 @@ today/7-day/30-day filter is invented.
 - Prerequisites: Mission 123.
 - Tests: five focused tests and Backend 322 tests.
 
+### Mission 125 — Backup & Recovery (Complete, Fake/Offline)
+
+- Goal: export and restore Workspace-owned product metadata without adding a
+  cloud storage dependency.
+- Scope: an injectable BackupStore contract, deterministic in-memory Fake
+  store, versioned bounded JSON export/restore, Workspace metadata, safe
+  Artifact metadata, Subscription metadata, and Manual/Fake Billing metadata.
+- Excludes: artifact file contents, user credentials or personal data, cloud
+  or object storage, schedules, automation, retention, and destructive delete.
+- Completion: restore validates schema and Workspace ownership before writes,
+  rejects implicit overwrite, strips sensitive fields and absolute paths, and
+  preserves partial product metadata through the existing repositories.
+- Prerequisites: Mission 124.
+- Tests: five focused tests, 23 related tests, and Backend 327 tests.
+
 ## Longer-term phases
 
-- Missions 125-130 remain production recovery,
+- Missions 126-130 remain distributed execution,
   distributed execution,
   security-hardening, Workflow Builder, Marketplace, Enterprise, and v1.0
   phases; no such feature is implemented by Mission 120.

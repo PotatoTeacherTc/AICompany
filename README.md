@@ -290,6 +290,21 @@ continues to observe persisted product state. Metrics are in-memory and
 single-process; external monitoring, durable time series, distributed tracing,
 alerting, and cloud services are not implemented.
 
+## Fake backup and recovery
+
+Mission 125 provides an application-neutral `BackupService` over the existing
+Workspace, Artifact, and State repository contracts. It can export a bounded,
+versioned JSON document and restore it explicitly into injected repositories.
+The current `InMemoryBackupStore` is a deterministic Fake only.
+
+Exports include Workspace metadata, safe Artifact metadata, Subscription
+metadata, and Manual/Fake Invoice, Payment, and non-personal BillingAccount
+metadata. Artifact file contents, billing email, prompts, credentials, and
+absolute paths are excluded. Restore validates the entire document and
+Workspace ownership before writing and requires explicit permission to
+overwrite an existing Workspace. Cloud/object storage, automatic schedules,
+retention, and destructive cleanup are not implemented.
+
 ## User lifecycle
 
 Mission 102 adds lifecycle state to the existing User implementation rather

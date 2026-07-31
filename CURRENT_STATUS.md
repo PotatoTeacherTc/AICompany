@@ -566,6 +566,15 @@ not inferred from a missing historical mission log.
   dependency-health aggregates only. Logger failure is isolated from HTTP
   results. External monitoring, durable metrics, tracing, and alerting remain
   unimplemented. Five focused tests and the Backend 322-test suite pass.
+- Mission 125: BackupService composes existing Workspace, Artifact, and shared
+  State repositories behind an injected BackupStore. Its in-memory Fake store
+  supports versioned JSON export and explicit restore of Workspace, safe
+  Artifact, Subscription, Invoice, Payment, and non-personal BillingAccount
+  metadata. It excludes artifact content, billing email, prompts, credentials,
+  and absolute paths; validates the whole payload before writes; enforces
+  Workspace ownership; and rejects implicit overwrite. Cloud/object storage,
+  scheduling, retention, and deletion are not implemented. Five focused,
+  23 related, and all 327 Backend tests pass.
 
 ## Implemented pipelines
 
@@ -582,14 +591,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current Backend suite contains **322 tests**. Its expected command is:
+The current Backend suite contains **327 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Current verification result: **322 passed, 0 failed**.
+Current verification result: **327 passed, 0 failed**.
 
 ## Not implemented
 
