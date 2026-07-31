@@ -528,6 +528,14 @@ not inferred from a missing historical mission log.
   full 306-test Backend suite, two Frontend tests, and production build pass.
   Impersonation, secret access, deletion, arbitrary code, and real payment are
   absent.
+- Mission 120: the local Fake/Offline SaaS Beta checkpoint is complete.
+  OnboardingService explicitly and idempotently supplies a FREE subscription
+  for an existing Workspace; it never auto-seeds production startup. FastAPI
+  now runs with debug disabled, a loopback-only CORS allowlist, `/health`, and
+  dependency-sensitive `/ready`. Safe environment examples and local
+  Backend/Frontend commands are documented. The 40-test integration selection,
+  full 310-test Backend suite, two Frontend tests, and production build pass.
+  `ALLOW_PAID_PROVIDER=False`; Billing is Manual/Fake and media remains Fake.
 
 ## Implemented pipelines
 
@@ -544,14 +552,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current Backend suite contains **306 tests**. Its expected command is:
+The current Backend suite contains **310 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Current verification result: **306 passed, 0 failed**.
+Current verification result: **310 passed, 0 failed**.
 
 ## Not implemented
 

@@ -609,9 +609,28 @@ today/7-day/30-day filter is invented.
 - Tests: role separation, aggregation, limited actions, data preservation,
   invalid actions, frontend visibility, regressions, and production build.
 
+### Mission 120 — SaaS Beta Completion (Complete, Local/Fake)
+
+- Goal: verify Missions 109-119 as one local, offline SaaS Beta boundary.
+- Scope: explicit FREE onboarding composition, safe loopback CORS, debug-off
+  FastAPI defaults, liveness/readiness, environment examples, local Backend
+  and Frontend commands, Fake E2E regression, and completion documentation.
+- Excludes: cloud deployment, real payment/provider credentials, Redis/broker,
+  distributed Workers, object storage, real media providers, Workflow Builder,
+  Marketplace, mobile, and Enterprise functionality.
+- Completion: Backend/Frontend tests and production build pass; persistence,
+  Job execution/recovery, Subscription/Plan, Manual/Fake Billing, Admin,
+  Dashboard, security defaults, and paid-provider blocking are verified
+  without external network calls.
+- Prerequisites: Missions 109-119.
+- Tests: 40-test integration selection, full Backend suite, Frontend suite,
+  production build, readiness/CORS/onboarding/restart/security checks.
+
 ## Longer-term phases
 
-- Mission 120: integrate and document the local Fake/Offline SaaS Beta.
+- Missions 121-130 remain the production cloud, distributed execution,
+  security-hardening, Workflow Builder, Marketplace, Enterprise, and v1.0
+  phases; no such feature is implemented by Mission 120.
 - Missions 121-130: production cloud/storage/broker choices, CI/CD, security
   hardening, Workflow Builder, Marketplace, Enterprise, and AICompany v1.0.
 - Real music/image/video/YouTube adapters remain separately blocked by

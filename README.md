@@ -182,6 +182,42 @@ and FAKE payment recording. The browser shows Admin navigation only after
 There is no impersonation, password/token/secret access, physical deletion,
 arbitrary code execution, real refund/payment, or infrastructure control.
 
+## Local SaaS Beta
+
+Mission 120 completes the verified local Fake/Offline Beta boundary. Install
+the declared local dependencies, then start the dependency-injected FastAPI
+factory on loopback:
+
+```powershell
+cd Automation
+python -m pip install -r requirements.txt
+python -m uvicorn application.backend:create_backend_app --factory --host 127.0.0.1 --port 8000
+```
+
+In another shell:
+
+```powershell
+cd Web
+npm.cmd install
+$env:VITE_API_BASE_URL="http://127.0.0.1:8000"
+npm.cmd run dev
+```
+
+Production frontend verification uses `npm.cmd run build`. Copy only safe
+values from `.env.example`; do not commit a populated `.env`. The default CORS
+allowlist accepts `127.0.0.1:5173` and `localhost:5173`, FastAPI debug is off,
+`/health` is liveness, and `/ready` reports whether injected persistence,
+queue, and monitor probes are configured. The bare factory command is the
+local adapter; a real deployment must inject persistent services and secrets
+through its own composition root.
+
+Completed locally: authenticated Workspace contracts, persistent Job execution
+and recovery, History/Artifact/Usage/Quota, Plan/Subscription, Manual/Fake
+Billing, Dashboard, and bounded Platform Admin operations. Not completed:
+real payment, cloud deployment, distributed Workers, Redis/broker, production
+object storage, real media providers, Workflow Builder, Marketplace, or
+Enterprise functionality. `ALLOW_PAID_PROVIDER=False` remains mandatory.
+
 ## User lifecycle
 
 Mission 102 adds lifecycle state to the existing User implementation rather

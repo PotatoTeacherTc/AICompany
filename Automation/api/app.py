@@ -29,8 +29,13 @@ def create_app(
     subscription_service=None,
     billing_service=None,
     admin_service=None,
+    onboarding_service=None,
     health_service=None,
     auth_required=False,
+    allowed_origins=(
+        "http://127.0.0.1:5173",
+        "http://localhost:5173",
+    ),
 ):
     """Create the HTTP application without starting a server."""
     if automation_service is None:
@@ -44,7 +49,17 @@ def create_app(
             automation_service._get_task_for_query,
         )
 
-    app = FastAPI(title="AICompany API", version="0.1.0")
+    app = FastAPI(title="AICompany API", version="0.1.0", debug=False)
+    if allowed_origins:
+        from fastapi.middleware.cors import CORSMiddleware
+
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=list(allowed_origins),
+            allow_credentials=False,
+            allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
+            allow_headers=["Authorization", "Content-Type", "X-Correlation-ID"],
+        )
     @app.middleware("http")
     async def correlation_middleware(request: Request, call_next):
         context=RequestContext.create(request.headers.get("X-Correlation-ID")); token=set_context(context); started=time.perf_counter()
@@ -113,6 +128,7 @@ def create_app(
     app.state.subscription_service = subscription_service
     app.state.billing_service = billing_service
     app.state.admin_service = admin_service
+    app.state.onboarding_service = onboarding_service
     if audit_service is None:
         from application.audit_service import AuditService
         audit_service = AuditService()
@@ -132,6 +148,12 @@ def create_app(
         if app.state.health_service is None:
             return {"status": "ok"}
         return app.state.health_service.snapshot()
+
+    @app.get("/ready")
+    def readiness_check():
+        if app.state.health_service is None:
+            return {"status": "not_ready"}
+        return app.state.health_service.readiness()
 
     @app.post("/tasks", status_code=201)
     def create_task(payload: dict, authorization: str | None = Header(default=None)):
@@ -522,6 +544,29 @@ def create_app(
             from api.errors import error_response
             return error_response(404, "workspace_not_found", "Workspace not found")
         return value
+
+    @app.post("/workspaces/{workspace_id}/onboarding")
+    def onboard_workspace(
+        workspace_id: str,
+        authorization: str | None = Header(default=None),
+    ):
+        denied = _authorize_workspace(
+            app, workspace_id, authorization, {"OWNER", "ADMIN"}
+        )
+        if denied:
+            return denied
+        if app.state.onboarding_service is None:
+            from api.errors import error_response
+            return error_response(
+                503, "onboarding_unavailable", "Onboarding is unavailable"
+            )
+        try:
+            return app.state.onboarding_service.ensure_workspace(workspace_id)
+        except KeyError:
+            from api.errors import error_response
+            return error_response(
+                404, "workspace_not_found", "Workspace not found"
+            )
 
     @app.get("/admin/workspaces")
     def admin_list_workspaces(

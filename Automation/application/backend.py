@@ -45,6 +45,19 @@ class BackendHealthService:
             "paid_provider_enabled": bool(ALLOW_PAID_PROVIDER),
         }
 
+    def readiness(self):
+        value = self.snapshot()
+        ready = all(
+            status == "available" for status in value["checks"].values()
+        )
+        return {
+            "service": value["service"],
+            "status": "ready" if ready else "not_ready",
+            "schema_version": value["schema_version"],
+            "checks": value["checks"],
+            "paid_provider_enabled": value["paid_provider_enabled"],
+        }
+
     @staticmethod
     def _probe(probe):
         if probe is None:
@@ -84,8 +97,13 @@ class BackendDependencies:
     subscription_service: object | None = None
     billing_service: object | None = None
     admin_service: object | None = None
+    onboarding_service: object | None = None
     health_service: BackendHealthService | None = None
     auth_required: bool = False
+    allowed_origins: tuple[str, ...] = (
+        "http://127.0.0.1:5173",
+        "http://localhost:5173",
+    )
 
 
 def create_backend_app(dependencies=None):
@@ -117,6 +135,8 @@ def create_backend_app(dependencies=None):
         subscription_service=dependencies.subscription_service,
         billing_service=dependencies.billing_service,
         admin_service=dependencies.admin_service,
+        onboarding_service=dependencies.onboarding_service,
         health_service=health_service,
         auth_required=dependencies.auth_required,
+        allowed_origins=dependencies.allowed_origins,
     )
