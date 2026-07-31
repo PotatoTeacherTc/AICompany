@@ -8,9 +8,9 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 132
+## Current baseline: Mission 133
 
-Mission 1-132 completion means completion of each Mission's explicitly bounded
+Mission 1-133 completion means completion of each Mission's explicitly bounded
 Contract, Foundation, Fake/Offline, or Local Integration scope. It does not
 mean that Project APEX as a whole is Production Ready.
 
@@ -858,6 +858,16 @@ today/7-day/30-day filter is invented.
   Mission 133 and Mission 134.
 - Tests: six focused tests, Backend 365 tests, and real Docker Redis restart
   verification.
+
+### Mission 133 — Redis Distributed Lock (Complete)
+
+- Adds a shared owner-token/TTL Lock lease contract with memory and Redis
+  implementations. Redis acquire is atomic, release/renew use owner-verified
+  Lua scripts, stale locks expire, and Workspace/Job IDs scope keys.
+- Redis outage fails closed with a safe category. Worker consumption remains
+  Mission 134.
+- Tests: four focused tests, Backend 369 tests, and real two-client Redis
+  competition verification.
 
 ### Unnumbered next-Phase candidates
 

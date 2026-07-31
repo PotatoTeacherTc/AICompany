@@ -2,15 +2,15 @@
 
 ## Mission
 
-Official current baseline: **Mission 132**.
+Official current baseline: **Mission 133**.
 
 Current product status: **Local/Fake SaaS Beta + Production Foundation**.
 
-Mission 1-132 completion means only that each Mission's bounded Contract,
+Mission 1-133 completion means only that each Mission's bounded Contract,
 Foundation, Fake/Offline, or Local Integration scope is complete. Project APEX
 as a whole is not Production Ready. The official next Mission is undefined.
 
-Current verification baseline: Backend 365 tests, Frontend two tests,
+Current verification baseline: Backend 369 tests, Frontend two tests,
 Frontend production build, and a healthy four-service Docker development
 stack.
 
@@ -46,6 +46,12 @@ candidate. Enterprise and AICompany v1.0 remain unimplemented.
 
 The following status is based on the current source tree and automated tests,
 not inferred from a missing historical mission log.
+
+- Mission 133: owner-token and mandatory TTL Lock leases now have memory and
+  Redis implementations. Redis uses atomic NX/PX acquisition and owner-checked
+  Lua release/renew; stale locks expire and Workspace keys isolate identical
+  Job IDs. Failure is closed and sanitized. Worker integration remains
+  Mission 134.
 
 - Mission 132: production composition can select a Redis FIFO Job transport
   while PostgreSQL remains authoritative for the existing Job record. Pending
@@ -684,14 +690,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current Backend suite contains **365 tests**. Its expected command is:
+The current Backend suite contains **369 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Current verification result: **365 passed, 0 failed** (one Docker PostgreSQL
+Current verification result: **369 passed, 0 failed** (one Docker PostgreSQL
 integration test is conditionally skipped outside the integration environment
 and passed against Compose PostgreSQL).
 

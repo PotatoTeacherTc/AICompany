@@ -600,8 +600,10 @@ existing Job contract and PostgreSQL state. Use
 Workspace-scoped pending/processing IDs only. Distributed locking and an
 external Worker are not part of Mission 132.
 
-The approved next Mission is Mission 133 Distributed Lock. Later approved
-Production Execution Layer work covers distributed Workers, recovery/DLQ, and
+Mission 133 adds owner-token TTL distributed locking. Redis acquisition is
+atomic and release/renew verify ownership; stale Locks expire and failures are
+closed. The approved next Mission is Mission 134 Distributed Worker. Later
+Production Execution Layer work covers recovery/DLQ and
 multi-instance validation. Object Storage, deployment/TLS/Secret Manager, and
 real Billing/approved Media Provider integration remain outside this bundle.
 Workflow, Plugin, and Marketplace expansion is not a current priority.
