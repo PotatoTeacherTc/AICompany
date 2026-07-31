@@ -543,6 +543,13 @@ not inferred from a missing historical mission log.
   were reviewed, and the stack stopped cleanly. PostgreSQL and Redis are
   infrastructure foundations only; existing repositories were not silently
   replaced. Backend 310 tests, Frontend two tests, and production build pass.
+- Mission 122: `.github/workflows/ci.yml` now runs least-privilege Backend and
+  Frontend jobs on push and pull requests. Backend uses a no-bytecode AST
+  syntax lint plus the full test suite; Frontend runs type lint, tests, and
+  build. pip/npm caches are keyed from lock inputs and only the bounded Web
+  build is uploaded for seven days. There is no deploy step, write permission,
+  secret reference, cloud credential, or registry publication. Two focused
+  tests, Backend 312 tests, Frontend two tests, lint, and build pass locally.
 
 ## Implemented pipelines
 
@@ -559,14 +566,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current Backend suite contains **310 tests**. Its expected command is:
+The current Backend suite contains **312 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Current verification result: **310 passed, 0 failed**.
+Current verification result: **312 passed, 0 failed**.
 
 ## Not implemented
 

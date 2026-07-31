@@ -241,6 +241,25 @@ PostgreSQL and Redis are provisioned foundations, not active replacements for
 the JSON/in-memory repositories. This is not Kubernetes, a cloud provider,
 a managed database, or a production-secret configuration.
 
+## Continuous integration
+
+Mission 122 runs the same safe checks on GitHub pushes and pull requests:
+
+```powershell
+cd Automation
+python -B -m unittest tests.test_source_syntax
+python -B -m unittest discover -s tests
+
+cd ..\Web
+npm.cmd run lint
+npm.cmd test
+npm.cmd run build
+```
+
+The workflow uses read-only repository permissions, pip/npm caches, and a
+seven-day static Web build artifact. It does not deploy, publish images, read
+cloud secrets, or change a production environment.
+
 ## User lifecycle
 
 Mission 102 adds lifecycle state to the existing User implementation rather

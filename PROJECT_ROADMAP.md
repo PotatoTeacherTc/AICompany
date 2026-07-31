@@ -640,9 +640,24 @@ today/7-day/30-day filter is invented.
 - Tests: Compose config/build/up/ps/logs/down, Backend 310 tests, Frontend two
   tests, and production build.
 
+### Mission 122 — CI Pipeline (Complete)
+
+- Goal: provide repeatable GitHub pull-request and push verification without
+  adding deployment authority.
+- Scope: least-privilege GitHub Actions jobs for Backend syntax lint/tests and
+  Frontend type lint/tests/build, with pip/npm caches and bounded build
+  artifact upload.
+- Excludes: deployment, write permissions, cloud credentials, production
+  secrets, registry publication, and environment mutation.
+- Completion: the workflow contract, local equivalents, full Backend suite,
+  Frontend suite, type lint, and production build pass.
+- Prerequisites: Mission 121.
+- Tests: workflow safety contract, AST syntax lint, Backend 312 tests,
+  Frontend two tests, `tsc --noEmit`, and production build.
+
 ## Longer-term phases
 
-- Missions 122-130 remain CI, production security/monitoring/recovery,
+- Missions 123-130 remain production security/monitoring/recovery,
   distributed execution,
   security-hardening, Workflow Builder, Marketplace, Enterprise, and v1.0
   phases; no such feature is implemented by Mission 120.

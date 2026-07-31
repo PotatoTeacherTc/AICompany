@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Automation
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: Automation/requirements.txt
+      - name: Install Backend dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Lint Backend syntax
+        run: python -m unittest tests.test_source_syntax
+      - name: Test Backend
+        run: python -m unittest discover -s tests
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: Web/package-lock.json
+      - name: Install Frontend dependencies
+        run: npm ci
+      - name: Lint Frontend types
+        run: npm run lint
+      - name: Test Frontend
+        run: npm test
+      - name: Build Frontend
+        run: npm run build
+      - name: Upload Frontend build
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: Web/dist
+          if-no-files-found: error
+          retention-days: 7
