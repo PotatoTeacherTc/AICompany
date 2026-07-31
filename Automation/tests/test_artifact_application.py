@@ -8,6 +8,7 @@ from api.app import create_app
 from application.artifact_service import ArtifactApplicationService
 from application.credential_service import CredentialService
 from application.login_service import LoginService
+from application.quota_service import QuotaApplicationService
 from application.session_service import SessionService
 from application.user_service import UserService
 from application.workspace_membership_service import WorkspaceMembershipService
@@ -15,6 +16,9 @@ from application.workspace_service import WorkspaceService
 from core.access_token_provider import SignedAccessTokenProvider
 from core.artifact_manager import ArtifactManager
 from core.artifact_repository import FileArtifactRepository
+from core.persistence import InMemoryStateRepository
+from core.quota import QuotaEngine
+from core.usage_engine import UsageEngine
 
 
 class _Automation:
@@ -191,6 +195,12 @@ class ArtifactApplicationTests(unittest.TestCase):
             credential_service=credentials,
             login_service=login,
             session_service=sessions,
+            quota_service=QuotaApplicationService(
+                QuotaEngine(
+                    (quota_repository := InMemoryStateRepository()),
+                    UsageEngine(quota_repository),
+                )
+            ),
             auth_required=True,
         )
         client = TestClient(app)
@@ -208,6 +218,23 @@ class ArtifactApplicationTests(unittest.TestCase):
         base = "/workspaces/{}/artifacts".format(workspace["workspace_id"])
         self.assertEqual(401, client.get(base).status_code)
         self.assertEqual(403, client.get(base, headers=outsider_headers).status_code)
+        quota_url = "/workspaces/{}/quota".format(workspace["workspace_id"])
+        self.assertEqual(200, client.get(quota_url, headers=member_headers).status_code)
+        self.assertEqual(
+            403,
+            client.put(
+                quota_url,
+                json={"execution_limit": 1},
+                headers=member_headers,
+            ).status_code,
+        )
+        configured = client.put(
+            quota_url,
+            json={"token_limit": 10, "cost_limit": 0, "execution_limit": 1},
+            headers=owner_headers,
+        )
+        self.assertEqual(200, configured.status_code)
+        self.assertEqual(10, configured.json()["token_limit"])
         self.assertEqual(
             403,
             client.post(

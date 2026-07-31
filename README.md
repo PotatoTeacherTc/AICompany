@@ -351,12 +351,17 @@ does not delete content or invalidate Job/History references. `AVAILABLE` is
 the active state, `ARCHIVED` is reversible, and missing content reports
 `MISSING`.
 
+Workspace quota endpoints expose current usage/remaining admission state to
+members and allow OWNER/ADMIN to set explicit token, estimated-cost, and
+execution limits. Enforcement occurs at persistent Job submission and before
+target execution. Reservations are restart-safe and idempotent within the
+current single process; the current period is `ALL_TIME`. This is not billing.
+
 The next defined sequence is:
 
-1. Mission 113 — Quota & Budget Enforcement
-2. Mission 114 — Plans & Entitlements
-3. Mission 115 — Dashboard API
-4. Mission 116 — Web Dashboard
+1. Mission 114 — Plans & Entitlements
+2. Mission 115 — Dashboard API
+3. Mission 116 — Web Dashboard
 
 Ollama Text remains explicit and loopback-only. Music, Image, Video, and
 YouTube remain Fake; no paid Provider or external media API is enabled.

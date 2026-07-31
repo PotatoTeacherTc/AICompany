@@ -481,7 +481,7 @@ state and missing files remain `MISSING`. OWNER/ADMIN may archive or restore,
 MEMBER may read and filter by status, and existing Job/History references
 remain valid. No physical file is deleted.
 
-### Mission 113 — Quota & Budget Enforcement
+### Mission 113 — Quota & Budget Enforcement (Complete)
 
 - Goal: turn existing Usage and Workspace settings into pre-execution safety
   decisions.
@@ -497,6 +497,13 @@ remain valid. No physical file is deleted.
 - Tests: limits below/at/above boundary, reservation idempotency, release,
   restart recovery, Workspace isolation, partial/missing Usage, clock-period
   rollover, and Logging failure isolation.
+
+Mission 113 adds an injected QuotaEngine over the existing UsageEngine and
+StateRepository. Explicit token, estimated-cost, and execution limits are
+enforced before persistent Job submission and token/cost limits are rechecked
+before the target callback. Workspace-qualified idempotent reservations survive
+restart and use an in-process lock. The current local contract supports the
+documented `ALL_TIME` period only; distributed quota and billing are absent.
 
 ### Mission 114 — Plans & Entitlements
 

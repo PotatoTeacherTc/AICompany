@@ -22,12 +22,14 @@ class PersistentExecutionService:
         execution_history,
         artifact_manager,
         usage_engine,
+        quota_engine=None,
     ):
         self.queue = queue
         self.worker = worker
         self.execution_history = execution_history
         self.artifact_manager = artifact_manager
         self.usage_engine = usage_engine
+        self.quota_engine = quota_engine
 
     def register_target(self, target_id, callback):
         target_id = _identifier(target_id, "target_id")
@@ -46,11 +48,15 @@ class PersistentExecutionService:
         idempotency_key,
         retry_state=None,
     ):
+        workspace_id = _identifier(workspace_id, "workspace_id")
+        idempotency_key = _identifier(idempotency_key, "idempotency_key")
+        if self.quota_engine is not None:
+            self.quota_engine.reserve(workspace_id, idempotency_key)
         return self.queue.enqueue(
-            _identifier(workspace_id, "workspace_id"),
+            workspace_id,
             _identifier(mission_id, "mission_id"),
             _identifier(target_id, "target_id"),
-            _identifier(idempotency_key, "idempotency_key"),
+            idempotency_key,
             retry_state=retry_state,
         )
 
@@ -59,6 +65,8 @@ class PersistentExecutionService:
 
     def _execute(self, job, callback):
         try:
+            if self.quota_engine is not None:
+                self.quota_engine.assert_allowed(job.workspace_id)
             result = callback(job)
             result = self._validated_result(result)
             artifacts = self._artifacts(job.workspace_id, result)

@@ -23,6 +23,7 @@ def create_app(
     persistent_execution_service=None,
     job_execution_api_service=None,
     organization_service=None,
+    quota_service=None,
     health_service=None,
     auth_required=False,
 ):
@@ -101,6 +102,7 @@ def create_app(
     app.state.persistent_execution_service = persistent_execution_service
     app.state.job_execution_api_service = job_execution_api_service
     app.state.organization_service = organization_service
+    app.state.quota_service = quota_service
     if audit_service is None:
         from application.audit_service import AuditService
         audit_service = AuditService()
@@ -482,6 +484,39 @@ def create_app(
 
             return error_response(409, "artifact_missing", "Artifact content is missing")
         return value
+
+    @app.get("/workspaces/{workspace_id}/quota")
+    def get_quota(
+        workspace_id: str,
+        authorization: str | None = Header(default=None),
+    ):
+        denied = _authorize_workspace(
+            app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"}
+        )
+        if denied:
+            return denied
+        if app.state.quota_service is None:
+            from api.errors import error_response
+            return error_response(503, "quota_unavailable", "Quota is unavailable")
+        return app.state.quota_service.get(workspace_id)
+
+    @app.put("/workspaces/{workspace_id}/quota")
+    def update_quota(
+        workspace_id: str,
+        payload: dict,
+        authorization: str | None = Header(default=None),
+    ):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN"})
+        if denied:
+            return denied
+        if app.state.quota_service is None:
+            from api.errors import error_response
+            return error_response(503, "quota_unavailable", "Quota is unavailable")
+        try:
+            return app.state.quota_service.update(workspace_id, payload)
+        except (TypeError, ValueError):
+            from api.errors import error_response
+            return error_response(400, "invalid_request", "Invalid quota request")
 
     @app.get("/workspaces/{workspace_id}/usage")
     def list_usage(
