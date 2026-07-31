@@ -18,6 +18,9 @@ class StorageProvider(ABC):
     def exists(self, key):
         pass
 
+    def health(self):
+        return {"ok": True, "backend": self.__class__.__name__}
+
 
 class LocalStorageProvider(StorageProvider):
     def __init__(self, root):
@@ -101,7 +104,7 @@ class ArtifactStorageAdapter:
     def store(
         self, workspace_id, artifact_id, filename, content,
         *, artifact_type="BINARY", mime_type="application/octet-stream",
-        mission_id=None, stage=None,
+        mission_id=None, task_id=None, stage=None, producer_pipeline=None,
     ):
         for value in (workspace_id, artifact_id, filename):
             if not isinstance(value, str) or not value:
@@ -121,7 +124,9 @@ class ArtifactStorageAdapter:
             "mime_type": mime_type,
             "size": len(data),
             "mission_id": mission_id,
+            "task_id": task_id,
             "stage": stage,
+            "producer_pipeline": producer_pipeline,
             "status": "AVAILABLE",
             "created_at": now,
             "updated_at": now,
@@ -131,11 +136,18 @@ class ArtifactStorageAdapter:
         return dict(metadata)
 
     def read(self, workspace_id, artifact_id):
-        artifact = self.artifacts.get(artifact_id)
+        artifact = self.artifacts.get(artifact_id, workspace_id)
         if artifact is None or artifact.get("workspace_id") != workspace_id:
             return None
         key = artifact.get("internal_ref")
         return self.storage.get(key) if isinstance(key, str) else None
+
+    def health(self):
+        try:
+            value = self.storage.health()
+            return value if isinstance(value, dict) else {"ok": bool(value)}
+        except Exception:
+            return {"ok": False}
 
 
 class StorageFactory:

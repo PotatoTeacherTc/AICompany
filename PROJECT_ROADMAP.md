@@ -8,9 +8,9 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 137
+## Current baseline: Mission 138
 
-Mission 1-137 completion means completion of each Mission's explicitly bounded
+Mission 1-138 completion means completion of each Mission's explicitly bounded
 Contract, Foundation, Fake/Offline, or Local Integration scope. It does not
 mean that Project APEX as a whole is Production Ready.
 
@@ -925,6 +925,22 @@ today/7-day/30-day filter is invented.
 - Tests: three focused tests, Backend 386 tests, and Docker verification of
   `ready` → Redis outage `not_ready` → recovered `ready`.
 - This does not make Project APEX Production Ready and adds no external APM.
+
+### Mission 138 — Artifact Object Storage Integration (Complete, local/Fake integration)
+
+- Connects the existing StorageProvider and ArtifactStorageAdapter to
+  ArtifactManager, safe content reads, production Backend/Worker composition,
+  and readiness without replacing Artifact contracts.
+- PostgreSQL StateRepository stores Workspace-qualified metadata/internal keys;
+  LocalStorageProvider stores bytes in the shared Docker volume. Unconfigured
+  local/test composition uses the memory-only Fake S3 provider.
+- Storage failure occurs before metadata creation; missing objects report
+  `MISSING`; archive/restore remains metadata state and metadata deletion uses
+  a non-destructive tombstone.
+- Tests: three focused tests, Backend 389 tests, and Docker create/read/restart/
+  read verification with exact test Artifact cleanup.
+- No real S3-compatible product, Cloud account, credential, or public URL is
+  implemented.
 
 ### Unnumbered next-Phase candidates
 

@@ -8,6 +8,9 @@ from application.plan_service import PlanApplicationService
 from application.job_execution_api_service import JobExecutionApiService
 from application.persistent_execution_service import PersistentExecutionService
 from core.artifact_manager import ArtifactManager
+from core.artifact_repository import StateArtifactRepository
+from core.object_storage import ArtifactStorageAdapter, StorageFactory
+from application.artifact_service import ArtifactApplicationService
 from core.batch import BatchManager
 from core.execution_history import ExecutionHistory
 from core.infrastructure import (
@@ -60,7 +63,7 @@ def create_production_app(environment=None):
     queue = QueueFactory.create(queue_config, repository, redis_client=redis_client)
     worker = InProcessJobWorker(queue)
     history = ExecutionHistory(state_repository=repository)
-    artifacts = ArtifactManager()
+    artifacts = create_artifact_manager(values, repository)
     usage = UsageEngine(repository)
     execution = PersistentExecutionService(queue, worker, history, artifacts, usage)
     job_api = JobExecutionApiService(
@@ -79,6 +82,7 @@ def create_production_app(environment=None):
     return create_backend_app(BackendDependencies(
         state_repository=repository,
         plan_service=PlanApplicationService(PlanManager(repository)),
+        artifact_service=ArtifactApplicationService(artifacts),
         persistent_execution_service=execution,
         job_execution_api_service=job_api,
         health_service=BackendHealthService(
@@ -86,9 +90,22 @@ def create_production_app(environment=None):
             queue_probe=queue.health if hasattr(queue, "health") else lambda: True,
             monitor_probe=metrics.snapshot,
             worker_probe=worker_probe,
-            required_checks=required_checks,
+            storage_probe=artifacts.storage_adapter.health,
+            required_checks=required_checks + ["storage"],
             instance_id=values.get("AICOMPANY_INSTANCE_ID") or socket.gethostname(),
         ),
         metrics=metrics,
         infrastructure_resources=resources,
     ))
+
+
+def create_artifact_manager(values, repository):
+    provider = values.get("AICOMPANY_ARTIFACT_STORAGE", "fake_s3")
+    storage = StorageFactory.create(
+        provider,
+        root=values.get("AICOMPANY_ARTIFACT_ROOT", "/data/artifacts"),
+        bucket=values.get("AICOMPANY_ARTIFACT_BUCKET"),
+    )
+    metadata = StateArtifactRepository(repository)
+    adapter = ArtifactStorageAdapter(storage, metadata)
+    return ArtifactManager(metadata, adapter)

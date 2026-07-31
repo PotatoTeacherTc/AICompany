@@ -101,12 +101,16 @@ class ArtifactApplicationService:
             return {"status": "MISSING"}
         if artifact.get("artifact_type") not in _ALLOWED_CONTENT_TYPES:
             raise ValueError("unsupported_content_type")
-        path = self._resolve_internal_path(artifact)
         try:
-            size = path.stat().st_size
-            if size > _MAX_CONTENT_BYTES:
-                raise ValueError("content_too_large")
-            raw = path.read_bytes()
+            if self.artifact_manager.storage_adapter is not None:
+                raw = self.artifact_manager.storage_adapter.read(workspace_id, artifact_id)
+                if raw is None: return {"status": "MISSING"}
+                if len(raw) > _MAX_CONTENT_BYTES: raise ValueError("content_too_large")
+            else:
+                path = self._resolve_internal_path(artifact)
+                size = path.stat().st_size
+                if size > _MAX_CONTENT_BYTES: raise ValueError("content_too_large")
+                raw = path.read_bytes()
             text = raw.decode("utf-8")
             content = (
                 sanitize_for_read(json.loads(text))

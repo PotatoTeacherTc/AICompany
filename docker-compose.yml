@@ -13,6 +13,8 @@ services:
       AICOMPANY_QUEUE_NAMESPACE: aicompany
       AICOMPANY_QUEUE_BLOCKING_TIMEOUT: 1
       AICOMPANY_REQUIRED_WORKERS: ${AICOMPANY_REQUIRED_WORKERS:-1}
+      AICOMPANY_ARTIFACT_STORAGE: local
+      AICOMPANY_ARTIFACT_ROOT: /data/artifacts
       DATABASE_URL: postgresql://aicompany:${POSTGRES_PASSWORD:-local-development-only}@postgres:5432/aicompany
       REDIS_URL: redis://redis:6379/0
       AICOMPANY_ALLOWED_ORIGINS: ${AICOMPANY_ALLOWED_ORIGINS:-http://127.0.0.1:5173,http://localhost:5173}
@@ -86,10 +88,14 @@ services:
       AICOMPANY_WORKER_WORKSPACES: ${AICOMPANY_WORKER_WORKSPACES:-default}
       AICOMPANY_WORKER_MAX_ATTEMPTS: 3
       AICOMPANY_WORKER_BACKOFF_SECONDS: 1
+      AICOMPANY_ARTIFACT_STORAGE: local
+      AICOMPANY_ARTIFACT_ROOT: /data/artifacts
       DATABASE_URL: postgresql://aicompany:${POSTGRES_PASSWORD:-local-development-only}@postgres:5432/aicompany
       REDIS_URL: redis://redis:6379/0
     networks:
       - aicompany
+    volumes:
+      - backend_state:/data
     depends_on:
       postgres:
         condition: service_healthy

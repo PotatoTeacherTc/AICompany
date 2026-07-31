@@ -1,10 +1,10 @@
 # AICompany
 
-Official baseline: **Mission 137**. Current product status:
+Official baseline: **Mission 138**. Current product status:
 **Local/Fake SaaS Beta + Production Foundation with bounded PostgreSQL/Redis
-local operations integration**. Completion through Mission 137 is limited to each Mission's documented Contract, Foundation,
+local operations integration**. Completion through Mission 138 is limited to each Mission's documented Contract, Foundation,
 Fake/Offline, or Local Integration scope; Project APEX is not Production Ready.
-The official next Mission is Mission 138 Artifact Object Storage Integration.
+The official next Mission is Mission 139 Production Configuration Security.
 
 AI 기반 자동화와 콘텐츠 제작 시스템을 연구하는 개인 AI 프로젝트 워크스페이스입니다.
 
@@ -521,7 +521,7 @@ this feature.
 
 ## Current Backend scope and next work
 
-The official baseline is Mission 137. Mission 1-137 completion means completion
+The official baseline is Mission 138. Mission 1-138 completion means completion
 of each Mission's bounded Contract, Foundation, Fake/Offline, or Local
 Integration scope; Project APEX is not Production Ready. The current product
 state is **Local/Fake SaaS Beta + Production Foundation**.
@@ -624,6 +624,12 @@ This is single-node local integration, not Cloud HA or Production Ready. Object
 Storage, deployment/TLS/Secret Manager, and
 real Billing/approved Media Provider integration remain outside this bundle.
 Workflow, Plugin, and Marketplace expansion is not a current priority.
+
+Mission 138 connects ArtifactManager to the existing Local/Fake object-storage
+contract. Docker selects `AICOMPANY_ARTIFACT_STORAGE=local` with the shared
+`/data/artifacts` volume; unset local/test composition safely uses memory-only
+`fake_s3`. PostgreSQL stores metadata and safe internal keys only. No AWS, GCP,
+Azure, S3-compatible service, credential, or public URL is configured.
 
 The initial Web Dashboard is in `Web/`. Run `npm.cmd install`, set
 `VITE_API_BASE_URL` to the Backend loopback URL, then use `npm.cmd run dev`.

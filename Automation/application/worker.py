@@ -6,8 +6,7 @@ import socket
 import time
 
 from application.persistent_execution_service import PersistentExecutionService
-from application.production import create_state_repository_from_environment
-from core.artifact_manager import ArtifactManager
+from application.production import create_artifact_manager, create_state_repository_from_environment
 from core.distributed_lock import RedisDistributedLock
 from core.distributed_worker import DistributedJobWorker
 from core.distributed_recovery import DistributedRecovery
@@ -42,7 +41,7 @@ def build_worker(environment=None):
     )
     history = ExecutionHistory(state_repository=repository)
     service = PersistentExecutionService(
-        queue, worker, history, ArtifactManager(), UsageEngine(repository)
+        queue, worker, history, create_artifact_manager(values, repository), UsageEngine(repository)
     )
     service.register_target("offline-success", lambda _job: {
         "status": PipelineStatus.SUCCESS,

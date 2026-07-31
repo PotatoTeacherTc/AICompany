@@ -2,15 +2,15 @@
 
 ## Mission
 
-Official current baseline: **Mission 137**.
+Official current baseline: **Mission 138**.
 
 Current product status: **Local/Fake SaaS Beta + Production Foundation**.
 
-Mission 1-137 completion means only that each Mission's bounded Contract,
+Mission 1-138 completion means only that each Mission's bounded Contract,
 Foundation, Fake/Offline, or Local Integration scope is complete. Project APEX
-as a whole is not Production Ready. The official next Mission is Mission 138.
+as a whole is not Production Ready. The official next Mission is Mission 139.
 
-Current verification baseline: Backend 386 tests, Frontend two tests,
+Current verification baseline: Backend 389 tests, Frontend two tests,
 Frontend production build, and a locally scaled Docker development stack with
 two Backends and two Workers.
 
@@ -46,6 +46,13 @@ candidate. Enterprise and AICompany v1.0 remain unimplemented.
 
 The following status is based on the current source tree and automated tests,
 not inferred from a missing historical mission log.
+
+- Mission 138: production ArtifactManager now writes bytes through the existing
+  Local/Fake StorageProvider contract while PostgreSQL StateRepository stores
+  Workspace-scoped metadata and safe internal keys. Content reads, missing
+  detection, restart recovery, archive/restore, and readiness reuse existing
+  application contracts. Docker verified read-after-Backend-restart. No real
+  Cloud Object Storage or credential is present.
 
 - Mission 137: production readiness now requires healthy PostgreSQL, Redis
   Queue, process-local monitoring, and the configured count of expiring Worker
