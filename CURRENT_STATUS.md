@@ -585,6 +585,14 @@ not inferred from a missing historical mission log.
   Five focused tests, all 332 Backend tests, Frontend tests/build, and the
   healthy four-service Compose stack pass.
 
+- Mission 127: StorageProvider now separates Artifact bytes from the existing
+  ArtifactRepository metadata contract. LocalStorageProvider confines keys to
+  an injected root; FakeS3StorageProvider is memory-only; ArtifactStorageAdapter
+  enforces Workspace reads; SignedUrlService returns a bounded opaque
+  `storage://` reference. StorageFactory cannot select real cloud providers.
+  Five focused, 16 related, all 337 Backend tests, Frontend tests/build, and
+  healthy Compose verification pass.
+
 ## Implemented pipelines
 
 | Type | Pipeline | Current result |
@@ -600,14 +608,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current Backend suite contains **332 tests**. Its expected command is:
+The current Backend suite contains **337 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Current verification result: **332 passed, 0 failed**.
+Current verification result: **337 passed, 0 failed**.
 
 ## Not implemented
 

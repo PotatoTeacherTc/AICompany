@@ -715,10 +715,25 @@ today/7-day/30-day filter is invented.
 - Tests: five focused tests, Backend 332 tests, Frontend tests/build, and
   healthy Compose verification.
 
+### Mission 127 — Object Storage Abstraction (Complete, Offline)
+
+- Goal: separate Artifact bytes from Artifact metadata behind an injectable
+  storage contract.
+- Scope: StorageProvider, safe local provider, in-memory Fake S3 provider,
+  ArtifactStorageAdapter, bounded opaque signed-reference contract, and
+  StorageFactory.
+- Excludes: AWS/GCP/Azure SDKs, network access, real buckets, credential
+  storage, and public URL delivery.
+- Completion: content round trips locally/Fake, metadata remains
+  Workspace-scoped, path escape is rejected, and references expose no absolute
+  path.
+- Tests: five focused tests, 16 related tests, Backend 337 tests, Frontend
+  tests/build, and healthy Compose verification.
+
 ## Longer-term phases
 
-- Missions 127-130 remain object storage, Workflow Builder, Plugin SDK, and
-  Marketplace foundation work,
+- Missions 128-130 remain Workflow Builder, Plugin SDK, and Marketplace
+  foundation work,
   distributed execution,
   security-hardening, Workflow Builder, Marketplace, Enterprise, and v1.0
   phases; no such feature is implemented by Mission 120.

@@ -317,6 +317,15 @@ The adapters assume externally managed PostgreSQL schema and injected clients.
 They do not run migrations, install a database driver, automatically switch
 storage, delete data, or contain cloud-provider code.
 
+## Object storage abstraction
+
+Mission 127 adds an injectable StorageProvider while retaining
+ArtifactRepository as the metadata authority. Local storage is confined to an
+explicit root, and Fake S3 is memory-only. ArtifactStorageAdapter uses
+Workspace-qualified internal references; the signed-reference contract is
+bounded and opaque. No AWS, GCP, Azure, real bucket, credential, public URL,
+or network operation is included.
+
 ## User lifecycle
 
 Mission 102 adds lifecycle state to the existing User implementation rather
