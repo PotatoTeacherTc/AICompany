@@ -39,17 +39,19 @@ class FakeCursor:
             self.rows = [(1,)]
         elif compact.startswith("INSERT"):
             kind, record_id, workspace_id, version, payload = values
-            self.connection.values[(kind, record_id)] = (
+            self.connection.values[(kind, workspace_id, record_id)] = (
                 workspace_id, version, payload
             )
         elif "record_id = %s" in compact:
-            self.rows = [self.connection.values.get(values)] if self.connection.values.get(values) else []
+            kind, record_id, workspace_id = values
+            key = (kind, workspace_id, record_id)
+            self.rows = [self.connection.values[key]] if key in self.connection.values else []
         else:
             kind, workspace_id = values
             self.rows = [
                 (record_id, row[1], row[2])
-                for (row_kind, record_id), row in self.connection.values.items()
-                if row_kind == kind and row[0] == workspace_id
+                for (row_kind, row_workspace, record_id), row in self.connection.values.items()
+                if row_kind == kind and row_workspace == workspace_id
             ]
     def fetchone(self): return self.rows[0] if self.rows else None
     def fetchall(self): return self.rows
@@ -97,6 +99,13 @@ class ProductionInfrastructureTests(unittest.TestCase):
         )
         self.assertEqual(1, connection.commits)
         self.assertTrue(repository.health()["ok"])
+        repository.save("mission", "m1", "ws-b", {"status": "OTHER"})
+        self.assertEqual(
+            "PENDING", repository.get("mission", "m1", "ws-a")["status"]
+        )
+        self.assertEqual(
+            "OTHER", repository.get("mission", "m1", "ws-b")["status"]
+        )
 
     def test_graceful_shutdown_closes_injected_resources(self):
         redis = RedisStateRepository(FakeRedis())

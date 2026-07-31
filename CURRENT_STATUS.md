@@ -2,15 +2,15 @@
 
 ## Mission
 
-Official current baseline: **Mission 130**.
+Official current baseline: **Mission 131**.
 
 Current product status: **Local/Fake SaaS Beta + Production Foundation**.
 
-Mission 1-130 completion means only that each Mission's bounded Contract,
+Mission 1-131 completion means only that each Mission's bounded Contract,
 Foundation, Fake/Offline, or Local Integration scope is complete. Project APEX
 as a whole is not Production Ready. The official next Mission is undefined.
 
-Current verification baseline: Backend 353 tests, Frontend two tests,
+Current verification baseline: Backend 359 tests, Frontend two tests,
 Frontend production build, and a healthy four-service Docker development
 stack.
 
@@ -20,7 +20,7 @@ stack.
 |---|---|---|
 | SaaS Beta | Local/Fake SaaS Beta | Production deployment and acceptance |
 | Cloud Foundation | Docker-based Local Development Foundation | Cloud runtime composition |
-| Production Infrastructure | PostgreSQL/Redis Repository Adapter Foundation | Schema, migration, drivers, and application composition |
+| Production Infrastructure | Bounded PostgreSQL Production Integration | Non-StateRepository domains, Redis execution, cloud deployment, and operations |
 | Object Storage | Local/Fake Provider Foundation | Real cloud Object Storage |
 | Workflow Builder | Definition/Validation Foundation | Execution, Persistence, API, and UI |
 | Plugin SDK | Local/Fake Contract Foundation | External discovery, download, and isolated execution |
@@ -36,8 +36,7 @@ Text; Fake media; Dashboard reads; Local/Fake Subscription, Billing, and
 Admin; and Docker-based local execution.
 
 The official next Mission is undefined. Unnumbered production-bottleneck
-candidates are PostgreSQL schema/migration/application composition;
-Redis-backed Queue/Lock/Broker and distributed Workers; real Object Storage
+candidates are Redis-backed Queue/Lock/Broker and distributed Workers; real Object Storage
 and Artifact integration; deployment/TLS/Secret Manager; and real Billing or
 approved Media Providers. These are candidates only and require user approval.
 Workflow, Plugin, and Marketplace expansion is not a current priority
@@ -47,6 +46,15 @@ candidate. Enterprise and AICompany v1.0 remain unimplemented.
 
 The following status is based on the current source tree and automated tests,
 not inferred from a missing historical mission log.
+
+- Mission 131: the existing shared StateRepository now selects memory, JSON,
+  or PostgreSQL from the environment. PostgreSQL uses psycopg, an additive
+  versioned migration, Workspace-qualified keys and queries, production Plan
+  API composition, safe connection/migration health, and lifespan closure. Docker
+  verification confirmed migration idempotence, Workspace A/B isolation, and
+  persistence across Backend restart. User, Workspace, and Artifact-specific
+  repositories are not silently converted; Redis/distributed execution,
+  cloud database deployment, TLS, and Secret Manager remain unimplemented.
 
 - Mission 108: Workspace-scoped Usage reporting now reuses UsageEngine and
   its in-memory/JSON persistence through a read-only application service.
@@ -669,14 +677,16 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current Backend suite contains **353 tests**. Its expected command is:
+The current Backend suite contains **359 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Current verification result: **353 passed, 0 failed**.
+Current verification result: **359 passed, 0 failed** (one Docker PostgreSQL
+integration test is conditionally skipped outside the integration environment
+and passed against Compose PostgreSQL).
 
 ## Not implemented
 
@@ -695,7 +705,8 @@ Current verification result: **353 passed, 0 failed**.
 - Real image/video providers, YouTube OAuth, and real YouTube upload. Paid
   providers remain disabled and no content-generation network call is made.
 - Distributed locking, OS cron, Celery/Redis/message-broker infrastructure,
-  external databases, and cloud storage.
+  external cloud databases, and cloud storage. Local Docker PostgreSQL now
+  persists only the shared StateRepository contract.
 - Real billing/payment integration, checkout, proration, refunds,
   external APM/Prometheus/Grafana/Sentry integrations,
   distributed monitoring, real-time WebSocket updates, remote log shipping,
@@ -711,9 +722,11 @@ Current verification result: **353 passed, 0 failed**.
 - Task and PipelineResult use dictionaries/strings rather than runtime schema
   validation or static types.
 - Console `print()` calls are widespread; structured logging is incomplete.
-- JSON persistence is local single-process storage; the persistent queue has
-  restart recovery and claim ownership but no atomic multi-process claim or
-  distributed locking.
+- JSON persistence is local single-process storage. PostgreSQL persistence is
+  available for shared StateRepository records, while separate User,
+  Workspace, and Artifact repositories retain their existing implementations.
+  The persistent queue has restart recovery and claim ownership but no atomic
+  multi-process claim or distributed locking.
 - FILE pipeline still relies on a simple local file-type mapping.
 - CONTENT and RESEARCH generate local scaffolds, not source-backed or
   AI-generated results.

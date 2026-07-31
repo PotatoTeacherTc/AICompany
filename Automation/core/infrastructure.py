@@ -13,10 +13,11 @@ from core.persistence import (
 
 
 class PostgreSQLStateRepository(StateRepository):
-    """DB-API adapter; schema ownership and migrations remain external."""
+    """Workspace-scoped DB-API adapter for the shared state contract."""
 
-    def __init__(self, connection):
+    def __init__(self, connection, migration_manager=None):
         self.connection = connection
+        self.migration_manager = migration_manager
 
     def save(self, kind, record_id, workspace_id, payload):
         record = _record(kind, record_id, workspace_id, payload)
@@ -26,10 +27,10 @@ class PostgreSQLStateRepository(StateRepository):
                 INSERT INTO aicompany_state
                     (kind, record_id, workspace_id, schema_version, payload)
                 VALUES (%s, %s, %s, %s, %s)
-                ON CONFLICT (kind, record_id) DO UPDATE SET
-                    workspace_id = EXCLUDED.workspace_id,
+                ON CONFLICT (kind, workspace_id, record_id) DO UPDATE SET
                     schema_version = EXCLUDED.schema_version,
-                    payload = EXCLUDED.payload
+                    payload = EXCLUDED.payload,
+                    updated_at = CURRENT_TIMESTAMP
                 """,
                 (
                     kind, record_id, workspace_id,
@@ -44,9 +45,10 @@ class PostgreSQLStateRepository(StateRepository):
             cursor.execute(
                 """
                 SELECT workspace_id, schema_version, payload
-                FROM aicompany_state WHERE kind = %s AND record_id = %s
+                FROM aicompany_state
+                WHERE kind = %s AND record_id = %s AND workspace_id = %s
                 """,
-                (kind, record_id),
+                (kind, record_id, workspace_id),
             )
             row = cursor.fetchone()
         return _payload(_postgres_record(kind, record_id, row), workspace_id)
@@ -75,9 +77,25 @@ class PostgreSQLStateRepository(StateRepository):
             with self.connection.cursor() as cursor:
                 cursor.execute("SELECT 1")
                 row = cursor.fetchone()
-            return {"ok": bool(row and row[0] == 1)}
+            connected = bool(row and row[0] == 1)
+            migration = (
+                self.migration_manager.status()
+                if connected and self.migration_manager is not None
+                else "not_configured"
+            )
+            return {
+                "ok": connected and migration in {"current", "not_configured"},
+                "configured": True,
+                "connected": connected,
+                "migration": migration,
+            }
         except Exception:
-            return {"ok": False}
+            return {
+                "ok": False,
+                "configured": True,
+                "connected": False,
+                "migration": "unknown",
+            }
 
     def close(self):
         try:
@@ -151,7 +169,7 @@ class RepositoryFactory:
             return InMemoryStateRepository()
         if adapter == "json":
             return JsonStateRepository(config.state_file)
-        if adapter == "postgres":
+        if adapter == "postgresql":
             if postgres_connection is None:
                 raise ValueError("postgres_connection_required")
             return PostgreSQLStateRepository(postgres_connection)
@@ -167,14 +185,15 @@ class InfrastructureConfig:
         self, adapter="memory", state_file=None,
         database_url=None, redis_url=None,
     ):
-        self.adapter = str(adapter).lower()
+        selected = str(adapter).lower()
+        self.adapter = "postgresql" if selected == "postgres" else selected
         self.state_file = state_file
         self.database_url = database_url
         self.redis_url = redis_url
 
     @classmethod
     def from_environment(cls, environment=None):
-        values = environment or os.environ
+        values = os.environ if environment is None else environment
         return cls(
             values.get("AICOMPANY_REPOSITORY_ADAPTER", "memory"),
             values.get("AICOMPANY_STATE_FILE"),
@@ -183,11 +202,11 @@ class InfrastructureConfig:
         ).validate()
 
     def validate(self):
-        if self.adapter not in {"memory", "json", "postgres", "redis"}:
+        if self.adapter not in {"memory", "json", "postgresql", "redis"}:
             raise ValueError("unsupported_repository_adapter")
         if self.adapter == "json" and not self.state_file:
             raise ValueError("state_file_required")
-        if self.adapter == "postgres":
+        if self.adapter == "postgresql":
             _url(self.database_url, {"postgres", "postgresql"})
         if self.adapter == "redis":
             _url(self.redis_url, {"redis", "rediss"})
@@ -203,10 +222,15 @@ class InfrastructureResources:
 
     def health(self):
         checks = []
+        details = {}
         for resource in self.resources:
             probe = getattr(resource, "health", None)
-            checks.append(bool(probe and probe().get("ok")))
-        return {"ok": all(checks)}
+            value = probe() if probe else {"ok": True}
+            checks.append(bool(value.get("ok")))
+            for key in ("configured", "connected", "migration"):
+                if key in value:
+                    details[key] = value[key]
+        return {"ok": all(checks), **details}
 
     def close(self):
         if self.closed:

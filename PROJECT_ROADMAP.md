@@ -8,15 +8,16 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 130
+## Current baseline: Mission 131
 
-Mission 1-130 completion means completion of each Mission's explicitly bounded
+Mission 1-131 completion means completion of each Mission's explicitly bounded
 Contract, Foundation, Fake/Offline, or Local Integration scope. It does not
 mean that Project APEX as a whole is Production Ready.
 
-Current product status: **Local/Fake SaaS Beta + Production Foundation**.
-Mission 121-130 are Foundation work. The official next Mission and Phase after
-Mission 130 are **not defined** and require user approval.
+Current product status: **Local/Fake SaaS Beta + Production Foundation with a
+bounded PostgreSQL Production Integration**. Mission 121-130 are Foundation
+work. The official next Mission and Phase after Mission 131 are **not defined**
+and require user approval.
 
 ### Completion level vocabulary
 
@@ -826,15 +827,35 @@ today/7-day/30-day filter is invented.
 - Completion level: **Local Metadata/Fake Install Foundation**. External
   Registry, package payload, distribution, and payment are not implemented.
 
+### Mission 131 — PostgreSQL Production Persistence Integration (Complete, bounded Production Integration)
+
+- Goal: connect the existing shared `StateRepository` PostgreSQL adapter to
+  environment-driven application composition and make its schema reproducible.
+- Scope: `memory`/`json`/`postgresql` selection, psycopg connection creation,
+  an additive versioned SQL migration runner, Workspace-scoped shared-state
+  table, automatic migration in the production app factory, existing Plan API
+  composition, safe health details, graceful connection closure, and Docker
+  PostgreSQL verification.
+- Excludes: User/Workspace/Artifact repository rewrites, Redis Queue/Lock/
+  Broker, distributed Workers, cloud database deployment, Secret Manager,
+  TLS, and destructive migration.
+- Completion: migrations apply to an empty database and rerun safely; shared
+  state survives Backend restart; identical record IDs remain isolated across
+  Workspaces; health distinguishes connection and migration state without
+  exposing the database URL.
+- Tests: six focused tests including real Docker PostgreSQL integration,
+  Backend 359 tests, Frontend tests/build, and healthy Compose verification.
+- Completion level: **bounded PostgreSQL Production Integration** for the
+  shared StateRepository only. Project APEX remains not Production Ready.
+
 ### Unnumbered next-Phase candidates
 
 No candidate below is an approved Phase or Mission:
 
-1. PostgreSQL schema, migration, and real application composition.
-2. Redis-backed Queue/Lock/Broker and distributed Workers.
-3. Real Object Storage integrated with Artifact lifecycle.
-4. Deployment, TLS, and Secret Manager integration.
-5. Real Billing and approved Media Provider integrations.
+1. Redis-backed Queue/Lock/Broker and distributed Workers.
+2. Real Object Storage integrated with Artifact lifecycle.
+3. Deployment, TLS, and Secret Manager integration.
+4. Real Billing and approved Media Provider integrations.
 
 Workflow, Plugin, and Marketplace expansion are not current priority
 candidates. The first production bottleneck requires explicit user approval
@@ -842,7 +863,7 @@ before a Mission number or implementation scope is assigned.
 
 ## Longer-term phases
 
-- Missions after 130 remain undefined implementation work and must be scoped
+- Missions after 131 remain undefined implementation work and must be scoped
   from the actual code and roadmap before development.
 - Historical Phase F themes included cloud/storage/broker choices, CI/CD,
   security hardening, Workflow Builder, Marketplace, Enterprise, and

@@ -1,8 +1,8 @@
 # AICompany
 
-Official baseline: **Mission 130**. Current product status:
-**Local/Fake SaaS Beta + Production Foundation**. Completion through Mission
-130 is limited to each Mission's documented Contract, Foundation,
+Official baseline: **Mission 131**. Current product status:
+**Local/Fake SaaS Beta + Production Foundation with bounded PostgreSQL
+Production Integration**. Completion through Mission 131 is limited to each Mission's documented Contract, Foundation,
 Fake/Offline, or Local Integration scope; Project APEX is not Production Ready.
 The official next Mission is undefined and requires user approval.
 
@@ -321,9 +321,28 @@ DB-API, and injected Redis-client adapters can be selected through validated
 configuration. Production resources expose safe health probes and are closed
 through the FastAPI lifespan boundary.
 
-The adapters assume externally managed PostgreSQL schema and injected clients.
-They do not run migrations, install a database driver, automatically switch
-storage, delete data, or contain cloud-provider code.
+Mission 131 completes a bounded PostgreSQL integration for this shared state
+contract. Set `AICOMPANY_REPOSITORY_ADAPTER=postgresql` and `DATABASE_URL` in
+the process environment; the explicit production app factory connects with
+psycopg, applies additive migrations, and exposes safe connection/migration
+health. Imports do not connect to a database, and memory remains the default.
+
+```powershell
+cd Automation
+$env:AICOMPANY_REPOSITORY_ADAPTER = "postgresql"
+$env:DATABASE_URL = "postgresql://..." # supply outside Git
+python -m core.migrations upgrade
+python -m uvicorn application.production:create_production_app --factory --host 127.0.0.1 --port 8000
+```
+
+Compose selects PostgreSQL automatically for Backend. `docker compose up -d`
+waits for PostgreSQL, then Backend applies the current migration. `GET /health`
+reports only configured, connected, and migration state. The database URL and
+credentials are never returned. The current schema stores shared
+StateRepository records only; the existing Plan API is its minimum composed
+HTTP write/read path. User, Workspace, Artifact, and other dedicated
+repositories retain their existing storage. Redis Queue/Broker, distributed
+Workers, cloud database operations, TLS, and Secret Manager are not included.
 
 ## Object storage abstraction
 
@@ -502,7 +521,7 @@ this feature.
 
 ## Current Backend scope and next work
 
-The official baseline is Mission 130. Mission 1-130 completion means completion
+The official baseline is Mission 131. Mission 1-131 completion means completion
 of each Mission's bounded Contract, Foundation, Fake/Offline, or Local
 Integration scope; Project APEX is not Production Ready. The current product
 state is **Local/Fake SaaS Beta + Production Foundation**.
@@ -574,9 +593,8 @@ Execution, Artifact, Usage/Quota, Plan, Department, and Worker data. Summary
 aggregation is bounded to 100 records; recent lists accept 1–20 items. No
 analytics database, WebSocket, or control operation is part of this endpoint.
 
-The official Mission after 130 is undefined. Before implementation, the user
-must approve the first production bottleneck: PostgreSQL
-schema/migration/application composition; Redis Queue/Lock/Broker and
+The official Mission after 131 is undefined. Before implementation, the user
+must approve the next production bottleneck: Redis Queue/Lock/Broker and
 distributed Workers; real Object Storage integration; deployment/TLS/Secret
 Manager; or real Billing/approved Media Provider integration. These candidates
 have no Mission numbers. Workflow, Plugin, and Marketplace expansion is not a

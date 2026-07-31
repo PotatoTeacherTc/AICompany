@@ -3,3 +3,5 @@ fastapi>=0.115,<1
 httpx>=0.27,<1
 # Local ASGI development runner. It is not a cloud deployment contract.
 uvicorn>=0.30,<1
+# PostgreSQL production persistence (Mission 131).
+psycopg[binary]>=3.2,<4

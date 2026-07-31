@@ -28,11 +28,14 @@ class BackendHealthService:
         self.metrics = metrics
 
     def snapshot(self):
-        checks = {
-            "persistence": self._probe(self.persistence_probe),
-            "queue": self._probe(self.queue_probe),
-            "monitor": self._probe(self.monitor_probe),
+        probes = {
+            "persistence": self.persistence_probe,
+            "queue": self.queue_probe,
+            "monitor": self.monitor_probe,
         }
+        values = {name: self._probe_value(probe) for name, probe in probes.items()}
+        checks = {name: value[0] for name, value in values.items()}
+        details = {name: value[1] for name, value in values.items() if value[1]}
         healthy = all(value != "unavailable" for value in checks.values())
         if self.metrics is not None:
             for name, status in checks.items():
@@ -45,13 +48,16 @@ class BackendHealthService:
                 level=LogLevel.WARNING,
                 status="DEGRADED",
             )
-        return {
+        result = {
             "service": "AICompany Backend",
             "status": "ok" if healthy else "degraded",
             "schema_version": BACKEND_SCHEMA_VERSION,
             "checks": checks,
             "paid_provider_enabled": bool(ALLOW_PAID_PROVIDER),
         }
+        if details:
+            result["details"] = details
+        return result
 
     def readiness(self):
         value = self.snapshot()
@@ -68,21 +74,32 @@ class BackendHealthService:
 
     @staticmethod
     def _probe(probe):
+        return BackendHealthService._probe_value(probe)[0]
+
+    @staticmethod
+    def _probe_value(probe):
         if probe is None:
-            return "not_configured"
+            return "not_configured", None
         try:
             value = probe()
             if isinstance(value, dict) and value.get("ok") is False:
-                return "unavailable"
-            if value is False:
-                return "unavailable"
-            return "available"
+                status = "unavailable"
+            elif value is False:
+                status = "unavailable"
+            else:
+                status = "available"
+            details = None
+            if isinstance(value, dict):
+                allowed = {"configured", "connected", "migration"}
+                details = {key: value[key] for key in allowed if key in value}
+            return status, details
         except Exception:
-            return "unavailable"
+            return "unavailable", None
 
 
 @dataclass(frozen=True)
 class BackendDependencies:
+    state_repository: object | None = None
     automation_service: object | None = None
     task_query_service: object | None = None
     workspace_service: object | None = None
@@ -179,4 +196,6 @@ def create_backend_app(dependencies=None):
     )
     if dependencies.infrastructure_resources is not None:
         app.state.infrastructure_resources = dependencies.infrastructure_resources
+    if dependencies.state_repository is not None:
+        app.state.state_repository = dependencies.state_repository
     return app

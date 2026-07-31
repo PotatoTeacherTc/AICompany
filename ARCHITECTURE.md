@@ -2,7 +2,7 @@
 
 ## Baseline and maturity
 
-The official baseline is Mission 130. Completion through Mission 130 refers to
+The official baseline is Mission 131. Completion through Mission 131 refers to
 each Mission's bounded Contract, Foundation, Fake/Offline, or Local Integration
 scope. The overall product is **Local/Fake SaaS Beta + Production Foundation**,
 not Production Ready.
@@ -20,9 +20,11 @@ Foundation without schema, migration, drivers, or default application
 composition; Mission 127 is a Local/Fake Object Storage Foundation; Mission
 128 is a Workflow Definition/Validation Foundation; Mission 129 is a
 Local/Fake Plugin Contract Foundation; and Mission 130 is a Local
-Metadata/Fake Install Marketplace Foundation. Billing remains Manual/Fake.
+Metadata/Fake Install Marketplace Foundation. Mission 131 is a bounded
+PostgreSQL Production Integration for the shared StateRepository. Billing
+remains Manual/Fake.
 
-No Mission after 130 is defined. Enterprise and AICompany v1.0 are
+No Mission after 131 is defined. Enterprise and AICompany v1.0 are
 unimplemented.
 
 ## Current execution flow
@@ -112,6 +114,7 @@ the workflow; `run()` is the explicit entry point.
 | Operational monitoring | `core/operational_metrics.py`, `core/structured_logging.py`, `api/request_context.py`, `api/app.py` | Mission 124 adds injected process-local aggregate metrics and structured HTTP lifecycle events. Request IDs identify one request while correlation IDs can link related requests. `/health/metrics` exposes status counts, duration averages, safe error categories, and dependency-health observations without request bodies, query values, credentials, paths, or raw exceptions. Logging failure is isolated. ExecutionHistory remains user execution history and WorkspaceMonitor remains persisted business-state observation. Durable metrics, external monitoring, tracing, alerts, and cloud integrations are absent. |
 | Fake backup and recovery | `core/backup.py` | Mission 125 composes the existing WorkspaceRepository, ArtifactRepository, and StateRepository behind an injected BackupStore. InMemoryBackupStore is the only implementation. BackupService emits a versioned, bounded Workspace JSON document and restores only validated Workspace, safe Artifact, Subscription, and Manual/Fake Billing metadata. The full payload is validated before writes; Workspace mismatch and implicit overwrite are rejected. Artifact bytes, billing email, prompts, credentials, absolute paths, cloud/object storage, retention, scheduling, and deletion are outside the contract. |
 | Production infrastructure adapters | `core/infrastructure.py`, `application/backend.py` | Mission 126 keeps StateRepository authoritative and adds PostgreSQL DB-API and Redis-client adapters behind RepositoryFactory. InfrastructureConfig validates environment selection and URLs without opening a connection. Adapters are injected, retain Workspace checks, expose boolean-only health probes, and close through FastAPI lifespan via InfrastructureResources. Schema creation/migration, driver installation, automatic production activation, cloud coupling, and deletion are absent. |
+| PostgreSQL persistence integration | `core/migrations.py`, `core/infrastructure.py`, `application/production.py`, `Automation/Dockerfile`, `docker-compose.yml` | Mission 131 installs psycopg, selects `memory`, `json`, or `postgresql` without import-time I/O, and automatically applies the additive shared-state migration when the production app is explicitly created. The schema version table tracks applied migrations; `aicompany_state` uses `(kind, workspace_id, record_id)` as its key and all reads constrain Workspace. The existing Plan API is the minimum HTTP composition over this shared Repository. The health contract reports only configured/connected/current state and lifespan closes the connection. This Production Integration is deliberately limited to domains already using StateRepository; User, Workspace, Membership, Credential, Session, Audit, Artifact metadata/bytes, and ExecutionHistory file repositories are not migrated. Redis execution, distributed Workers, cloud DB operations, TLS, Secret Manager, and destructive downgrade are absent. |
 | Object storage abstraction | `core/object_storage.py` | Mission 127 separates Artifact bytes from existing ArtifactRepository metadata. StorageProvider has local-root and memory-only Fake S3 implementations; ArtifactStorageAdapter stores Workspace-qualified keys and preserves safe internal references. SignedUrlService emits bounded opaque `storage://` references using an injected signing key. StorageFactory has no real cloud option. Path escape, cross-Workspace reads, public URLs, credentials, SDKs, and network access are excluded. |
 | Workflow definition | `core/workflow_definition.py` | Mission 128 provides immutable, versioned Workflow/Step data contracts with dependency DAGs, conditional branch targets, bounded Retry policy, and parallel-group labels. Validation and deterministic JSON import/export are definition-only. There is no UI, execution, scheduling, persistence, provider invocation, or Plugin resolution. |
 | Plugin SDK foundation | `core/plugin_sdk.py` | Mission 129 defines Plugin, Manifest, Capability, and major-version compatibility contracts. PluginLoader can instantiate only explicitly injected factories and validates identity and declared capabilities before sanitized invocation. FakePlugin is local and deterministic. Filesystem discovery, dynamic import, arbitrary-code sandboxing, external packages, Marketplace operations, network, secrets, and payments are absent. |
