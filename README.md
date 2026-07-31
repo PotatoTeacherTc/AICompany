@@ -331,14 +331,27 @@ These routes reuse persistent Queue state and existing RBAC. They do not
 replace the in-memory Task API. Job results return safe History, Artifact, and
 Usage references without task text or internal paths.
 
+Mission 111 exposes Department management and read-only Worker capabilities:
+
+```text
+GET/POST /workspaces/{workspace_id}/departments
+GET/PATCH /workspaces/{workspace_id}/departments/{department_id}
+POST/DELETE /workspaces/{workspace_id}/departments/{department_id}/workers/...
+GET /workspaces/{workspace_id}/workers
+GET /workspaces/{workspace_id}/workers/{worker_id}
+```
+
+OWNER and ADMIN manage Departments and assignments; MEMBER may read. Worker
+creation or mutation is not exposed because WorkerDirectory contains injected
+live Worker implementations rather than persistent safe configuration.
+
 The next defined sequence is:
 
-1. Mission 111 — AI Organization API
-2. Mission 112 — Artifact Lifecycle
-3. Mission 113 — Quota & Budget Enforcement
-4. Mission 114 — Plans & Entitlements
-5. Mission 115 — Dashboard API
-6. Mission 116 — Web Dashboard
+1. Mission 112 — Artifact Lifecycle
+2. Mission 113 — Quota & Budget Enforcement
+3. Mission 114 — Plans & Entitlements
+4. Mission 115 — Dashboard API
+5. Mission 116 — Web Dashboard
 
 Ollama Text remains explicit and loopback-only. Music, Image, Video, and
 YouTube remain Fake; no paid Provider or external media API is enabled.

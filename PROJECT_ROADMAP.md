@@ -8,7 +8,7 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 110
+## Current baseline: Mission 111
 
 The verified implementation currently provides a Task/Queue/Worker execution
 path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,
@@ -432,6 +432,7 @@ retryable FAILED Jobs. The legacy in-memory Task API remains unchanged.
 
 ### Mission 111 — AI Organization API
 
+- Status: completed.
 - Goal: expose the existing AI Department organization safely without
   duplicating Worker or Department storage.
 - Scope: application DTOs and authenticated Department list/detail/create/
@@ -446,6 +447,16 @@ retryable FAILED Jobs. The legacy in-memory Task API remains unchanged.
 - Tests: RBAC, revision conflict, Worker capability validation, disabled
   Department behavior, restart recovery, sensitive-data rejection, and
   cross-Workspace denial.
+
+Mission 111 adds `OrganizationService` and authenticated Workspace Department
+list/detail/create/update/enable/disable plus Worker assignment/removal routes.
+OWNER/ADMIN manage organization state and MEMBER may read it. WorkerDirectory
+is exposed only as path-free capability list/detail DTOs because it stores
+injected live BaseWorker instances and has no safe persistence or API creation
+contract. Worker code upload, registration, mutation, and deletion APIs are
+therefore intentionally not invented. Department persistence, optimistic
+revision, lifecycle, and cross-Workspace validation remain in the existing
+DepartmentManager.
 
 ### Mission 112 — Artifact Lifecycle
 

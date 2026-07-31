@@ -22,6 +22,7 @@ def create_app(
     usage_service=None,
     persistent_execution_service=None,
     job_execution_api_service=None,
+    organization_service=None,
     health_service=None,
     auth_required=False,
 ):
@@ -99,6 +100,7 @@ def create_app(
     app.state.usage_service = usage_service
     app.state.persistent_execution_service = persistent_execution_service
     app.state.job_execution_api_service = job_execution_api_service
+    app.state.organization_service = organization_service
     if audit_service is None:
         from application.audit_service import AuditService
         audit_service = AuditService()
@@ -616,6 +618,83 @@ def create_app(
         if value is None:
             from api.errors import error_response
             return error_response(404, "batch_not_found", "Batch not found")
+        return value
+
+    @app.get("/workspaces/{workspace_id}/departments")
+    def list_departments(workspace_id: str, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"})
+        if denied: return denied
+        return app.state.organization_service.list_departments(workspace_id)
+
+    @app.post("/workspaces/{workspace_id}/departments", status_code=201)
+    def create_department(workspace_id: str, payload: dict, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN"})
+        if denied: return denied
+        try:
+            return app.state.organization_service.create_department(workspace_id, payload)
+        except ValueError as error:
+            from api.errors import error_response
+            code = "resource_conflict" if "already" in str(error) else "invalid_request"
+            return error_response(409 if code == "resource_conflict" else 400, code, "Department request rejected")
+
+    @app.get("/workspaces/{workspace_id}/departments/{department_id}")
+    def get_department(workspace_id: str, department_id: str, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"})
+        if denied: return denied
+        value = app.state.organization_service.get_department(workspace_id, department_id)
+        if value is None:
+            from api.errors import error_response
+            return error_response(404, "department_not_found", "Department not found")
+        return value
+
+    @app.patch("/workspaces/{workspace_id}/departments/{department_id}")
+    def update_department(workspace_id: str, department_id: str, payload: dict, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN"})
+        if denied: return denied
+        if app.state.organization_service.get_department(workspace_id, department_id) is None:
+            from api.errors import error_response
+            return error_response(404, "department_not_found", "Department not found")
+        try:
+            return app.state.organization_service.update_department(workspace_id, department_id, payload)
+        except ValueError as error:
+            from api.errors import error_response
+            conflict = "revision" in str(error)
+            return error_response(409 if conflict else 400, "revision_conflict" if conflict else "invalid_request", "Department update rejected")
+
+    @app.post("/workspaces/{workspace_id}/departments/{department_id}/workers")
+    def assign_department_worker(workspace_id: str, department_id: str, payload: dict, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN"})
+        if denied: return denied
+        try:
+            return app.state.organization_service.assign_worker(workspace_id, department_id, payload)
+        except ValueError:
+            from api.errors import error_response
+            return error_response(409, "assignment_rejected", "Worker assignment rejected")
+
+    @app.delete("/workspaces/{workspace_id}/departments/{department_id}/workers/{worker_id}")
+    def remove_department_worker(workspace_id: str, department_id: str, worker_id: str, expected_revision: int, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN"})
+        if denied: return denied
+        try:
+            return app.state.organization_service.remove_worker(workspace_id, department_id, worker_id, expected_revision)
+        except ValueError:
+            from api.errors import error_response
+            return error_response(409, "assignment_rejected", "Worker assignment rejected")
+
+    @app.get("/workspaces/{workspace_id}/workers")
+    def list_organization_workers(workspace_id: str, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"})
+        if denied: return denied
+        return app.state.organization_service.list_workers(workspace_id)
+
+    @app.get("/workspaces/{workspace_id}/workers/{worker_id}")
+    def get_organization_worker(workspace_id: str, worker_id: str, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"})
+        if denied: return denied
+        value = app.state.organization_service.get_worker(workspace_id, worker_id)
+        if value is None:
+            from api.errors import error_response
+            return error_response(404, "worker_not_found", "Worker not found")
         return value
 
     @app.post("/workspaces/{workspace_id}/members", status_code=201)

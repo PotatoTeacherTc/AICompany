@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 110**.
+Current mission baseline: **Mission 111**.
 
 Roadmap review baseline: `750d755 feat: add workspace usage reporting`
 following `af72f6c feat: expose workspace artifact access`.
@@ -450,7 +450,7 @@ not inferred from a missing historical mission log.
 - FakeTextProvider remains the default. Ollama Text is a verified explicit
   loopback option using `qwen2.5:1.5b`; Music, Image, Video, and YouTube remain
   Fake. Paid providers and external media calls remain disabled.
-- The next defined work is Mission 111 — AI Organization API.
+- The next defined work is Mission 112 — Artifact Lifecycle.
 - Mission 109: `PersistentExecutionService` now composes the existing
   PersistentJobQueue, InProcessJobWorker, ExecutionHistory, ArtifactManager,
   and UsageEngine through dependency injection. Workspace-scoped idempotency,
@@ -470,6 +470,14 @@ not inferred from a missing historical mission log.
   PENDING-only cancellation and retryable-FAILED retry reuse Queue methods.
   The in-memory Task API remains unchanged. Five focused tests and the full
   271-test suite pass offline.
+- Mission 111: `OrganizationService` exposes existing DepartmentManager
+  lifecycle and assignment operations through authenticated Workspace APIs.
+  OWNER/ADMIN create, update, enable/disable, assign, and remove; MEMBER reads.
+  WorkerDirectory is read-only at the API and returns only Worker ID,
+  Workspace, and supported task types. No API can instantiate, mutate, upload,
+  or persist live Worker code. Existing Department JSON persistence,
+  optimistic revision, duplicate protection, and cross-Workspace checks are
+  reused. Five focused tests and the full 276-test suite pass offline.
 
 ## Implemented pipelines
 
@@ -486,14 +494,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **271 tests**. Its expected command is:
+The current suite contains **276 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Current verification result: **271 passed, 0 failed**.
+Current verification result: **276 passed, 0 failed**.
 
 ## Not implemented
 
