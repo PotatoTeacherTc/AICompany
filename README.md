@@ -159,6 +159,17 @@ Cancelled or expired records are preserved while entitlements fall back to
 FREE. There is no checkout, pricing, proration, invoice, refund, card storage,
 payment provider, or external network request.
 
+## Local billing foundation
+
+Mission 118 adds only development accounting records: a Workspace Billing
+Account, explicitly development-only integer-minor-unit Prices, idempotent
+period Invoices, and MANUAL/FAKE Payment records. A successful local record
+marks an Invoice PAID. Plan changes are reflected when the next Invoice is
+created; mid-period proration is not implemented.
+
+No real price, checkout, card or account data, tax, exchange, refund, webhook,
+payment SDK/provider, or billing network call is configured.
+
 ## User lifecycle
 
 Mission 102 adds lifecycle state to the existing User implementation rather

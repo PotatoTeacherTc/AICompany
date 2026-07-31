@@ -579,9 +579,24 @@ today/7-day/30-day filter is invented.
 - Tests: lifecycle, duplicate prevention, restart, Workspace isolation,
   fallback, validation, and redaction.
 
+### Mission 118 — Billing Foundation (Complete)
+
+- Goal: provide local invoice accounting for Subscription without real payment.
+- Scope: Workspace BillingAccount, injected development-only Price contracts,
+  idempotent period Invoice creation, and MANUAL/FAKE Payment records.
+- Excludes: Stripe or other SDKs, checkout, cards/accounts, webhooks, tax,
+  exchange, proration, refunds, and external network calls.
+- Completion: integer-minor-unit invoices survive restart, duplicate periods
+  and successful payments are blocked, and successful Fake/Manual records
+  transition an Invoice to PAID.
+- Prerequisites: Mission 117.
+- Tests: account/price/invoice/payment contracts, validation, idempotency,
+  restart, Workspace isolation, sensitive-field rejection, and Subscription
+  regression.
+
 ## Longer-term phases
 
-- Missions 118-120: Billing foundation, Admin operations, then local SaaS Beta.
+- Missions 119-120: Admin operations, then local SaaS Beta.
 - Missions 121-130: production cloud/storage/broker choices, CI/CD, security
   hardening, Workflow Builder, Marketplace, Enterprise, and AICompany v1.0.
 - Real music/image/video/YouTube adapters remain separately blocked by

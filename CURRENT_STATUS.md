@@ -513,6 +513,13 @@ not inferred from a missing historical mission log.
   CANCELLED/EXPIRED records remain while assignment falls back to FREE. Five
   focused tests and the full 294-test Backend suite pass offline. Pricing,
   invoices, checkout, payments, and external billing calls remain absent.
+- Mission 118: BillingManager adds a minimal BillingAccount, injected
+  development-only integer Price catalog, period-idempotent Invoice records,
+  and MANUAL/FAKE Payment records over the shared StateRepository. Successful
+  records mark an Invoice PAID; failure remains OPEN. Seven focused tests,
+  five Subscription regression tests, and the full 301-test Backend suite pass
+  offline. No card/account data, real price, checkout, proration, tax, refund,
+  webhook, SDK, payment provider, or network call exists.
 
 ## Implemented pipelines
 
@@ -529,14 +536,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current Backend suite contains **294 tests**. Its expected command is:
+The current Backend suite contains **301 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Current verification result: **294 passed, 0 failed**.
+Current verification result: **301 passed, 0 failed**.
 
 ## Not implemented
 
@@ -556,7 +563,7 @@ Current verification result: **294 passed, 0 failed**.
   providers remain disabled and no content-generation network call is made.
 - Distributed locking, OS cron, Celery/Redis/message-broker infrastructure,
   external databases, and cloud storage.
-- Real billing/payment integration, checkout, proration, invoices, refunds,
+- Real billing/payment integration, checkout, proration, refunds,
   external APM/Prometheus/Grafana/Sentry integrations,
   distributed monitoring, real-time WebSocket updates, remote log shipping,
   distributed tracing, log retention/rotation, model pricing, credit/billing

@@ -27,6 +27,7 @@ def create_app(
     plan_service=None,
     dashboard_service=None,
     subscription_service=None,
+    billing_service=None,
     health_service=None,
     auth_required=False,
 ):
@@ -109,6 +110,7 @@ def create_app(
     app.state.plan_service = plan_service
     app.state.dashboard_service = dashboard_service
     app.state.subscription_service = subscription_service
+    app.state.billing_service = billing_service
     if audit_service is None:
         from application.audit_service import AuditService
         audit_service = AuditService()
@@ -518,6 +520,86 @@ def create_app(
             from api.errors import error_response
             return error_response(404, "workspace_not_found", "Workspace not found")
         return value
+
+    @app.get("/workspaces/{workspace_id}/billing/account")
+    def get_billing_account(
+        workspace_id: str,
+        authorization: str | None = Header(default=None),
+    ):
+        denied = _authorize_workspace(
+            app, workspace_id, authorization, {"OWNER", "ADMIN"}
+        )
+        if denied:
+            return denied
+        return _billing_read(app, workspace_id, "account")
+
+    @app.put("/workspaces/{workspace_id}/billing/account")
+    def update_billing_account(
+        workspace_id: str,
+        payload: dict,
+        authorization: str | None = Header(default=None),
+    ):
+        return _billing_mutation(
+            app, workspace_id, authorization, "update_account", payload
+        )
+
+    @app.get("/workspaces/{workspace_id}/billing/prices")
+    def list_billing_prices(
+        workspace_id: str,
+        authorization: str | None = Header(default=None),
+    ):
+        denied = _authorize_workspace(
+            app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"}
+        )
+        if denied:
+            return denied
+        return _billing_read(app, workspace_id, "prices")
+
+    @app.get("/workspaces/{workspace_id}/invoices")
+    def list_invoices(
+        workspace_id: str,
+        authorization: str | None = Header(default=None),
+    ):
+        denied = _authorize_workspace(
+            app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"}
+        )
+        if denied:
+            return denied
+        return _billing_read(app, workspace_id, "invoices")
+
+    @app.get("/workspaces/{workspace_id}/invoices/{invoice_id}")
+    def get_invoice(
+        workspace_id: str,
+        invoice_id: str,
+        authorization: str | None = Header(default=None),
+    ):
+        denied = _authorize_workspace(
+            app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"}
+        )
+        if denied:
+            return denied
+        return _billing_read(app, workspace_id, "invoice", invoice_id)
+
+    @app.post("/workspaces/{workspace_id}/invoices", status_code=201)
+    def create_invoice(
+        workspace_id: str,
+        payload: dict,
+        authorization: str | None = Header(default=None),
+    ):
+        return _billing_mutation(
+            app, workspace_id, authorization, "create_invoice", payload
+        )
+
+    @app.post("/workspaces/{workspace_id}/invoices/{invoice_id}/payments")
+    def record_invoice_payment(
+        workspace_id: str,
+        invoice_id: str,
+        payload: dict,
+        authorization: str | None = Header(default=None),
+    ):
+        return _billing_mutation(
+            app, workspace_id, authorization, "pay", invoice_id, payload
+        )
 
     @app.get("/workspaces/{workspace_id}/subscription")
     def current_subscription(
@@ -1194,3 +1276,39 @@ def _subscription_mutation(
         return error_response(
             409, "subscription_conflict", "Subscription cannot be changed"
         )
+
+
+def _billing_read(app, workspace_id, operation_name, *args):
+    from api.errors import error_response
+
+    service = app.state.billing_service
+    if service is None:
+        return error_response(503, "billing_unavailable", "Billing is unavailable")
+    try:
+        value = getattr(service, operation_name)(workspace_id, *args)
+    except (KeyError, TypeError, ValueError):
+        return error_response(400, "invalid_billing_request", "Invalid billing request")
+    if value is None:
+        return error_response(404, "billing_record_not_found", "Billing record not found")
+    return value
+
+
+def _billing_mutation(
+    app, workspace_id, authorization, operation_name, *args
+):
+    from api.errors import error_response
+
+    denied = _authorize_workspace(
+        app, workspace_id, authorization, {"OWNER", "ADMIN"}
+    )
+    if denied:
+        return denied
+    service = app.state.billing_service
+    if service is None:
+        return error_response(503, "billing_unavailable", "Billing is unavailable")
+    try:
+        return getattr(service, operation_name)(workspace_id, *args)
+    except KeyError:
+        return error_response(404, "billing_record_not_found", "Billing record not found")
+    except (TypeError, ValueError):
+        return error_response(409, "billing_conflict", "Billing record cannot be changed")
