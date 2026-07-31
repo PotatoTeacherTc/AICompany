@@ -334,6 +334,14 @@ Definitions validate and round-trip through deterministic JSON. This is not a
 workflow runtime: UI, execution, scheduling, persistence, and provider calls
 are intentionally absent.
 
+## Plugin SDK foundation
+
+Mission 129 defines local Plugin, Manifest, Capability, and version contracts.
+The loader uses explicitly injected factories only, validates identity and
+declared capabilities, and sanitizes request metadata. The bundled Fake Plugin
+is offline. Filesystem discovery, dynamic import, arbitrary external code,
+Marketplace download, networking, credentials, and payment are absent.
+
 ## User lifecycle
 
 Mission 102 adds lifecycle state to the existing User implementation rather

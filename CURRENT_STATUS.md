@@ -601,6 +601,14 @@ not inferred from a missing historical mission log.
   persistence, or provider call. Five focused and all 342 Backend tests,
   Frontend tests/build, and healthy Compose verification pass.
 
+- Mission 129: the local-only Plugin SDK defines Plugin, PluginManifest, and
+  Capability contracts with major-version compatibility. PluginLoader accepts
+  explicit injected factories only, validates Plugin identity/capabilities,
+  and strips sensitive request fields. FakePlugin is deterministic and
+  offline. There is no discovery, dynamic import, arbitrary-code sandbox,
+  Marketplace, download, network call, or secret. Five focused and all 347
+  Backend tests, Frontend tests/build, and healthy Compose verification pass.
+
 ## Implemented pipelines
 
 | Type | Pipeline | Current result |
@@ -616,14 +624,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current Backend suite contains **342 tests**. Its expected command is:
+The current Backend suite contains **347 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Current verification result: **342 passed, 0 failed**.
+Current verification result: **347 passed, 0 failed**.
 
 ## Not implemented
 

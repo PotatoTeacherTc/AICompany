@@ -743,9 +743,22 @@ today/7-day/30-day filter is invented.
 - Tests: five focused tests, Backend 342 tests, Frontend tests/build, and
   healthy Compose verification.
 
+### Mission 129 — Plugin SDK Foundation (Complete, Local-Only)
+
+- Goal: define a safe extension contract without loading external code.
+- Scope: Plugin interface, validated Manifest and Capability contracts,
+  semantic major-version compatibility, explicitly injected PluginLoader, and
+  sanitized Fake Plugin.
+- Excludes: filesystem discovery, dynamic imports, sandboxing arbitrary code,
+  Marketplace, download, network access, secrets, and payment.
+- Completion: only registered factories load; identity, version, capabilities,
+  request shape, and sensitive-field removal are enforced.
+- Tests: five focused tests, Backend 347 tests, Frontend tests/build, and
+  healthy Compose verification.
+
 ## Longer-term phases
 
-- Missions 129-130 remain Plugin SDK and Marketplace foundation work,
+- Mission 130 remains Marketplace foundation work,
   distributed execution,
   security-hardening, Workflow Builder, Marketplace, Enterprise, and v1.0
   phases; no such feature is implemented by Mission 120.
