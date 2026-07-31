@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from concurrent.futures import ThreadPoolExecutor, TimeoutError
 import re
 
 from config.settings import ALLOW_PAID_PROVIDER
@@ -23,6 +24,10 @@ class BackendHealthService:
         logger=None,
         metrics=None,
         instance_id=None,
+        worker_probe=None,
+        storage_probe=None,
+        required_checks=None,
+        probe_timeout_seconds=1.0,
     ):
         self.persistence_probe = persistence_probe
         self.queue_probe = queue_probe
@@ -34,12 +39,21 @@ class BackendHealthService:
             if isinstance(instance_id, str) and _INSTANCE_ID.fullmatch(instance_id)
             else None
         )
+        self.worker_probe = worker_probe
+        self.storage_probe = storage_probe
+        self.required_checks = tuple(required_checks or ("persistence", "queue", "monitor"))
+        self.probe_timeout_seconds = float(probe_timeout_seconds)
+        if not 0 < self.probe_timeout_seconds <= 5:
+            raise ValueError("invalid_probe_timeout")
+        self._shutting_down = False
 
     def snapshot(self):
         probes = {
             "persistence": self.persistence_probe,
             "queue": self.queue_probe,
             "monitor": self.monitor_probe,
+            "worker": self.worker_probe,
+            "storage": self.storage_probe,
         }
         values = {name: self._probe_value(probe) for name, probe in probes.items()}
         checks = {name: value[0] for name, value in values.items()}
@@ -71,8 +85,8 @@ class BackendHealthService:
 
     def readiness(self):
         value = self.snapshot()
-        ready = all(
-            status == "available" for status in value["checks"].values()
+        ready = not self._shutting_down and all(
+            value["checks"].get(name) == "available" for name in self.required_checks
         )
         return {
             "service": value["service"],
@@ -83,16 +97,18 @@ class BackendHealthService:
             **({"instance_id": self.instance_id} if self.instance_id else {}),
         }
 
-    @staticmethod
-    def _probe(probe):
-        return BackendHealthService._probe_value(probe)[0]
+    def begin_shutdown(self):
+        self._shutting_down = True
 
-    @staticmethod
-    def _probe_value(probe):
+    def _probe(self, probe):
+        return self._probe_value(probe)[0]
+
+    def _probe_value(self, probe):
         if probe is None:
             return "not_configured", None
+        executor = ThreadPoolExecutor(max_workers=1)
         try:
-            value = probe()
+            value = executor.submit(probe).result(timeout=self.probe_timeout_seconds)
             if isinstance(value, dict) and value.get("ok") is False:
                 status = "unavailable"
             elif value is False:
@@ -104,8 +120,10 @@ class BackendHealthService:
                 allowed = {"configured", "connected", "migration"}
                 details = {key: value[key] for key in allowed if key in value}
             return status, details
-        except Exception:
+        except (Exception, TimeoutError):
             return "unavailable", None
+        finally:
+            executor.shutdown(wait=False, cancel_futures=True)
 
 
 @dataclass(frozen=True)

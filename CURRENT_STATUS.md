@@ -2,15 +2,15 @@
 
 ## Mission
 
-Official current baseline: **Mission 136**.
+Official current baseline: **Mission 137**.
 
 Current product status: **Local/Fake SaaS Beta + Production Foundation**.
 
-Mission 1-136 completion means only that each Mission's bounded Contract,
+Mission 1-137 completion means only that each Mission's bounded Contract,
 Foundation, Fake/Offline, or Local Integration scope is complete. Project APEX
-as a whole is not Production Ready. The official next Mission is undefined.
+as a whole is not Production Ready. The official next Mission is Mission 138.
 
-Current verification baseline: Backend 383 tests, Frontend two tests,
+Current verification baseline: Backend 386 tests, Frontend two tests,
 Frontend production build, and a locally scaled Docker development stack with
 two Backends and two Workers.
 
@@ -35,10 +35,10 @@ Usage and Quota; Department and Worker contracts; explicit loopback Ollama
 Text; Fake media; Dashboard reads; Local/Fake Subscription, Billing, and
 Admin; and Docker-based local execution.
 
-No Mission after 136 is defined. Unnumbered production-bottleneck candidates
-are real Object Storage
-and Artifact integration; deployment/TLS/Secret Manager; and real Billing or
-approved Media Providers. These are candidates only and require user approval.
+The approved Production Operations sequence continues through Mission 141.
+Mission 138 is Artifact Object Storage Integration; later work covers local
+configuration security, TLS gateway foundation, and single-host validation.
+Real Billing or approved Media Providers remain unnumbered candidates.
 Workflow, Plugin, and Marketplace expansion is not a current priority
 candidate. Enterprise and AICompany v1.0 remain unimplemented.
 
@@ -46,6 +46,13 @@ candidate. Enterprise and AICompany v1.0 remain unimplemented.
 
 The following status is based on the current source tree and automated tests,
 not inferred from a missing historical mission log.
+
+- Mission 137: production readiness now requires healthy PostgreSQL, Redis
+  Queue, process-local monitoring, and the configured count of expiring Worker
+  heartbeats. Probes are bounded, shutdown blocks readiness, and memory/local
+  modes remain compatible. Docker changed from `ready` to `not_ready` during a
+  Redis outage and returned to `ready` after recovery. This is not a
+  Production Ready declaration.
 
 - Mission 136: local Docker validation runs two Backends behind a loopback
   gateway and two hostname-identified Workers over shared PostgreSQL/Redis.

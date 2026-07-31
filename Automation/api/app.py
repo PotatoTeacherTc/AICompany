@@ -60,6 +60,8 @@ def create_app(
         try:
             yield
         finally:
+            if health_service is not None and hasattr(health_service, "begin_shutdown"):
+                health_service.begin_shutdown()
             if infrastructure_resources is not None:
                 infrastructure_resources.close()
 

@@ -19,6 +19,8 @@ from core.infrastructure import (
 from core.migrations import PostgreSQLMigrationManager, connect_postgresql
 from core.plans import PlanManager
 from core.redis_job_queue import QueueConfig, QueueFactory, connect_redis
+from core.readiness import RedisWorkerReadiness
+from core.operational_metrics import InMemoryOperationalMetrics
 from core.task_queue import InProcessJobWorker
 from core.usage_engine import UsageEngine
 
@@ -65,6 +67,15 @@ def create_production_app(environment=None):
         execution, history, artifacts, usage, BatchManager(queue, repository)
     )
     resources = InfrastructureResources(repository, queue)
+    metrics = InMemoryOperationalMetrics()
+    worker_probe = lambda: True
+    required_checks = ["persistence", "queue", "monitor"]
+    if redis_client is not None:
+        required_workers = int(values.get("AICOMPANY_REQUIRED_WORKERS", "1"))
+        worker_probe = RedisWorkerReadiness(
+            redis_client, queue_config.namespace, required_workers
+        ).health
+        required_checks.append("worker")
     return create_backend_app(BackendDependencies(
         state_repository=repository,
         plan_service=PlanApplicationService(PlanManager(repository)),
@@ -73,7 +84,11 @@ def create_production_app(environment=None):
         health_service=BackendHealthService(
             persistence_probe=repository.health,
             queue_probe=queue.health if hasattr(queue, "health") else lambda: True,
+            monitor_probe=metrics.snapshot,
+            worker_probe=worker_probe,
+            required_checks=required_checks,
             instance_id=values.get("AICOMPANY_INSTANCE_ID") or socket.gethostname(),
         ),
+        metrics=metrics,
         infrastructure_resources=resources,
     ))

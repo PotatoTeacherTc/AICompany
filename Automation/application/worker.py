@@ -15,6 +15,7 @@ from core.execution_history import ExecutionHistory
 from core.redis_job_queue import QueueConfig, QueueFactory, connect_redis
 from core.status import PipelineStatus
 from core.retry_recovery import RetryPolicy
+from core.readiness import RedisWorkerReadiness
 from core.usage_engine import UsageEngine
 
 
@@ -59,6 +60,7 @@ def build_worker(environment=None):
         "artifacts": [],
         "error": "ProviderError: ConnectionError",
     })
+    service.worker_readiness = RedisWorkerReadiness(client, config.namespace)
     return service, repository_resources
 
 
@@ -81,6 +83,9 @@ def main():
 
 def run_worker_cycle(service, workspaces):
     try:
+        readiness = getattr(service, "worker_readiness", None)
+        if readiness is not None:
+            readiness.touch(service.worker.worker_id)
         for workspace_id in workspaces:
             service.run_once(workspace_id)
         return True

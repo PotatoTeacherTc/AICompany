@@ -1,10 +1,10 @@
 # AICompany
 
-Official baseline: **Mission 136**. Current product status:
+Official baseline: **Mission 137**. Current product status:
 **Local/Fake SaaS Beta + Production Foundation with bounded PostgreSQL/Redis
-local multi-instance validation**. Completion through Mission 136 is limited to each Mission's documented Contract, Foundation,
+local operations integration**. Completion through Mission 137 is limited to each Mission's documented Contract, Foundation,
 Fake/Offline, or Local Integration scope; Project APEX is not Production Ready.
-The official next Mission is undefined and requires user approval.
+The official next Mission is Mission 138 Artifact Object Storage Integration.
 
 AI 기반 자동화와 콘텐츠 제작 시스템을 연구하는 개인 AI 프로젝트 워크스페이스입니다.
 
@@ -521,7 +521,7 @@ this feature.
 
 ## Current Backend scope and next work
 
-The official baseline is Mission 136. Mission 1-136 completion means completion
+The official baseline is Mission 137. Mission 1-137 completion means completion
 of each Mission's bounded Contract, Foundation, Fake/Offline, or Local
 Integration scope; Project APEX is not Production Ready. The current product
 state is **Local/Fake SaaS Beta + Production Foundation**.
@@ -617,9 +617,11 @@ $env:AICOMPANY_WORKER_WORKSPACES="default,workspace-b"
 docker compose up -d --scale backend=2 --scale worker=2
 ```
 
-This is single-node local Docker validation, not Cloud HA. `/ready` remains
-`not_ready` until the existing Monitor probe is composed. No Mission after 136
-is defined. Object Storage, deployment/TLS/Secret Manager, and
+Mission 137 composes bounded PostgreSQL, Redis Queue, process-local monitoring,
+and expiring Worker heartbeat probes. `/health` is liveness and `/ready` is
+dependency readiness; Docker verification covered Redis failure and recovery.
+This is single-node local integration, not Cloud HA or Production Ready. Object
+Storage, deployment/TLS/Secret Manager, and
 real Billing/approved Media Provider integration remain outside this bundle.
 Workflow, Plugin, and Marketplace expansion is not a current priority.
 

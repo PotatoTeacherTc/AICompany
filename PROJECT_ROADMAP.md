@@ -8,9 +8,9 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 136
+## Current baseline: Mission 137
 
-Mission 1-136 completion means completion of each Mission's explicitly bounded
+Mission 1-137 completion means completion of each Mission's explicitly bounded
 Contract, Foundation, Fake/Offline, or Local Integration scope. It does not
 mean that Project APEX as a whole is Production Ready.
 
@@ -913,6 +913,19 @@ today/7-day/30-day filter is invented.
 - Excludes Kubernetes, leader election, Redis Cluster, new Broker/framework,
   Cloud/TLS/Secret Manager, and work after Mission 136.
 
+### Mission 137 — Production Readiness Integration (Complete, local integration)
+
+- Production composition connects existing persistence, Redis Queue,
+  process-local monitoring metrics, and expiring Redis Worker heartbeats to
+  the existing readiness contract. Required and optional probes are explicit.
+- Probe execution is bounded, liveness remains separate, shutdown immediately
+  blocks readiness, and safe results omit dependency URLs and exceptions.
+- Memory/JSON and in-process Queue modes remain supported without requiring an
+  external Worker heartbeat.
+- Tests: three focused tests, Backend 386 tests, and Docker verification of
+  `ready` → Redis outage `not_ready` → recovered `ready`.
+- This does not make Project APEX Production Ready and adds no external APM.
+
 ### Unnumbered next-Phase candidates
 
 No candidate below is an approved Phase or Mission:
@@ -927,8 +940,11 @@ before a Mission number or implementation scope is assigned.
 
 ## Longer-term phases
 
-- Work after Mission 136 remains undefined and must be scoped from actual code
-  and the roadmap before development.
+- The constitution audit approved the dependent Production Operations sequence:
+  Mission 138 Artifact Object Storage Integration, Mission 139 Production
+  Configuration Security, Mission 140 TLS and Gateway Security Foundation,
+  and Mission 141 Single-host Production Deployment Validation. Work after
+  Mission 141 remains undefined.
 - Historical Phase F themes included cloud/storage/broker choices, CI/CD,
   security hardening, Workflow Builder, Marketplace, Enterprise, and
   AICompany v1.0. Missions 121-130 implemented only their documented
