@@ -1,0 +1,89 @@
+name: aicompany
+
+services:
+  backend:
+    build:
+      context: ./Automation
+    environment:
+      AICOMPANY_ENV: production
+      ALLOW_PAID_PROVIDER: "False"
+      AICOMPANY_STATE_ROOT: /data
+      DATABASE_URL: postgresql://aicompany:${POSTGRES_PASSWORD:-local-development-only}@postgres:5432/aicompany
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "127.0.0.1:${AICOMPANY_API_PORT:-8000}:8000"
+    volumes:
+      - backend_state:/data
+    networks:
+      - aicompany
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  frontend:
+    build:
+      context: ./Web
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://127.0.0.1:8000}
+    ports:
+      - "127.0.0.1:${AICOMPANY_WEB_PORT:-8080}:80"
+    networks:
+      - aicompany
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: aicompany
+      POSTGRES_USER: aicompany
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local-development-only}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - aicompany
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aicompany -d aicompany"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    networks:
+      - aicompany
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  backend_state:
+  postgres_data:
+  redis_data:
+
+networks:
+  aicompany:
+    driver: bridge

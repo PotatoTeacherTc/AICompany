@@ -218,6 +218,29 @@ real payment, cloud deployment, distributed Workers, Redis/broker, production
 object storage, real media providers, Workflow Builder, Marketplace, or
 Enterprise functionality. `ALLOW_PAID_PROVIDER=False` remains mandatory.
 
+## Docker development stack
+
+Mission 121 adds a provider-neutral Compose environment:
+
+```powershell
+Copy-Item .env.example .env
+# Replace only the local PostgreSQL placeholder in the untracked .env.
+docker compose build
+docker compose up -d
+docker compose ps
+docker compose logs --no-color
+docker compose down
+```
+
+Backend is exposed at `127.0.0.1:8000` and Frontend at
+`127.0.0.1:8080`; PostgreSQL and Redis remain private to the Compose network.
+Named volumes preserve container data. `/health` is used for container health,
+while the existing `/ready` contract remains available.
+
+PostgreSQL and Redis are provisioned foundations, not active replacements for
+the JSON/in-memory repositories. This is not Kubernetes, a cloud provider,
+a managed database, or a production-secret configuration.
+
 ## User lifecycle
 
 Mission 102 adds lifecycle state to the existing User implementation rather

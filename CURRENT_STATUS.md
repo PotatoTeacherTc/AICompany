@@ -536,6 +536,13 @@ not inferred from a missing historical mission log.
   Backend/Frontend commands are documented. The 40-test integration selection,
   full 310-test Backend suite, two Frontend tests, and production build pass.
   `ALLOW_PAID_PROVIDER=False`; Billing is Manual/Fake and media remains Fake.
+- Mission 121: provider-neutral Docker development packaging is complete.
+  Backend and multi-stage Frontend images run with PostgreSQL 17 and Redis 7
+  on a private Compose network. Named volumes preserve container state and
+  host ports bind to loopback. All four services reached healthy state, logs
+  were reviewed, and the stack stopped cleanly. PostgreSQL and Redis are
+  infrastructure foundations only; existing repositories were not silently
+  replaced. Backend 310 tests, Frontend two tests, and production build pass.
 
 ## Implemented pipelines
 

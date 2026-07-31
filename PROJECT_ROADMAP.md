@@ -626,12 +626,27 @@ today/7-day/30-day filter is invented.
 - Tests: 40-test integration selection, full Backend suite, Frontend suite,
   production build, readiness/CORS/onboarding/restart/security checks.
 
+### Mission 121 — Cloud Foundation (Complete, Provider-Neutral)
+
+- Goal: run the local SaaS Beta as a reproducible Docker development stack.
+- Scope: Backend and multi-stage Frontend images, Compose Backend/Frontend/
+  PostgreSQL/Redis services, private networking, named volumes, loopback host
+  ports, production configuration seams, and health checks.
+- Excludes: Kubernetes, cloud deployment, managed services, real secrets, and
+  replacing existing repositories with PostgreSQL/Redis adapters.
+- Completion: all services build, start healthy, log safely, and stop cleanly;
+  existing Backend and Frontend regressions pass.
+- Prerequisites: Mission 120.
+- Tests: Compose config/build/up/ps/logs/down, Backend 310 tests, Frontend two
+  tests, and production build.
+
 ## Longer-term phases
 
-- Missions 121-130 remain the production cloud, distributed execution,
+- Missions 122-130 remain CI, production security/monitoring/recovery,
+  distributed execution,
   security-hardening, Workflow Builder, Marketplace, Enterprise, and v1.0
   phases; no such feature is implemented by Mission 120.
-- Missions 121-130: production cloud/storage/broker choices, CI/CD, security
+- Missions 122-130: production cloud/storage/broker choices, CI/CD, security
   hardening, Workflow Builder, Marketplace, Enterprise, and AICompany v1.0.
 - Real music/image/video/YouTube adapters remain separately blocked by
   explicit account, network, credential, legal, and cost approval. They are

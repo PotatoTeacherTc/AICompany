@@ -1,0 +1,9 @@
+venv
+__pycache__
+*.pyc
+logs
+TestFiles
+Music
+tests
+.env
+.git_backup
