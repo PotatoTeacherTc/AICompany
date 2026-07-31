@@ -95,6 +95,16 @@ class BatchManager:
             ],
         }
 
+    def list(self, workspace_id):
+        values = []
+        for value in self.repository.list("batch", workspace_id):
+            if not isinstance(value, dict) or not value.get("batch_id"):
+                continue
+            batch = self.get(value["batch_id"], workspace_id)
+            if batch is not None:
+                values.append(batch)
+        return values
+
     def _save(self, batch):
         self.repository.save(
             "batch", batch.batch_id, batch.workspace_id, batch.to_dict()

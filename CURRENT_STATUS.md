@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 109**.
+Current mission baseline: **Mission 110**.
 
 Roadmap review baseline: `750d755 feat: add workspace usage reporting`
 following `af72f6c feat: expose workspace artifact access`.
@@ -450,7 +450,7 @@ not inferred from a missing historical mission log.
 - FakeTextProvider remains the default. Ollama Text is a verified explicit
   loopback option using `qwen2.5:1.5b`; Music, Image, Video, and YouTube remain
   Fake. Paid providers and external media calls remain disabled.
-- The next defined work is Mission 110 — Job & Execution API.
+- The next defined work is Mission 111 — AI Organization API.
 - Mission 109: `PersistentExecutionService` now composes the existing
   PersistentJobQueue, InProcessJobWorker, ExecutionHistory, ArtifactManager,
   and UsageEngine through dependency injection. Workspace-scoped idempotency,
@@ -461,6 +461,15 @@ not inferred from a missing historical mission log.
   remain compatible. BackendDependencies accepts the service, while Job,
   Execution, and Batch APIs remain Mission 110 scope. Eight focused tests and
   the full 266-test suite pass offline.
+- Mission 110: authenticated Workspace APIs now expose persistent Job
+  submission/list/detail/cancel/retry, ExecutionHistory list/detail, and
+  existing Batch list/detail summaries through `JobExecutionApiService`.
+  MEMBER/ADMIN/OWNER follow the existing Task-control policy, cross-Workspace
+  records are non-disclosing, and result DTOs omit task text, paths, raw
+  errors, and secrets while linking safe Artifact and Usage summaries.
+  PENDING-only cancellation and retryable-FAILED retry reuse Queue methods.
+  The in-memory Task API remains unchanged. Five focused tests and the full
+  271-test suite pass offline.
 
 ## Implemented pipelines
 
@@ -477,14 +486,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **266 tests**. Its expected command is:
+The current suite contains **271 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Current verification result: **266 passed, 0 failed**.
+Current verification result: **271 passed, 0 failed**.
 
 ## Not implemented
 

@@ -76,6 +76,7 @@ class BackendDependencies:
     artifact_service: object | None = None
     usage_service: object | None = None
     persistent_execution_service: object | None = None
+    job_execution_api_service: object | None = None
     health_service: BackendHealthService | None = None
     auth_required: bool = False
 
@@ -101,6 +102,7 @@ def create_backend_app(dependencies=None):
         artifact_service=dependencies.artifact_service,
         usage_service=dependencies.usage_service,
         persistent_execution_service=dependencies.persistent_execution_service,
+        job_execution_api_service=dependencies.job_execution_api_service,
         health_service=health_service,
         auth_required=dependencies.auth_required,
     )

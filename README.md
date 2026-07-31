@@ -314,15 +314,31 @@ summaries to existing History, Artifact metadata, and Usage storage. Pipelines
 still register their own artifacts through ArtifactManager. No Job,
 ExecutionHistory, or Batch API was added.
 
+Mission 110 adds authenticated Workspace routes:
+
+```text
+POST/GET /workspaces/{workspace_id}/jobs
+GET /workspaces/{workspace_id}/jobs/{job_id}
+POST /workspaces/{workspace_id}/jobs/{job_id}/cancel
+POST /workspaces/{workspace_id}/jobs/{job_id}/retry
+GET /workspaces/{workspace_id}/executions
+GET /workspaces/{workspace_id}/executions/{execution_id}
+GET /workspaces/{workspace_id}/batches
+GET /workspaces/{workspace_id}/batches/{batch_id}
+```
+
+These routes reuse persistent Queue state and existing RBAC. They do not
+replace the in-memory Task API. Job results return safe History, Artifact, and
+Usage references without task text or internal paths.
+
 The next defined sequence is:
 
-1. Mission 110 — Job & Execution API
-2. Mission 111 — AI Organization API
-3. Mission 112 — Artifact Lifecycle
-4. Mission 113 — Quota & Budget Enforcement
-5. Mission 114 — Plans & Entitlements
-6. Mission 115 — Dashboard API
-7. Mission 116 — Web Dashboard
+1. Mission 111 — AI Organization API
+2. Mission 112 — Artifact Lifecycle
+3. Mission 113 — Quota & Budget Enforcement
+4. Mission 114 — Plans & Entitlements
+5. Mission 115 — Dashboard API
+6. Mission 116 — Web Dashboard
 
 Ollama Text remains explicit and loopback-only. Music, Image, Video, and
 YouTube remain Fake; no paid Provider or external media API is enabled.

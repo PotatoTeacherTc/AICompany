@@ -8,7 +8,7 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 109
+## Current baseline: Mission 110
 
 The verified implementation currently provides a Task/Queue/Worker execution
 path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,
@@ -404,6 +404,7 @@ can receive this coordinator, but no Job, Execution, or Batch route is added.
 
 ### Mission 110 — Job & Execution API
 
+- Status: completed.
 - Goal: expose persistent execution state and controls through the
   authenticated Backend boundary.
 - Scope: Workspace-scoped Job list/detail, safe retry/cancel semantics,
@@ -420,6 +421,14 @@ can receive this coordinator, but no Job, Execution, or Batch route is added.
   idempotency, valid/invalid retry and cancellation, partial Usage, safe
   errors, result/Artifact linkage, restart recovery, and cross-Workspace
   denial.
+
+Mission 110 adds `JobExecutionApiService` and authenticated Workspace routes
+for persistent Job submission/list/detail/cancel/retry, ExecutionHistory
+list/detail, and the existing BatchManager list/detail contract. Responses
+reuse Queue state, strip task/prompt fields, expose only path-free Artifact
+references and recorded Usage, and return non-disclosing not-found responses
+across Workspaces. Cancellation is limited to PENDING Jobs and retry to
+retryable FAILED Jobs. The legacy in-memory Task API remains unchanged.
 
 ### Mission 111 — AI Organization API
 

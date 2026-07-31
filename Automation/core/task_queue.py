@@ -111,6 +111,7 @@ class JobStatus:
     RUNNING = "RUNNING"
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
+    CANCELLED = "CANCELLED"
 
 
 @dataclass(frozen=True)
@@ -221,6 +222,23 @@ class PersistentJobQueue:
         )
         return updated
 
+    def cancel(self, job_id, workspace_id):
+        with self._lock:
+            job = self.get(job_id, workspace_id)
+            if job is None or job.status != JobStatus.PENDING:
+                raise ValueError("pending job not found")
+            updated = replace(
+                job, status=JobStatus.CANCELLED, claimed_by=None
+            )
+            self._jobs[job_id] = updated
+            self._save(updated)
+        safe_log(
+            self.logger, "QUEUE_CANCELLED", "PersistentJobQueue",
+            workspace_id=workspace_id, mission_id=job.mission_id,
+            job_id=job_id, status=updated.status,
+        )
+        return updated
+
     def get(self, job_id, workspace_id):
         with self._lock:
             job = self._jobs.get(job_id)
@@ -291,6 +309,7 @@ class PersistentJobQueue:
             if status not in {
                 JobStatus.PENDING, JobStatus.RUNNING,
                 JobStatus.COMPLETED, JobStatus.FAILED,
+                JobStatus.CANCELLED,
             }:
                 return None
             return Job(**value)

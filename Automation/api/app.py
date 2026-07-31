@@ -21,6 +21,7 @@ def create_app(
     artifact_service=None,
     usage_service=None,
     persistent_execution_service=None,
+    job_execution_api_service=None,
     health_service=None,
     auth_required=False,
 ):
@@ -97,6 +98,7 @@ def create_app(
             usage_service = UsageReportingService(usage_engine)
     app.state.usage_service = usage_service
     app.state.persistent_execution_service = persistent_execution_service
+    app.state.job_execution_api_service = job_execution_api_service
     if audit_service is None:
         from application.audit_service import AuditService
         audit_service = AuditService()
@@ -520,6 +522,101 @@ def create_app(
             from api.errors import error_response
 
             return error_response(400, "invalid_request", "Invalid usage query")
+
+    @app.post("/workspaces/{workspace_id}/jobs", status_code=201)
+    def submit_job(workspace_id: str, payload: dict, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"})
+        if denied: return denied
+        if app.state.job_execution_api_service is None:
+            from api.errors import error_response
+            return error_response(503, "job_service_unavailable", "Job service is unavailable")
+        try:
+            return app.state.job_execution_api_service.submit(workspace_id, payload)
+        except (TypeError, ValueError):
+            from api.errors import error_response
+            return error_response(400, "invalid_request", "Invalid job request")
+
+    @app.get("/workspaces/{workspace_id}/jobs")
+    def list_jobs(workspace_id: str, status: str | None = None, limit: int = 50, offset: int = 0, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"})
+        if denied: return denied
+        try:
+            return app.state.job_execution_api_service.list_jobs(workspace_id, status, limit, offset)
+        except (AttributeError, TypeError, ValueError):
+            from api.errors import error_response
+            return error_response(400, "invalid_request", "Invalid job query")
+
+    @app.get("/workspaces/{workspace_id}/jobs/{job_id}")
+    def get_job(workspace_id: str, job_id: str, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"})
+        if denied: return denied
+        value = app.state.job_execution_api_service.get_job(workspace_id, job_id)
+        if value is None:
+            from api.errors import error_response
+            return error_response(404, "job_not_found", "Job not found")
+        return value
+
+    @app.post("/workspaces/{workspace_id}/jobs/{job_id}/cancel")
+    def cancel_job(workspace_id: str, job_id: str, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"})
+        if denied: return denied
+        if app.state.job_execution_api_service.get_job(workspace_id, job_id) is None:
+            from api.errors import error_response
+            return error_response(404, "job_not_found", "Job not found")
+        try:
+            return app.state.job_execution_api_service.cancel(workspace_id, job_id)
+        except ValueError:
+            from api.errors import error_response
+            return error_response(409, "job_state_conflict", "Job cannot be cancelled")
+
+    @app.post("/workspaces/{workspace_id}/jobs/{job_id}/retry")
+    def retry_job(workspace_id: str, job_id: str, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"})
+        if denied: return denied
+        if app.state.job_execution_api_service.get_job(workspace_id, job_id) is None:
+            from api.errors import error_response
+            return error_response(404, "job_not_found", "Job not found")
+        try:
+            return app.state.job_execution_api_service.retry(workspace_id, job_id)
+        except ValueError:
+            from api.errors import error_response
+            return error_response(409, "job_state_conflict", "Job cannot be retried")
+
+    @app.get("/workspaces/{workspace_id}/executions")
+    def list_executions(workspace_id: str, status: str | None = None, pipeline: str | None = None, task_type: str | None = None, start_at: str | None = None, end_at: str | None = None, limit: int = 50, offset: int = 0, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"})
+        if denied: return denied
+        try:
+            return app.state.job_execution_api_service.list_executions(workspace_id, status, pipeline, task_type, start_at, end_at, limit, offset)
+        except (AttributeError, TypeError, ValueError):
+            from api.errors import error_response
+            return error_response(400, "invalid_request", "Invalid execution query")
+
+    @app.get("/workspaces/{workspace_id}/executions/{execution_id}")
+    def get_execution(workspace_id: str, execution_id: str, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"})
+        if denied: return denied
+        value = app.state.job_execution_api_service.get_execution(workspace_id, execution_id)
+        if value is None:
+            from api.errors import error_response
+            return error_response(404, "execution_not_found", "Execution not found")
+        return value
+
+    @app.get("/workspaces/{workspace_id}/batches")
+    def list_batches(workspace_id: str, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"})
+        if denied: return denied
+        return app.state.job_execution_api_service.list_batches(workspace_id)
+
+    @app.get("/workspaces/{workspace_id}/batches/{batch_id}")
+    def get_batch(workspace_id: str, batch_id: str, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"})
+        if denied: return denied
+        value = app.state.job_execution_api_service.get_batch(workspace_id, batch_id)
+        if value is None:
+            from api.errors import error_response
+            return error_response(404, "batch_not_found", "Batch not found")
+        return value
 
     @app.post("/workspaces/{workspace_id}/members", status_code=201)
     def add_member(workspace_id: str, payload: dict, authorization: str | None = Header(default=None)):
