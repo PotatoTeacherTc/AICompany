@@ -549,7 +549,7 @@ today/7-day/30-day filter is invented.
   omission, read-only behavior, RBAC, restart recovery, and
   cross-Workspace denial.
 
-### Mission 116 — Web Dashboard
+### Mission 116 — Web Dashboard (Complete)
 
 - Goal: deliver the first authenticated browser UI over existing Backend
   contracts.

@@ -372,7 +372,14 @@ analytics database, WebSocket, or control operation is part of this endpoint.
 
 The next defined sequence is:
 
-1. Mission 116 — Web Dashboard
+1. Mission 117 — Subscription
+
+The initial Web Dashboard is in `Web/`. Run `npm.cmd install`, set
+`VITE_API_BASE_URL` to the Backend loopback URL, then use `npm.cmd run dev`.
+Authentication tokens remain in memory and clear on refresh/logout. The
+current release provides login, Workspace switching, overview metrics, and
+responsive navigation; secondary administration screens remain intentionally
+minimal. Billing and Subscription are not implemented.
 
 Ollama Text remains explicit and loopback-only. Music, Image, Video, and
 YouTube remain Fake; no paid Provider or external media API is enabled.
