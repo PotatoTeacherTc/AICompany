@@ -357,11 +357,17 @@ execution limits. Enforcement occurs at persistent Job submission and before
 target execution. Reservations are restart-safe and idempotent within the
 current single process; the current period is `ALL_TIME`. This is not billing.
 
+Plans are product-policy contracts, not purchases. The injected
+FREE/PRO/BUSINESS catalog supplies quota defaults and feature entitlements;
+Workspace overrides remain higher priority. Workspace members can read the
+current plan and OWNER/ADMIN can assign an active plan. Artifact archive is the
+current enforced feature entitlement. Subscription, pricing, invoices,
+payments, and Billing are not implemented.
+
 The next defined sequence is:
 
-1. Mission 114 — Plans & Entitlements
-2. Mission 115 — Dashboard API
-3. Mission 116 — Web Dashboard
+1. Mission 115 — Dashboard API
+2. Mission 116 — Web Dashboard
 
 Ollama Text remains explicit and loopback-only. Music, Image, Video, and
 YouTube remain Fake; no paid Provider or external media API is enabled.

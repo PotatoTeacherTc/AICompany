@@ -450,7 +450,7 @@ not inferred from a missing historical mission log.
 - FakeTextProvider remains the default. Ollama Text is a verified explicit
   loopback option using `qwen2.5:1.5b`; Music, Image, Video, and YouTube remain
   Fake. Paid providers and external media calls remain disabled.
-- The next defined work is Mission 114 — Plans & Entitlements.
+- The next defined work is Mission 115 — Dashboard API.
 - Mission 109: `PersistentExecutionService` now composes the existing
   PersistentJobQueue, InProcessJobWorker, ExecutionHistory, ArtifactManager,
   and UsageEngine through dependency injection. Workspace-scoped idempotency,
@@ -492,6 +492,13 @@ not inferred from a missing historical mission log.
   read status. Missing usage remains absent/zero-safe. The current `ALL_TIME`
   period and in-process lock are local-only; billing and distributed quota are
   not implemented. Four focused tests and the full 281-test suite pass offline.
+- Mission 114: PlanManager provides injected FREE/PRO/BUSINESS non-billing
+  definitions, default and persistent Workspace assignment, safe entitlement
+  reads, and Plan-derived quota defaults. Explicit Workspace quota overrides
+  take precedence. Artifact archive is the one enforced feature entitlement;
+  OWNER/ADMIN assign and MEMBER reads. Five focused tests and the full
+  286-test suite pass offline. Subscription, Billing, pricing, and payments
+  remain unimplemented.
 
 ## Implemented pipelines
 
@@ -508,14 +515,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **281 tests**. Its expected command is:
+The current suite contains **286 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Current verification result: **281 passed, 0 failed**.
+Current verification result: **286 passed, 0 failed**.
 
 ## Not implemented
 

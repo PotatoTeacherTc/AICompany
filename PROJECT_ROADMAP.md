@@ -505,7 +505,7 @@ before the target callback. Workspace-qualified idempotent reservations survive
 restart and use an in-process lock. The current local contract supports the
 documented `ALL_TIME` period only; distributed quota and billing are absent.
 
-### Mission 114 — Plans & Entitlements
+### Mission 114 — Plans & Entitlements (Complete)
 
 - Goal: define non-billing product plans and Workspace feature entitlements
   that quota enforcement can consume.
@@ -520,6 +520,13 @@ documented `ALL_TIME` period only; distributed quota and billing are absent.
 - Tests: default/custom plans, assignment revision, invalid entitlement,
   downgrade limits, restart recovery, RBAC, audit failure isolation, and
   cross-Workspace denial.
+
+Mission 114 supplies an injected FREE/PRO/BUSINESS non-billing catalog and
+Workspace plan assignment through the existing StateRepository. Effective
+quota resolution is Workspace override, then Plan entitlement, then the
+existing unlimited fallback when neither is composed. Artifact archive is the
+single enforced feature entitlement. No price, purchase, subscription,
+invoice, trial, or payment state exists.
 
 ### Mission 115 — Dashboard API
 

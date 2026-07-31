@@ -24,6 +24,7 @@ def create_app(
     job_execution_api_service=None,
     organization_service=None,
     quota_service=None,
+    plan_service=None,
     health_service=None,
     auth_required=False,
 ):
@@ -103,6 +104,7 @@ def create_app(
     app.state.job_execution_api_service = job_execution_api_service
     app.state.organization_service = organization_service
     app.state.quota_service = quota_service
+    app.state.plan_service = plan_service
     if audit_service is None:
         from application.audit_service import AuditService
         audit_service = AuditService()
@@ -484,6 +486,69 @@ def create_app(
 
             return error_response(409, "artifact_missing", "Artifact content is missing")
         return value
+
+    @app.get("/workspaces/{workspace_id}/plans")
+    def list_plans(
+        workspace_id: str,
+        authorization: str | None = Header(default=None),
+    ):
+        denied = _authorize_workspace(
+            app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"}
+        )
+        if denied:
+            return denied
+        if app.state.plan_service is None:
+            from api.errors import error_response
+            return error_response(503, "plan_unavailable", "Plan is unavailable")
+        return app.state.plan_service.list()
+
+    @app.get("/workspaces/{workspace_id}/plan")
+    def current_plan(
+        workspace_id: str,
+        authorization: str | None = Header(default=None),
+    ):
+        denied = _authorize_workspace(
+            app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"}
+        )
+        if denied:
+            return denied
+        if app.state.plan_service is None:
+            from api.errors import error_response
+            return error_response(503, "plan_unavailable", "Plan is unavailable")
+        return app.state.plan_service.current(workspace_id)
+
+    @app.get("/workspaces/{workspace_id}/entitlements")
+    def current_entitlements(
+        workspace_id: str,
+        authorization: str | None = Header(default=None),
+    ):
+        denied = _authorize_workspace(
+            app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"}
+        )
+        if denied:
+            return denied
+        if app.state.plan_service is None:
+            from api.errors import error_response
+            return error_response(503, "plan_unavailable", "Plan is unavailable")
+        return app.state.plan_service.entitlements(workspace_id)
+
+    @app.put("/workspaces/{workspace_id}/plan")
+    def assign_plan(
+        workspace_id: str,
+        payload: dict,
+        authorization: str | None = Header(default=None),
+    ):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN"})
+        if denied:
+            return denied
+        if app.state.plan_service is None:
+            from api.errors import error_response
+            return error_response(503, "plan_unavailable", "Plan is unavailable")
+        try:
+            return app.state.plan_service.assign(workspace_id, payload)
+        except (TypeError, ValueError):
+            from api.errors import error_response
+            return error_response(400, "invalid_request", "Invalid plan request")
 
     @app.get("/workspaces/{workspace_id}/quota")
     def get_quota(

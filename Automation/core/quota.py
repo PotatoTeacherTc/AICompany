@@ -21,10 +21,13 @@ class QuotaPolicy:
 class QuotaEngine:
     """Workspace quota decisions over UsageEngine and shared persistence."""
 
-    def __init__(self, repository, usage_engine, clock=None):
+    def __init__(
+        self, repository, usage_engine, clock=None, policy_resolver=None
+    ):
         self.repository = repository
         self.usage_engine = usage_engine
         self.clock = clock or (lambda: datetime.now(timezone.utc))
+        self.policy_resolver = policy_resolver
         self._lock = RLock()
 
     def get_policy(self, workspace_id):
@@ -64,6 +67,8 @@ class QuotaEngine:
 
     def status(self, workspace_id):
         policy = self.get_policy(workspace_id)
+        if policy is None and self.policy_resolver is not None:
+            policy = self.policy_resolver(workspace_id)
         usage = self.usage_engine.summary(workspace_id)
         executions = len(self.repository.list("quota_reservation", workspace_id))
         result = {

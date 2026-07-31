@@ -14,8 +14,9 @@ _MAX_CONTENT_BYTES = 1024 * 1024
 class ArtifactApplicationService:
     """Workspace-scoped safe DTO and bounded text-content access."""
 
-    def __init__(self, artifact_manager):
+    def __init__(self, artifact_manager, entitlement_checker=None):
         self.artifact_manager = artifact_manager
+        self.entitlement_checker = entitlement_checker
 
     def list(
         self,
@@ -67,6 +68,13 @@ class ArtifactApplicationService:
         return self._safe_dto(artifact) if artifact else None
 
     def archive(self, workspace_id, artifact_id):
+        if (
+            self.entitlement_checker is not None
+            and not self.entitlement_checker(
+                workspace_id, "artifact_archive_enabled"
+            )
+        ):
+            raise ValueError("entitlement_denied")
         return self._change_status(workspace_id, artifact_id, archive=True)
 
     def restore(self, workspace_id, artifact_id):

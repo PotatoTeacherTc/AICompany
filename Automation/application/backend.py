@@ -79,6 +79,7 @@ class BackendDependencies:
     job_execution_api_service: object | None = None
     organization_service: object | None = None
     quota_service: object | None = None
+    plan_service: object | None = None
     health_service: BackendHealthService | None = None
     auth_required: bool = False
 
@@ -107,6 +108,7 @@ def create_backend_app(dependencies=None):
         job_execution_api_service=dependencies.job_execution_api_service,
         organization_service=dependencies.organization_service,
         quota_service=dependencies.quota_service,
+        plan_service=dependencies.plan_service,
         health_service=health_service,
         auth_required=dependencies.auth_required,
     )

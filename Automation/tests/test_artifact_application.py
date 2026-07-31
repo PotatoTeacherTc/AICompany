@@ -9,6 +9,7 @@ from application.artifact_service import ArtifactApplicationService
 from application.credential_service import CredentialService
 from application.login_service import LoginService
 from application.quota_service import QuotaApplicationService
+from application.plan_service import PlanApplicationService
 from application.session_service import SessionService
 from application.user_service import UserService
 from application.workspace_membership_service import WorkspaceMembershipService
@@ -18,6 +19,7 @@ from core.artifact_manager import ArtifactManager
 from core.artifact_repository import FileArtifactRepository
 from core.persistence import InMemoryStateRepository
 from core.quota import QuotaEngine
+from core.plans import PlanManager
 from core.usage_engine import UsageEngine
 
 
@@ -186,6 +188,13 @@ class ArtifactApplicationTests(unittest.TestCase):
             "Text Pipeline",
             workspace_id=workspace["workspace_id"],
         )
+        quota_repository = InMemoryStateRepository()
+        plan_manager = PlanManager(quota_repository)
+        quota_engine = QuotaEngine(
+            quota_repository,
+            UsageEngine(quota_repository),
+            policy_resolver=plan_manager.quota_defaults,
+        )
         app = create_app(
             automation_service=_Automation(self.manager),
             task_query_service=_Unused(),
@@ -195,12 +204,8 @@ class ArtifactApplicationTests(unittest.TestCase):
             credential_service=credentials,
             login_service=login,
             session_service=sessions,
-            quota_service=QuotaApplicationService(
-                QuotaEngine(
-                    (quota_repository := InMemoryStateRepository()),
-                    UsageEngine(quota_repository),
-                )
-            ),
+            quota_service=QuotaApplicationService(quota_engine),
+            plan_service=PlanApplicationService(plan_manager, quota_engine),
             auth_required=True,
         )
         client = TestClient(app)
@@ -235,6 +240,22 @@ class ArtifactApplicationTests(unittest.TestCase):
         )
         self.assertEqual(200, configured.status_code)
         self.assertEqual(10, configured.json()["token_limit"])
+        plan_url = "/workspaces/{}/plan".format(workspace["workspace_id"])
+        self.assertEqual("FREE", client.get(
+            plan_url, headers=member_headers
+        ).json()["plan_id"])
+        self.assertEqual(
+            403,
+            client.put(
+                plan_url, json={"plan_id": "PRO"}, headers=member_headers
+            ).status_code,
+        )
+        self.assertEqual(
+            "PRO",
+            client.put(
+                plan_url, json={"plan_id": "PRO"}, headers=owner_headers
+            ).json()["plan_id"],
+        )
         self.assertEqual(
             403,
             client.post(
