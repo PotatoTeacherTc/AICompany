@@ -7,10 +7,13 @@ from agent.manager import Manager
 from application.creative_demo import build_creative_demo
 from application.automation_service import AutomationService
 from core.artifact_manager import ArtifactManager
+from core.artifact_repository import FileArtifactRepository
 from core.base_pipeline import BasePipeline
 from core.execution_history import ExecutionHistory
 from core.content_pipeline import ContentPipeline
 from core.history_pipeline import HistoryPipeline
+from core.execution_history_repository import JsonFileExecutionHistoryRepository
+from core.music_planning import MusicPlanningRequest, MusicPlanningService
 from core.music_pipeline import MusicPipeline
 from core.pipeline import AIPipeline
 from core.registry import PipelineRegistry
@@ -19,6 +22,7 @@ from core.research_pipeline import ResearchPipeline
 from core.status import PipelineStatus
 from core.stub_pipelines import StubPipeline
 from core.task import Task
+from providers.factory import ProviderFactory
 
 
 class FailingPipeline(BasePipeline):
@@ -151,8 +155,60 @@ def run_creative_demo(request=None, use_local_text=False, root=None):
     return result
 
 
+def run_music_plan(request=None, workspace_id="default", root=None,
+                   environment=None, transport=None):
+    request = request or "이별 후 다시 일어서는 내용의 한국어 발라드를 기획해 줘."
+    root = Path(root or Path(__file__).parent / "logs" / "music-plans").resolve()
+    storage = root / "artifacts"
+    state = root / "state"
+    artifacts = ArtifactManager(FileArtifactRepository(
+        state / "artifact-metadata.json", storage
+    ))
+    history = ExecutionHistory(repository=JsonFileExecutionHistoryRepository(
+        state / "execution-history.json"
+    ))
+    selection = ProviderFactory.text_from_environment(
+        dict(os.environ) if environment is None else environment,
+        transport=transport,
+    )
+    result = MusicPlanningService(
+        storage, selection=selection, artifact_manager=artifacts,
+        execution_history=history,
+    ).run(MusicPlanningRequest(workspace_id, request))
+    data = result.get("data") or {}
+    print(json.dumps({
+        "workspace_id": data.get("workspace_id"),
+        "request_id": data.get("mission_id"),
+        "status": result.get("status"),
+        "primary_title": data.get("primary_title"),
+        "provider": data.get("provider"),
+        "model": data.get("model"),
+        "artifact_ids": [item.get("artifact_id") for item in result.get("artifacts", [])],
+        "next_action": data.get("next_action"),
+        "error": result.get("error"),
+    }, ensure_ascii=False, indent=2))
+    return result
+
+
 if __name__ == "__main__":
-    if len(sys.argv) > 1 and sys.argv[1] == "creative-demo":
+    if len(sys.argv) > 1 and sys.argv[1] == "music-plan":
+        workspace = "default"
+        request_parts = []
+        index = 2
+        while index < len(sys.argv):
+            if sys.argv[index] == "--workspace" and index + 1 < len(sys.argv):
+                workspace = sys.argv[index + 1]
+                index += 2
+            else:
+                request_parts.append(sys.argv[index])
+                index += 1
+        music_plan_result = run_music_plan(
+            " ".join(request_parts) if request_parts else None,
+            workspace_id=workspace,
+        )
+        if music_plan_result.get("status") != PipelineStatus.WAITING_FOR_INPUT:
+            raise SystemExit(1)
+    elif len(sys.argv) > 1 and sys.argv[1] == "creative-demo":
         local = "--local-text" in sys.argv[2:]
         request_parts = [
             item for item in sys.argv[2:] if item != "--local-text"

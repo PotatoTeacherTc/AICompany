@@ -8,7 +8,8 @@ from providers.models import UsageMetadata
 
 
 TEXT_TASK_TYPES = {
-    "LYRICS", "CONTENT_PLAN", "VIDEO_SCRIPT", "TITLE_DESCRIPTION"
+    "LYRICS", "CONTENT_PLAN", "VIDEO_SCRIPT", "TITLE_DESCRIPTION",
+    "MUSIC_PLAN",
 }
 
 
@@ -96,6 +97,39 @@ class FakeTextProvider(TextProvider):
                 "title": "다시 피는 바람",
                 "description": "이별 뒤 다시 시작하는 마음을 담은 감성 음악 영상",
                 "tags": ["희망", "발라드", "감성음악"],
+            },
+            "MUSIC_PLAN": {
+                "title_candidates": ["다시 걷는 밤", "새벽의 약속", "일어서는 마음"],
+                "primary_title": "다시 걷는 밤",
+                "concept_summary": "이별 뒤 스스로를 회복하는 한국어 발라드",
+                "target_listener": "감성 발라드를 듣는 성인 청자",
+                "genre": "Korean ballad",
+                "subgenres": ["pop ballad"],
+                "mood": ["reflective", "hopeful"],
+                "tempo_bpm": 74,
+                "key_or_tonality": "minor verses, hopeful major lift",
+                "time_signature": "4/4",
+                "song_structure": ["Intro", "Verse 1", "Pre-Chorus", "Chorus", "Verse 2", "Chorus", "Bridge", "Final Chorus", "Outro"],
+                "instrumentation": ["piano", "strings", "soft drums", "bass"],
+                "vocal_style": "warm, restrained solo vocal with a stronger final chorus",
+                "language": "ko",
+                "lyrical_theme": "이별 이후의 회복",
+                "lyrical_direction": "구체적인 새벽 풍경으로 시작해 자기 확신으로 마무리",
+                "production_direction": "intimate piano opening, gradual orchestral build, clean vocal-forward mix",
+                "reference_style_notes": "contemporary Korean pop ballad without imitating a specific artist or song",
+                "negative_constraints": ["no artist imitation", "no excessive vocal runs", "no abrupt genre switch"],
+                "suno_style_prompt": "Korean pop ballad, 74 BPM, intimate piano, warm strings, restrained drums, emotional solo vocal, gradual hopeful build",
+                "suno_lyrics_prompt": "한국어 가사. 이별 뒤 새벽길을 걸으며 다시 일어서는 화자. 절제된 벌스와 기억에 남는 희망적 후렴, 브리지와 마지막 후렴 포함.",
+                "suno_exclude_prompt": "artist imitation, EDM drop, aggressive rap, excessive melisma",
+                "recommended_settings": {"duration_seconds": 210, "explicit_content": False, "vocal_mode": "solo"},
+                "variations": [
+                    {"name": "piano intimate", "style_prompt": "minimal Korean piano ballad, close vocal, 72 BPM", "direction": "감정을 절제한 소규모 편곡"},
+                    {"name": "cinematic lift", "style_prompt": "cinematic Korean pop ballad, strings and full final chorus, 76 BPM", "direction": "후반부의 큰 상승감을 강조"}
+                ],
+                "quality_checklist": ["제목과 후렴의 정서가 일치하는지 확인", "보컬이 가사를 가리지 않는지 확인", "특정 아티스트 모사가 없는지 확인"],
+                "assumptions": ["선택 입력이 없어 한국어 솔로 보컬을 가정"],
+                "warnings": ["생성 서비스의 결과는 시도마다 달라질 수 있음"],
+                "next_action": "Suno에서 제목, 스타일, 가사 지시와 제외 요소를 복사해 2~3개 변형을 수동 생성한 뒤 선호 음원을 보관하세요."
             },
         }
         output = json.dumps(templates[request.task_type], ensure_ascii=False)
@@ -343,6 +377,7 @@ def _structured_prompt(request):
         "TITLE_DESCRIPTION": (
             '{"title":"string","description":"string","tags":["string"]}'
         ),
+        "MUSIC_PLAN": '{"music_plan":"use the caller supplied response_schema"}',
     }
     return (
         "Return exactly one valid JSON object with no markdown or commentary. "

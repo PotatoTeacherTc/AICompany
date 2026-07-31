@@ -988,7 +988,7 @@ today/7-day/30-day filter is invented.
   Storage, managed databases, and the official next numbered Mission remain
   undefined.
 
-## Real-use connection roadmap: @1-@10 (approved; @1 complete)
+## Real-use connection roadmap: @1-@10 (approved; @1-@2 complete)
 
 This sequence is separate from the historical Mission numbering. Mission
 1-141 records completed Foundation and bounded Production Integration work.
@@ -1039,7 +1039,7 @@ added behind the existing Provider abstraction without changing the workflow.
   are recorded when present and `estimated_cost_usd` remains unavailable
   rather than being invented.
 
-### @2 — Music planning employee and Suno creation package
+### @2 — Music planning employee and Suno creation package (Complete, Mock-verified; real smoke pending)
 
 - Goal: use the real LLM to produce everything required immediately before
   manual Suno execution.
@@ -1047,6 +1047,18 @@ added behind the existing Provider abstraction without changing the workflow.
   vocals, song structure, full lyrics, Suno and style prompts, exclusions,
   recommended settings, creation notes, and Artifact storage.
 - Completion: the user can copy the package into Suno and create the audio.
+- Implemented boundary: `MusicPlanningService` composes the existing
+  TextProvider/ProviderFactory, a bounded `MUSIC_PLAN` JSON Schema, domain
+  validation, Suno package formatting, PipelineResult, UsageMetadata,
+  ArtifactManager, ExecutionHistory, Workspace isolation, and the new
+  `WAITING_FOR_INPUT` Task/Pipeline state. It writes a structured plan JSON,
+  a Suno package JSON, and a human-readable package Markdown file. A minimal
+  `music-plan` CLI is the user entry point.
+- Safety and verification: Fake Text remains the deterministic default;
+  injected OpenAI transport verifies the real-provider DI path without a
+  network or paid call. Prompts and user request text are not returned,
+  logged, or written to History/Artifact metadata. Suno remains a manual user
+  action. No actual OpenAI credential smoke was executed for @2.
 
 ### @3 — Completed audio intake and project connection
 

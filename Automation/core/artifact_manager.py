@@ -37,6 +37,7 @@ class ArtifactManager:
         task_id=None,
         stage=None,
         status="AVAILABLE",
+        metadata=None,
     ):
         path = Path(file_path)
         if not path.is_file():
@@ -45,15 +46,20 @@ class ArtifactManager:
             raise ValueError("artifact_type must be a non-empty string")
         if not isinstance(producer_pipeline, str) or not producer_pipeline:
             raise ValueError("producer_pipeline must be a non-empty string")
+        metadata = self._metadata(metadata)
 
         if self.storage_adapter is not None:
-            return self.storage_adapter.store(
+            artifact = self.storage_adapter.store(
                 workspace_id or "default", uuid.uuid4().hex, path.name,
                 path.read_bytes(), artifact_type=artifact_type,
                 mime_type=mimetypes.guess_type(path.name)[0] or "application/octet-stream",
                 mission_id=mission_id, task_id=task_id,
                 stage=stage or producer_pipeline, producer_pipeline=producer_pipeline,
             )
+            if metadata:
+                artifact["metadata"] = metadata
+                self.repository.save(artifact)
+            return artifact
         created_at = datetime.now().isoformat()
         artifact = {
             "artifact_id": uuid.uuid4().hex,
@@ -71,8 +77,30 @@ class ArtifactManager:
             "updated_at": created_at,
             "path": str(path),
         }
+        if metadata:
+            artifact["metadata"] = metadata
         self.repository.save(artifact)
         return artifact
+
+    @staticmethod
+    def _metadata(value):
+        if value is None:
+            return {}
+        if not isinstance(value, dict):
+            raise ValueError("artifact metadata must be a dictionary")
+        allowed = {
+            "provider", "model", "prompt_version", "source_request_id",
+            "schema_version",
+        }
+        if set(value) - allowed:
+            raise ValueError("artifact metadata contains unsupported fields")
+        clean = {}
+        for key, item in value.items():
+            if item is not None:
+                if not isinstance(item, str) or not item.strip() or len(item) > 128:
+                    raise ValueError("artifact metadata value is invalid")
+                clean[key] = item.strip()
+        return clean
 
     def get(self, artifact_id, workspace_id=None):
         artifact = self.repository.get(artifact_id, workspace_id)

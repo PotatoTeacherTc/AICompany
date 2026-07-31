@@ -113,6 +113,14 @@ class Task:
 
         self.result = result
 
+    def wait_for_input(self, result=None):
+
+        self.status = PipelineStatus.WAITING_FOR_INPUT
+
+        self.completed_at = datetime.now().isoformat()
+
+        self.result = result
+
 
     def cancel(self, result=None):
 
@@ -173,6 +181,7 @@ class Task:
             PipelineStatus.SKIPPED,
             PipelineStatus.CANCELLED,
             PipelineStatus.TIMED_OUT,
+            PipelineStatus.WAITING_FOR_INPUT,
         }
 
 

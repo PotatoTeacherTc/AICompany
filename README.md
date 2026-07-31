@@ -5,9 +5,10 @@ Official baseline: **Mission 141**. Current product status:
 Completion through Mission 141 is limited to each Mission's documented Contract, Foundation,
 Fake/Offline, or Local Integration scope; Project APEX is not Production Ready.
 The next numbered Mission is undefined. A separate approved real-use product
-roadmap, `@1` through `@10`, has completed `@1 — Real LLM foundation` at its
-Mock-verified boundary; the real credential smoke remains pending and `@2` has
-not started. The `@` stages are not Mission 142 onward.
+roadmap, `@1` through `@10`, has completed `@1 — Real LLM foundation` and
+`@2 — Music planning employee and Suno creation package` at their
+Mock-verified boundaries; the real credential smoke remains pending and `@3`
+has not started. The `@` stages are not Mission 142 onward.
 
 AI 기반 자동화와 콘텐츠 제작 시스템을 연구하는 개인 AI 프로젝트 워크스페이스입니다.
 
@@ -702,3 +703,27 @@ model, paid opt-in, key, and `AICOMPANY_RUN_OPENAI_SMOKE=true` are all supplied
 explicitly. Normal tests use injected Mock transports and make no network or
 paid request. Production configuration continues to require
 `ALLOW_PAID_PROVIDER=False`; @1 does not enable OpenAI in production Compose.
+
+## @2 music planning and manual Suno package
+
+The local entry point accepts one natural-language request and writes a
+structured plan plus copy-ready Suno JSON/Markdown Artifacts. Fake Text is the
+default:
+
+```powershell
+cd D:\AICompany\Automation
+.\venv\Scripts\python.exe -B main.py music-plan --workspace default "한국어 감성 발라드를 기획해 줘."
+```
+
+To use ChatGPT/OpenAI, set the explicit @1 Provider, model, paid opt-in, and
+untracked Secret-file environment values shown above before running the same
+command. The CLI prints only a safe summary and Artifact IDs; it does not print
+the request or generated package body. The package contains title candidates,
+genre/mood/BPM and arrangement direction, vocals and structure, style/lyrics/
+exclude prompts, recommended settings, two or three variations, a quality
+checklist, and the next action. Successful planning returns
+`WAITING_FOR_INPUT` while the user manually generates audio in Suno.
+
+No Suno API, login, browser automation, audio download, or audio intake is
+implemented. The OpenAI path is Mock-verified; no real credential smoke was
+run for @2. Completed audio intake belongs to @3.

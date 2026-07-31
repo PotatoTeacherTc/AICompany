@@ -12,6 +12,8 @@ class PipelineStatus:
 
     RUNNING = "RUNNING"
 
+    WAITING_FOR_INPUT = "WAITING_FOR_INPUT"
+
     SKIPPED = "SKIPPED"
 
     CANCELLED = "CANCELLED"

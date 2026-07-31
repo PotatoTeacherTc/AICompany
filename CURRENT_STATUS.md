@@ -10,10 +10,11 @@ Mission 1-141 completion means only that each Mission's bounded Contract,
 Foundation, Fake/Offline, or Local Integration scope is complete. Project APEX
 as a whole is not Production Ready. The next numbered Mission is undefined.
 The separately approved real-use roadmap is `@1` through `@10`. `@1 — Real LLM
-foundation` is complete at its Mock-verified Provider foundation boundary; its
-real credential smoke remains unexecuted. `@2` has not started.
+foundation` and `@2 — Music planning employee and Suno creation package` are
+complete at their Mock-verified boundaries; their real credential smoke
+remains unexecuted. `@3` has not started.
 
-Current verification baseline: Backend 404 tests with two conditional skips,
+Current verification baseline: Backend 416 tests with two conditional skips,
 Frontend two tests,
 Frontend production build, and a production-like single-host Docker stack with
 two Backends and two Workers behind a local TLS Gateway.
@@ -49,6 +50,16 @@ Workflow, Plugin, and Marketplace expansion is not a current priority
 candidate. Enterprise and AICompany v1.0 remain unimplemented.
 
 ## Verified completed capabilities
+
+- @2: a Workspace-scoped music planning service accepts one natural-language
+  request plus optional preferences, calls the existing TextProvider through
+  DI with a bounded JSON Schema, validates the musical plan, and creates
+  `structured_music_plan.json`, `suno_creation_package.json`, and an optional
+  copy-friendly Markdown package. It records path-free Artifact metadata,
+  optional Usage and ExecutionHistory, then returns `WAITING_FOR_INPUT` for
+  the user's manual Suno generation. The `music-plan` CLI provides the local
+  entry point. Fake is the tested default; the OpenAI DI path is Mock-verified
+  and no real paid request was made.
 
 - @1: OpenAI Responses API support is registered behind the existing Text
   Provider Factory. Selection requires explicit paid opt-in, model, and
