@@ -1,0 +1,115 @@
+services:
+  migration:
+    build:
+      context: ./Automation
+    command: ["python", "-m", "core.migrations", "upgrade"]
+    restart: "no"
+    environment:
+      DATABASE_URL: ""
+      DATABASE_URL_FILE: /run/secrets/database_url
+    volumes:
+      - ${AICOMPANY_DATABASE_URL_FILE:?Database URL file required}:/run/secrets/database_url:ro
+    networks:
+      - aicompany
+    depends_on:
+      postgres:
+        condition: service_healthy
+    logging: &bounded-logging
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  backend:
+    restart: unless-stopped
+    environment:
+      AICOMPANY_ENV: production
+      ALLOW_PAID_PROVIDER: "False"
+      AICOMPANY_ALLOWED_ORIGINS: ${AICOMPANY_ALLOWED_ORIGINS:-https://localhost:8444}
+      AICOMPANY_SIGNING_SECRET: ""
+      AICOMPANY_SIGNING_SECRET_FILE: /run/secrets/signing
+      DATABASE_URL: ""
+      DATABASE_URL_FILE: /run/secrets/database_url
+      REDIS_URL: ""
+      REDIS_URL_FILE: /run/secrets/redis_url
+      AICOMPANY_REPOSITORY_ADAPTER: postgresql
+      AICOMPANY_QUEUE_BACKEND: redis
+      AICOMPANY_ARTIFACT_STORAGE: local
+    volumes:
+      - ${AICOMPANY_SIGNING_SECRET_FILE:?Signing secret file required}:/run/secrets/signing:ro
+      - ${AICOMPANY_DATABASE_URL_FILE:?Database URL file required}:/run/secrets/database_url:ro
+      - ${AICOMPANY_REDIS_URL_FILE:?Redis URL file required}:/run/secrets/redis_url:ro
+    mem_limit: 768m
+    cpus: 1.0
+    depends_on:
+      migration:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    logging: *bounded-logging
+
+  worker:
+    restart: unless-stopped
+    environment:
+      AICOMPANY_ENV: production
+      ALLOW_PAID_PROVIDER: "False"
+      AICOMPANY_ALLOWED_ORIGINS: ${AICOMPANY_ALLOWED_ORIGINS:-https://localhost:8444}
+      AICOMPANY_SIGNING_SECRET: ""
+      AICOMPANY_SIGNING_SECRET_FILE: /run/secrets/signing
+      DATABASE_URL: ""
+      DATABASE_URL_FILE: /run/secrets/database_url
+      REDIS_URL: ""
+      REDIS_URL_FILE: /run/secrets/redis_url
+      AICOMPANY_REPOSITORY_ADAPTER: postgresql
+      AICOMPANY_QUEUE_BACKEND: redis
+      AICOMPANY_ARTIFACT_STORAGE: local
+    volumes:
+      - ${AICOMPANY_SIGNING_SECRET_FILE:?Signing secret file required}:/run/secrets/signing:ro
+      - ${AICOMPANY_DATABASE_URL_FILE:?Database URL file required}:/run/secrets/database_url:ro
+      - ${AICOMPANY_REDIS_URL_FILE:?Redis URL file required}:/run/secrets/redis_url:ro
+    mem_limit: 768m
+    cpus: 1.0
+    depends_on:
+      migration:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    logging: *bounded-logging
+
+  frontend:
+    restart: unless-stopped
+    ports: !override []
+    build:
+      args:
+        VITE_API_BASE_URL: ${AICOMPANY_PUBLIC_API_URL:-https://localhost:8443}
+    mem_limit: 256m
+    cpus: 0.5
+    logging: *bounded-logging
+
+  gateway:
+    restart: unless-stopped
+    mem_limit: 256m
+    cpus: 0.5
+    logging: *bounded-logging
+
+  postgres:
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ""
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    volumes:
+      - ${AICOMPANY_POSTGRES_PASSWORD_FILE:?PostgreSQL password file required}:/run/secrets/postgres_password:ro
+    mem_limit: 1g
+    cpus: 1.0
+    logging: *bounded-logging
+
+  redis:
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--aclfile", "/run/secrets/redis.acl"]
+    volumes:
+      - ${AICOMPANY_REDIS_ACL_FILE:?Redis ACL file required}:/run/secrets/redis.acl:ro
+    healthcheck:
+      test: ["CMD-SHELL", "REDISCLI_AUTH=\"$$(sed -n 's/^user default.*>\\([^ ]*\\).*/\\1/p' /run/secrets/redis.acl)\" redis-cli --no-auth-warning ping"]
+    mem_limit: 512m
+    cpus: 0.5
+    logging: *bounded-logging

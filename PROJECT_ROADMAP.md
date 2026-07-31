@@ -8,15 +8,15 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 140
+## Current baseline: Mission 141
 
-Mission 1-140 completion means completion of each Mission's explicitly bounded
+Mission 1-141 completion means completion of each Mission's explicitly bounded
 Contract, Foundation, Fake/Offline, or Local Integration scope. It does not
 mean that Project APEX as a whole is Production Ready.
 
-Current product status: **Local/Fake SaaS Beta + Production Foundation with a
-bounded PostgreSQL Production Integration**. Mission 121-130 are Foundation
-work. Mission 132 begins the approved Production Execution Layer.
+Current product status: **Local/Fake SaaS Beta + bounded single-host Production
+Integration**. Mission 121-130 are Foundation work; Missions 131-141 integrate
+and validate the approved local Production Execution and Operations layers.
 
 ### Completion level vocabulary
 
@@ -969,6 +969,24 @@ today/7-day/30-day filter is invented.
 - No certificate/private key is tracked; public CA, DNS, external load
   balancer, WAF, CDN, and Cloud TLS remain unimplemented.
 
+### Mission 141 — Single-host Production Deployment Validation (Complete, local Production Integration)
+
+- Adds a production-like Compose overlay with external file-based Secret
+  injection, a one-shot migration gate, named PostgreSQL/Redis/Artifact
+  volumes, bounded resources/log rotation, restart policies, and independently
+  scalable Backend and Worker services.
+- Docker E2E verified two Backends and two Workers, HTTPS API/Frontend,
+  readiness, Job execution, Workspace isolation, Local Artifact persistence,
+  single-instance failover, dependency restart plus application reconnection,
+  and PostgreSQL/Artifact backup restoration into separate verification
+  targets.
+- Tests: two focused contracts and Backend 396 tests. The operational procedure
+  is documented in `OPERATIONS_RUNBOOK.md`; no Secret, certificate, backup, or
+  validation data remains in Git or the running Docker environment.
+- This is a single-host local Production Integration, not Cloud HA or a
+  Production Ready declaration. Public TLS/DNS, Secret Manager, real Object
+  Storage, managed databases, and the official next Mission remain undefined.
+
 ### Unnumbered next-Phase candidates
 
 No candidate below is an approved Phase or Mission:
@@ -978,8 +996,8 @@ No candidate below is an approved Phase or Mission:
 3. Real Billing and approved Media Provider integrations.
 
 Workflow, Plugin, and Marketplace expansion are not current priority
-candidates. The first production bottleneck requires explicit user approval
-before a Mission number or implementation scope is assigned.
+candidates. Any work after Mission 141 requires explicit user approval before
+a Mission number or implementation scope is assigned.
 
 ## Longer-term phases
 

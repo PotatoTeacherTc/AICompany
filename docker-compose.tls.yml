@@ -3,6 +3,7 @@ services:
     ports: !override
       - "127.0.0.1:${AICOMPANY_API_PORT:-8000}:8000"
       - "127.0.0.1:${AICOMPANY_HTTPS_PORT:-8443}:8443"
+      - "127.0.0.1:${AICOMPANY_WEB_HTTPS_PORT:-8444}:8444"
     volumes: !override
       - ./Automation/gateway-tls.conf:/etc/nginx/conf.d/default.conf:ro
       - ${AICOMPANY_TLS_CERT_FILE:?TLS certificate file required}:/run/tls/tls.crt:ro

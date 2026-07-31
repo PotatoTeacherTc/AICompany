@@ -97,7 +97,9 @@ def create_production_app(environment=None):
             instance_id=values.get("AICOMPANY_INSTANCE_ID") or socket.gethostname(),
         ),
         metrics=metrics,
-        security_settings=SecuritySettings.from_environment(values),
+        security_settings=SecuritySettings.from_environment(
+            {key: value for key, value in values.items() if not key.endswith("_FILE")}
+        ),
         infrastructure_resources=resources,
     ))
 

@@ -3,6 +3,8 @@
 import argparse
 import os
 
+from core.production_config import resolve_secret_files
+
 
 LATEST_VERSION = 1
 MIGRATIONS = (
@@ -106,7 +108,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description="AICompany PostgreSQL migrations")
     parser.add_argument("command", choices=("upgrade", "status"))
     args = parser.parse_args(argv)
-    database_url = os.environ.get("DATABASE_URL")
+    database_url = resolve_secret_files(os.environ).get("DATABASE_URL")
     if not database_url:
         raise SystemExit("DATABASE_URL is required")
     connection = connect_postgresql(database_url)

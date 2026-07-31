@@ -2,17 +2,17 @@
 
 ## Mission
 
-Official current baseline: **Mission 140**.
+Official current baseline: **Mission 141**.
 
-Current product status: **Local/Fake SaaS Beta + Production Foundation**.
+Current product status: **Local/Fake SaaS Beta + bounded single-host Production Integration**.
 
-Mission 1-140 completion means only that each Mission's bounded Contract,
+Mission 1-141 completion means only that each Mission's bounded Contract,
 Foundation, Fake/Offline, or Local Integration scope is complete. Project APEX
-as a whole is not Production Ready. The official next Mission is Mission 141.
+as a whole is not Production Ready. The official next Mission is undefined.
 
-Current verification baseline: Backend 394 tests, Frontend two tests,
-Frontend production build, and a locally scaled Docker development stack with
-two Backends and two Workers.
+Current verification baseline: Backend 396 tests, Frontend two tests,
+Frontend production build, and a production-like single-host Docker stack with
+two Backends and two Workers behind a local TLS Gateway.
 
 ## Completion levels
 
@@ -35,14 +35,20 @@ Usage and Quota; Department and Worker contracts; explicit loopback Ollama
 Text; Fake media; Dashboard reads; Local/Fake Subscription, Billing, and
 Admin; and Docker-based local execution.
 
-The approved Production Operations sequence continues through Mission 141.
-Mission 138 is Artifact Object Storage Integration; later work covers local
-configuration security, TLS gateway foundation, and single-host validation.
+The approved Production Operations sequence is complete through Mission 141.
 Real Billing or approved Media Providers remain unnumbered candidates.
 Workflow, Plugin, and Marketplace expansion is not a current priority
 candidate. Enterprise and AICompany v1.0 remain unimplemented.
 
 ## Verified completed capabilities
+
+- Mission 141: the production-like Compose overlay injects Secrets from
+  external files, gates startup on a one-shot migration, bounds resources and
+  Docker logs, and scales Backend/Worker instances independently. Docker E2E
+  verified HTTPS API/Frontend, Job and Artifact persistence, Workspace
+  isolation, one-instance failover, dependency restart and application
+  reconnection, plus PostgreSQL and Artifact restoration into separate empty
+  targets. This is single-host Production Integration, not Cloud HA.
 
 The following status is based on the current source tree and automated tests,
 not inferred from a missing historical mission log.

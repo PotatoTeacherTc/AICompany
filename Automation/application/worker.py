@@ -15,11 +15,12 @@ from core.redis_job_queue import QueueConfig, QueueFactory, connect_redis
 from core.status import PipelineStatus
 from core.retry_recovery import RetryPolicy
 from core.readiness import RedisWorkerReadiness
+from core.production_config import validate_production_configuration
 from core.usage_engine import UsageEngine
 
 
 def build_worker(environment=None):
-    values = os.environ if environment is None else environment
+    values = validate_production_configuration(os.environ if environment is None else environment)
     repository, repository_resources = create_state_repository_from_environment(values)
     config = QueueConfig.from_environment(values)
     if config.backend != "redis":

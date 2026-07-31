@@ -1,10 +1,10 @@
 # AICompany
 
-Official baseline: **Mission 140**. Current product status:
-**Local/Fake SaaS Beta + Production Foundation with bounded PostgreSQL/Redis
-local operations integration**. Completion through Mission 140 is limited to each Mission's documented Contract, Foundation,
+Official baseline: **Mission 141**. Current product status:
+**Local/Fake SaaS Beta + bounded single-host Production Integration**.
+Completion through Mission 141 is limited to each Mission's documented Contract, Foundation,
 Fake/Offline, or Local Integration scope; Project APEX is not Production Ready.
-The official next Mission is Mission 141 Single-host Production Deployment Validation.
+The official next Mission is undefined.
 
 AI 기반 자동화와 콘텐츠 제작 시스템을 연구하는 개인 AI 프로젝트 워크스페이스입니다.
 
@@ -647,6 +647,20 @@ HTTP redirects to loopback HTTPS port 8443. The Gateway accepts TLS 1.2/1.3,
 bounds requests/timeouts, overwrites forwarded headers, and emits security
 headers. Self-signed certificates are for local verification only; public
 certificate issuance, DNS, WAF, CDN, and external load balancing are absent.
+
+Mission 141 adds the optional production-like overlay. After supplying every
+external file path described in `OPERATIONS_RUNBOOK.md`, compose it with the
+base and TLS files:
+
+```powershell
+docker compose -f docker-compose.yml -f docker-compose.tls.yml -f docker-compose.production.yml up -d --scale backend=2 --scale worker=2
+```
+
+The overlay runs a one-shot migration before Backend/Worker startup, uses
+authenticated PostgreSQL/Redis configuration, persists Artifact bytes in the
+shared named volume, and applies restart/resource/log bounds. Local validation
+covered failover and backup/restore, but this is not Cloud HA and does not
+include public TLS, DNS, a Secret Manager, or real Object Storage.
 
 The initial Web Dashboard is in `Web/`. Run `npm.cmd install`, set
 `VITE_API_BASE_URL` to the Backend loopback URL, then use `npm.cmd run dev`.
