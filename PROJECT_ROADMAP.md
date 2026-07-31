@@ -8,9 +8,9 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 139
+## Current baseline: Mission 140
 
-Mission 1-139 completion means completion of each Mission's explicitly bounded
+Mission 1-140 completion means completion of each Mission's explicitly bounded
 Contract, Foundation, Fake/Offline, or Local Integration scope. It does not
 mean that Project APEX as a whole is Production Ready.
 
@@ -955,6 +955,19 @@ today/7-day/30-day filter is invented.
   Secret value or source path.
 - Tests: three focused tests and Backend 392 tests. No Secret Manager, Vault,
   real credential, or generated user Secret is included.
+
+### Mission 140 — TLS and Gateway Security Foundation (Complete, local TLS validation)
+
+- Hardens the existing Nginx Gateway with bounded request bodies/timeouts,
+  overwritten forwarding headers, no-store sensitive routes, and standard
+  security headers while preserving dynamic Backend failover.
+- An optional Compose override mounts an externally supplied certificate/key,
+  enables TLS 1.2/1.3 on loopback 8443, and redirects loopback HTTP to HTTPS.
+- Tests: two focused tests, Backend 394 tests, and Docker verification with an
+  ephemeral self-signed certificate: HTTPS readiness 200, HSTS present, and
+  HTTP 308 redirect. Temporary certificate files were removed.
+- No certificate/private key is tracked; public CA, DNS, external load
+  balancer, WAF, CDN, and Cloud TLS remain unimplemented.
 
 ### Unnumbered next-Phase candidates
 

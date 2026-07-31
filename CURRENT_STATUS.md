@@ -2,15 +2,15 @@
 
 ## Mission
 
-Official current baseline: **Mission 139**.
+Official current baseline: **Mission 140**.
 
 Current product status: **Local/Fake SaaS Beta + Production Foundation**.
 
-Mission 1-139 completion means only that each Mission's bounded Contract,
+Mission 1-140 completion means only that each Mission's bounded Contract,
 Foundation, Fake/Offline, or Local Integration scope is complete. Project APEX
-as a whole is not Production Ready. The official next Mission is Mission 140.
+as a whole is not Production Ready. The official next Mission is Mission 141.
 
-Current verification baseline: Backend 392 tests, Frontend two tests,
+Current verification baseline: Backend 394 tests, Frontend two tests,
 Frontend production build, and a locally scaled Docker development stack with
 two Backends and two Workers.
 
@@ -46,6 +46,12 @@ candidate. Enterprise and AICompany v1.0 remain unimplemented.
 
 The following status is based on the current source tree and automated tests,
 not inferred from a missing historical mission log.
+
+- Mission 140: the existing Gateway now bounds bodies and proxy timeouts,
+  overwrites forwarded headers, prevents sensitive-route caching, and supports
+  an optional externally mounted TLS certificate through a Compose override.
+  Docker verified local self-signed TLS, HSTS, readiness, and HTTP redirect;
+  temporary key material was removed. Public TLS/DNS is not implemented.
 
 - Mission 139: production startup now rejects missing/insecure database,
   authenticated Redis, signing, storage, origin, or paid-provider policy

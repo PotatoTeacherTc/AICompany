@@ -1,10 +1,10 @@
 # AICompany
 
-Official baseline: **Mission 139**. Current product status:
+Official baseline: **Mission 140**. Current product status:
 **Local/Fake SaaS Beta + Production Foundation with bounded PostgreSQL/Redis
-local operations integration**. Completion through Mission 139 is limited to each Mission's documented Contract, Foundation,
+local operations integration**. Completion through Mission 140 is limited to each Mission's documented Contract, Foundation,
 Fake/Offline, or Local Integration scope; Project APEX is not Production Ready.
-The official next Mission is Mission 140 TLS and Gateway Security Foundation.
+The official next Mission is Mission 141 Single-host Production Deployment Validation.
 
 AI 기반 자동화와 콘텐츠 제작 시스템을 연구하는 개인 AI 프로젝트 워크스페이스입니다.
 
@@ -521,7 +521,7 @@ this feature.
 
 ## Current Backend scope and next work
 
-The official baseline is Mission 139. Mission 1-139 completion means completion
+The official baseline is Mission 140. Mission 1-140 completion means completion
 of each Mission's bounded Contract, Foundation, Fake/Offline, or Local
 Integration scope; Project APEX is not Production Ready. The current product
 state is **Local/Fake SaaS Beta + Production Foundation**.
@@ -635,6 +635,18 @@ Mission 139 adds production-only configuration checks and Docker-secret-
 compatible `_FILE` inputs for signing material and dependency URLs. Direct and
 file input cannot be combined. Local/test defaults remain available; no real
 Secret, Vault, or Cloud Secret Manager is stored in this repository.
+
+Mission 140 provides an optional local TLS Gateway override. Supply certificate
+and key paths outside Git, then run:
+
+```powershell
+docker compose -f docker-compose.yml -f docker-compose.tls.yml up -d
+```
+
+HTTP redirects to loopback HTTPS port 8443. The Gateway accepts TLS 1.2/1.3,
+bounds requests/timeouts, overwrites forwarded headers, and emits security
+headers. Self-signed certificates are for local verification only; public
+certificate issuance, DNS, WAF, CDN, and external load balancing are absent.
 
 The initial Web Dashboard is in `Web/`. Run `npm.cmd install`, set
 `VITE_API_BASE_URL` to the Backend loopback URL, then use `npm.cmd run dev`.
