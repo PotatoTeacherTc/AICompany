@@ -24,6 +24,8 @@ from core.plans import PlanManager
 from core.redis_job_queue import QueueConfig, QueueFactory, connect_redis
 from core.readiness import RedisWorkerReadiness
 from core.operational_metrics import InMemoryOperationalMetrics
+from core.production_config import validate_production_configuration
+from core.security import SecuritySettings
 from core.task_queue import InProcessJobWorker
 from core.usage_engine import UsageEngine
 
@@ -50,8 +52,8 @@ def create_state_repository_from_environment(environment=None):
 
 
 def create_production_app(environment=None):
-    repository, resources = create_state_repository_from_environment(environment)
-    values = os.environ if environment is None else environment
+    values = validate_production_configuration(os.environ if environment is None else environment)
+    repository, resources = create_state_repository_from_environment(values)
     queue_config = QueueConfig.from_environment(values)
     redis_client = None
     if queue_config.backend == "redis":
@@ -95,6 +97,7 @@ def create_production_app(environment=None):
             instance_id=values.get("AICOMPANY_INSTANCE_ID") or socket.gethostname(),
         ),
         metrics=metrics,
+        security_settings=SecuritySettings.from_environment(values),
         infrastructure_resources=resources,
     ))
 

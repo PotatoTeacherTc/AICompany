@@ -3,6 +3,7 @@ import threading
 import time
 from dataclasses import dataclass
 from urllib.parse import urlparse
+from core.production_config import resolve_secret_files
 
 
 @dataclass(frozen=True)
@@ -16,7 +17,7 @@ class SecuritySettings:
 
     @classmethod
     def from_environment(cls, environ=None):
-        values = os.environ if environ is None else environ
+        values = resolve_secret_files(os.environ if environ is None else environ)
         environment = values.get("AICOMPANY_ENV", "development").strip().lower()
         if environment not in {"development", "test", "production"}:
             raise ValueError("invalid_environment")

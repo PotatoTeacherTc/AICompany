@@ -8,9 +8,9 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 138
+## Current baseline: Mission 139
 
-Mission 1-138 completion means completion of each Mission's explicitly bounded
+Mission 1-139 completion means completion of each Mission's explicitly bounded
 Contract, Foundation, Fake/Offline, or Local Integration scope. It does not
 mean that Project APEX as a whole is Production Ready.
 
@@ -941,6 +941,20 @@ today/7-day/30-day filter is invented.
   read verification with exact test Artifact cleanup.
 - No real S3-compatible product, Cloud account, credential, or public URL is
   implemented.
+
+### Mission 139 — Production Configuration Security (Complete, local contract)
+
+- Adds production-only validation for PostgreSQL, authenticated Redis,
+  Local Artifact storage, HTTPS origins, strong signing material, and the
+  immutable paid-provider-off policy.
+- Existing environment variables remain supported; matching `_FILE` inputs
+  provide Docker-secret-compatible loading with duplicate-source, size,
+  missing-file, and empty-value rejection. Files are reread on application
+  restart so external rotation is not blocked.
+- Local/test modes retain safe defaults. Errors expose categories only and no
+  Secret value or source path.
+- Tests: three focused tests and Backend 392 tests. No Secret Manager, Vault,
+  real credential, or generated user Secret is included.
 
 ### Unnumbered next-Phase candidates
 

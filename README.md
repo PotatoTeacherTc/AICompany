@@ -1,10 +1,10 @@
 # AICompany
 
-Official baseline: **Mission 138**. Current product status:
+Official baseline: **Mission 139**. Current product status:
 **Local/Fake SaaS Beta + Production Foundation with bounded PostgreSQL/Redis
-local operations integration**. Completion through Mission 138 is limited to each Mission's documented Contract, Foundation,
+local operations integration**. Completion through Mission 139 is limited to each Mission's documented Contract, Foundation,
 Fake/Offline, or Local Integration scope; Project APEX is not Production Ready.
-The official next Mission is Mission 139 Production Configuration Security.
+The official next Mission is Mission 140 TLS and Gateway Security Foundation.
 
 AI 기반 자동화와 콘텐츠 제작 시스템을 연구하는 개인 AI 프로젝트 워크스페이스입니다.
 
@@ -521,7 +521,7 @@ this feature.
 
 ## Current Backend scope and next work
 
-The official baseline is Mission 138. Mission 1-138 completion means completion
+The official baseline is Mission 139. Mission 1-139 completion means completion
 of each Mission's bounded Contract, Foundation, Fake/Offline, or Local
 Integration scope; Project APEX is not Production Ready. The current product
 state is **Local/Fake SaaS Beta + Production Foundation**.
@@ -630,6 +630,11 @@ contract. Docker selects `AICOMPANY_ARTIFACT_STORAGE=local` with the shared
 `/data/artifacts` volume; unset local/test composition safely uses memory-only
 `fake_s3`. PostgreSQL stores metadata and safe internal keys only. No AWS, GCP,
 Azure, S3-compatible service, credential, or public URL is configured.
+
+Mission 139 adds production-only configuration checks and Docker-secret-
+compatible `_FILE` inputs for signing material and dependency URLs. Direct and
+file input cannot be combined. Local/test defaults remain available; no real
+Secret, Vault, or Cloud Secret Manager is stored in this repository.
 
 The initial Web Dashboard is in `Web/`. Run `npm.cmd install`, set
 `VITE_API_BASE_URL` to the Backend loopback URL, then use `npm.cmd run dev`.
