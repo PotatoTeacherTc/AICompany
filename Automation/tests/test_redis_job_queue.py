@@ -32,6 +32,8 @@ class FakeRedis:
         self._check()
         values = self.lists.setdefault(key, [])
         self.lists[key] = [item for item in values if item != value]
+    def lrange(self, key, start, end):
+        self._check(); return list(self.lists.get(key, []))
 
     def ping(self): self._check(); return True
     def close(self): self.closed = True

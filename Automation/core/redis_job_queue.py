@@ -154,6 +154,30 @@ class RedisJobQueue(PersistentJobQueue):
         except Exception:
             raise RuntimeError("redis_queue_unavailable") from None
 
+    def recover_abandoned(self, workspace_id, lock_manager):
+        try:
+            recovered = 0
+            for value in self.redis.lrange(self._processing(workspace_id), 0, -1):
+                job_id = value.decode("utf-8") if isinstance(value, bytes) else str(value)
+                if lock_manager.is_locked(workspace_id, job_id):
+                    continue
+                job = self.get(job_id, workspace_id)
+                if job is None or job.status != JobStatus.RUNNING:
+                    self.acknowledge(job_id, workspace_id)
+                    continue
+                from dataclasses import replace
+                pending = replace(job, status=JobStatus.PENDING, claimed_by=None)
+                self._jobs[job_id] = pending
+                self._save(pending)
+                self.acknowledge(job_id, workspace_id)
+                self.redis.rpush(self._pending(workspace_id), job_id)
+                recovered += 1
+            return recovered
+        except RuntimeError:
+            raise
+        except Exception:
+            raise RuntimeError("redis_queue_unavailable") from None
+
     def health(self):
         try:
             return {"ok": bool(self.redis.ping()), "backend": "redis"}

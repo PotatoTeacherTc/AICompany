@@ -1,18 +1,23 @@
 from datetime import datetime
 from pathlib import Path
-from core.execution_history_repository import JsonFileExecutionHistoryRepository
+from core.execution_history_repository import InMemoryExecutionHistoryRepository, JsonFileExecutionHistoryRepository
 
 
 class ExecutionHistory:
 
-    def __init__(self, history_file=None, repository=None):
+    def __init__(self, history_file=None, repository=None, state_repository=None):
 
         self.records = []
 
         self.history_file = Path(history_file) if history_file else (
             Path(__file__).parent.parent / "logs" / "execution_history.json"
         )
-        self.repository = repository or JsonFileExecutionHistoryRepository(self.history_file)
+        self.repository = repository or (
+            InMemoryExecutionHistoryRepository()
+            if state_repository is not None
+            else JsonFileExecutionHistoryRepository(self.history_file)
+        )
+        self.state_repository = state_repository
 
 
         self.load()
@@ -327,6 +332,8 @@ class ExecutionHistory:
                 break
         else:
             self.records.append(record)
+        if self.state_repository is not None:
+            self.state_repository.save("execution", job.job_id, job.workspace_id, record)
         self.save()
 
 
@@ -405,8 +412,13 @@ class ExecutionHistory:
         if limit is not None and (not isinstance(limit, int) or limit < 0):
             raise ValueError("limit must be a non-negative integer or None")
 
+        source = (
+            self.state_repository.list("execution", workspace_id)
+            if self.state_repository is not None and workspace_id is not None
+            else self.records
+        )
         records = sorted(
-            self.records,
+            source,
             key=lambda record: record.get("completed_at") or "",
             reverse=True,
         )

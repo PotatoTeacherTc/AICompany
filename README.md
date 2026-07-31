@@ -602,8 +602,11 @@ external Worker are not part of Mission 132.
 
 Mission 133 adds owner-token TTL distributed locking. Redis acquisition is
 atomic and release/renew verify ownership; stale Locks expire and failures are
-closed. The approved next Mission is Mission 134 Distributed Worker. Later
-Production Execution Layer work covers recovery/DLQ and
+closed. Mission 134 adds the separate `python -m application.worker` process;
+Compose starts it beside Backend. It consumes only the deterministic
+`offline-success` target and writes Job History/Usage to PostgreSQL. The
+approved next Mission is Mission 135 Recovery/DLQ. Later
+Production Execution Layer work covers multi-instance validation and
 multi-instance validation. Object Storage, deployment/TLS/Secret Manager, and
 real Billing/approved Media Provider integration remain outside this bundle.
 Workflow, Plugin, and Marketplace expansion is not a current priority.

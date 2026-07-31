@@ -56,7 +56,7 @@ def create_production_app(environment=None):
             raise RuntimeError("redis_queue_connection_failed") from None
     queue = QueueFactory.create(queue_config, repository, redis_client=redis_client)
     worker = InProcessJobWorker(queue)
-    history = ExecutionHistory()
+    history = ExecutionHistory(state_repository=repository)
     artifacts = ArtifactManager()
     usage = UsageEngine(repository)
     execution = PersistentExecutionService(queue, worker, history, artifacts, usage)

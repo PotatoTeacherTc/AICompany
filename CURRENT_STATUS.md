@@ -2,15 +2,15 @@
 
 ## Mission
 
-Official current baseline: **Mission 133**.
+Official current baseline: **Mission 134**.
 
 Current product status: **Local/Fake SaaS Beta + Production Foundation**.
 
-Mission 1-133 completion means only that each Mission's bounded Contract,
+Mission 1-134 completion means only that each Mission's bounded Contract,
 Foundation, Fake/Offline, or Local Integration scope is complete. Project APEX
 as a whole is not Production Ready. The official next Mission is undefined.
 
-Current verification baseline: Backend 369 tests, Frontend two tests,
+Current verification baseline: Backend 373 tests, Frontend two tests,
 Frontend production build, and a healthy four-service Docker development
 stack.
 
@@ -46,6 +46,13 @@ candidate. Enterprise and AICompany v1.0 remain unimplemented.
 
 The following status is based on the current source tree and automated tests,
 not inferred from a missing historical mission log.
+
+- Mission 134: a separate production Worker entrypoint consumes Redis Jobs,
+  acquires the Mission 133 Lock, and reuses PersistentExecutionService for
+  PipelineResult, PostgreSQL ExecutionHistory, and Usage. Compose separates
+  Backend and Worker; polling and shutdown are bounded. The only built-in
+  target is deterministic Fake/Offline. Retry/DLQ expansion remains Mission
+  135.
 
 - Mission 133: owner-token and mandatory TTL Lock leases now have memory and
   Redis implementations. Redis uses atomic NX/PX acquisition and owner-checked
@@ -690,14 +697,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current Backend suite contains **369 tests**. Its expected command is:
+The current Backend suite contains **373 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Current verification result: **369 passed, 0 failed** (one Docker PostgreSQL
+Current verification result: **373 passed, 0 failed** (one Docker PostgreSQL
 integration test is conditionally skipped outside the integration environment
 and passed against Compose PostgreSQL).
 

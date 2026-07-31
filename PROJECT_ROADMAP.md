@@ -8,9 +8,9 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 133
+## Current baseline: Mission 134
 
-Mission 1-133 completion means completion of each Mission's explicitly bounded
+Mission 1-134 completion means completion of each Mission's explicitly bounded
 Contract, Foundation, Fake/Offline, or Local Integration scope. It does not
 mean that Project APEX as a whole is Production Ready.
 
@@ -868,6 +868,18 @@ today/7-day/30-day filter is invented.
   Mission 134.
 - Tests: four focused tests, Backend 369 tests, and real two-client Redis
   competition verification.
+
+### Mission 134 — Distributed Worker Execution (Complete, Offline target)
+
+- Adds a separately runnable Worker entrypoint that reserves Redis Jobs,
+  obtains the owner-token Lock, executes through PersistentExecutionService,
+  and records PipelineResult, ExecutionHistory, and Usage in PostgreSQL.
+- Compose runs Backend and Worker separately. Polling is bounded, shutdown is
+  graceful, and an abandoned processing item is minimally returned after its
+  Lock expires. Only the deterministic `offline-success` target is registered;
+  real providers remain disabled. Extended Retry/DLQ remains Mission 135.
+- Tests: four focused tests, Backend 373 tests, and real Backend→Redis→Worker→
+  PostgreSQL→Backend Docker verification.
 
 ### Unnumbered next-Phase candidates
 

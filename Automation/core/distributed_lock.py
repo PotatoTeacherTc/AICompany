@@ -63,6 +63,11 @@ class InMemoryDistributedLock:
             self._values[key] = (lease.owner_token, self.clock() + lease.ttl_seconds)
             return True
 
+    def is_locked(self, workspace_id, job_id):
+        with self._lock:
+            value = self._values.get((workspace_id, job_id))
+            return bool(value and value[1] > self.clock())
+
 
 class RedisDistributedLock:
     def __init__(self, redis_client, namespace="aicompany"):
@@ -97,6 +102,12 @@ class RedisDistributedLock:
                 self._key(lease.workspace_id, lease.job_id), lease.owner_token,
                 max(1, int(lease.ttl_seconds * 1000)),
             ))
+        except Exception:
+            raise RuntimeError("distributed_lock_unavailable") from None
+
+    def is_locked(self, workspace_id, job_id):
+        try:
+            return bool(self.redis.exists(self._key(workspace_id, job_id)))
         except Exception:
             raise RuntimeError("distributed_lock_unavailable") from None
 
