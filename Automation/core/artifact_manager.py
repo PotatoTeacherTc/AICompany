@@ -20,6 +20,7 @@ class ArtifactManager:
         "task_id",
         "stage",
         "status",
+        "updated_at",
     )
 
     def __init__(self, repository=None):
@@ -44,19 +45,21 @@ class ArtifactManager:
         if not isinstance(producer_pipeline, str) or not producer_pipeline:
             raise ValueError("producer_pipeline must be a non-empty string")
 
+        created_at = datetime.now().isoformat()
         artifact = {
             "artifact_id": uuid.uuid4().hex,
             "artifact_type": artifact_type,
             "mime_type": mimetypes.guess_type(path.name)[0] or "application/octet-stream",
             "filename": path.name,
             "size": path.stat().st_size,
-            "created_at": datetime.now().isoformat(),
+            "created_at": created_at,
             "producer_pipeline": producer_pipeline,
             "workspace_id": workspace_id or "default",
             "mission_id": mission_id,
             "task_id": task_id,
             "stage": stage or producer_pipeline,
             "status": status,
+            "updated_at": created_at,
             "path": str(path),
         }
         self.repository.save(artifact)
@@ -83,6 +86,26 @@ class ArtifactManager:
         if artifact is None:
             return False
         return self.repository.delete(artifact_id)
+
+    def archive(self, artifact_id, workspace_id):
+        return self._transition(artifact_id, workspace_id, "ARCHIVED")
+
+    def restore(self, artifact_id, workspace_id):
+        return self._transition(artifact_id, workspace_id, "AVAILABLE")
+
+    def _transition(self, artifact_id, workspace_id, target_status):
+        artifact = self.get(artifact_id, workspace_id)
+        if artifact is None:
+            return None
+        current_status = artifact.get("status", "AVAILABLE")
+        if current_status == "MISSING":
+            raise ValueError("artifact_missing")
+        if current_status == target_status:
+            return artifact
+        artifact["status"] = target_status
+        artifact["updated_at"] = datetime.now().isoformat()
+        self.repository.save(artifact)
+        return self.get(artifact_id, workspace_id)
 
     def register_files(
         self,

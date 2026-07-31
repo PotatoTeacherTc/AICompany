@@ -118,6 +118,29 @@ class ArtifactApplicationTests(unittest.TestCase):
         self.assertEqual("MISSING", restored["status"])
         self.assertNotIn(str(self.storage), repr(restored))
 
+    def test_archive_restore_are_idempotent_persistent_and_workspace_scoped(self):
+        archived = self.service.archive("workspace-a", self.text["artifact_id"])
+        again = self.service.archive("workspace-a", self.text["artifact_id"])
+        self.assertEqual("ARCHIVED", archived["status"])
+        self.assertEqual(archived, again)
+        self.assertTrue(self.text_path.is_file())
+        self.assertIsNone(self.service.archive("workspace-b", self.text["artifact_id"]))
+        self.assertEqual(
+            1, self.service.list("workspace-a", status="ARCHIVED")["total"]
+        )
+
+        restarted = ArtifactApplicationService(
+            ArtifactManager(FileArtifactRepository(self.repository_file, self.storage))
+        )
+        restored = restarted.restore("workspace-a", self.text["artifact_id"])
+        restored_again = restarted.restore("workspace-a", self.text["artifact_id"])
+        self.assertEqual("AVAILABLE", restored["status"])
+        self.assertEqual(restored, restored_again)
+        self.assertEqual("safe artifact body", restarted.content(
+            "workspace-a", self.text["artifact_id"]
+        )["content"])
+        self.assertNotIn(str(self.storage), repr(restored))
+
     def test_corrupt_and_traversal_metadata_are_ignored(self):
         self.repository_file.write_text(
             '[{"artifact_id":"bad","workspace_id":"workspace-a",'
@@ -135,8 +158,9 @@ class ArtifactApplicationTests(unittest.TestCase):
         users = UserService()
         owner = users.create("owner@example.com")
         outsider = users.create("outsider@example.com")
+        member = users.create("member@example.com")
         credentials = CredentialService(users)
-        for user in (owner, outsider):
+        for user in (owner, outsider, member):
             credentials.set_password(user["user_id"], "safe-passphrase")
         sessions = SessionService()
         login = LoginService(
@@ -148,6 +172,7 @@ class ArtifactApplicationTests(unittest.TestCase):
         workspaces = WorkspaceService()
         memberships = WorkspaceMembershipService(workspaces, users)
         workspace = memberships.create_workspace("Artifacts", owner["user_id"])
+        memberships.add(workspace["workspace_id"], member["user_id"], "MEMBER")
 
         owned_path = self.storage / "owned.txt"
         owned_path.write_text("owned", encoding="utf-8")
@@ -179,9 +204,17 @@ class ArtifactApplicationTests(unittest.TestCase):
 
         owner_headers = headers("owner@example.com")
         outsider_headers = headers("outsider@example.com")
+        member_headers = headers("member@example.com")
         base = "/workspaces/{}/artifacts".format(workspace["workspace_id"])
         self.assertEqual(401, client.get(base).status_code)
         self.assertEqual(403, client.get(base, headers=outsider_headers).status_code)
+        self.assertEqual(
+            403,
+            client.post(
+                base + "/" + owned["artifact_id"] + "/archive",
+                headers=member_headers,
+            ).status_code,
+        )
         listed = client.get(base, headers=owner_headers)
         detail = client.get(base + "/" + owned["artifact_id"], headers=owner_headers)
         content = client.get(
@@ -190,6 +223,18 @@ class ArtifactApplicationTests(unittest.TestCase):
         self.assertEqual(200, listed.status_code)
         self.assertEqual(200, detail.status_code)
         self.assertEqual("owned", content.json()["content"])
+        archived = client.post(
+            base + "/" + owned["artifact_id"] + "/archive", headers=owner_headers
+        )
+        self.assertEqual("ARCHIVED", archived.json()["status"])
+        self.assertEqual(
+            1,
+            client.get(base + "?status=ARCHIVED", headers=member_headers).json()["total"],
+        )
+        restored_response = client.post(
+            base + "/" + owned["artifact_id"] + "/restore", headers=owner_headers
+        )
+        self.assertEqual("AVAILABLE", restored_response.json()["status"])
         for response in (listed, detail, content):
             self.assertNotIn(str(self.storage), response.text)
             self.assertNotIn(owner_headers["Authorization"], response.text)

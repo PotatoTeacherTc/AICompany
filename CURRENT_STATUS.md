@@ -444,13 +444,13 @@ not inferred from a missing historical mission log.
 - AI Departments and Worker capability ownership exist as persistent domain
   contracts and support the creative workflow, but have no authenticated
   management API.
-- Artifact reads and Usage reporting are authenticated and Workspace-scoped.
-  Artifact archive/restore policy and Usage quota/budget enforcement do not
+- Artifact reads, metadata-only archive/restore, and Usage reporting are
+  authenticated and Workspace-scoped. Usage quota/budget enforcement does not
   exist.
 - FakeTextProvider remains the default. Ollama Text is a verified explicit
   loopback option using `qwen2.5:1.5b`; Music, Image, Video, and YouTube remain
   Fake. Paid providers and external media calls remain disabled.
-- The next defined work is Mission 112 — Artifact Lifecycle.
+- The next defined work is Mission 113 — Quota & Budget Enforcement.
 - Mission 109: `PersistentExecutionService` now composes the existing
   PersistentJobQueue, InProcessJobWorker, ExecutionHistory, ArtifactManager,
   and UsageEngine through dependency injection. Workspace-scoped idempotency,
@@ -478,6 +478,13 @@ not inferred from a missing historical mission log.
   or persist live Worker code. Existing Department JSON persistence,
   optimistic revision, duplicate protection, and cross-Workspace checks are
   reused. Five focused tests and the full 276-test suite pass offline.
+- Mission 112: ArtifactManager and ArtifactApplicationService now provide
+  idempotent Workspace-scoped archive/restore over the existing repository.
+  `AVAILABLE` remains the established active state, `ARCHIVED` is persisted,
+  and a missing file remains `MISSING`. OWNER/ADMIN manage lifecycle while
+  MEMBER reads and filters. The operation never deletes a file or breaks
+  existing Job/History references. Six focused tests and the full 277-test
+  suite pass offline.
 
 ## Implemented pipelines
 
@@ -494,14 +501,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **276 tests**. Its expected command is:
+The current suite contains **277 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Current verification result: **276 passed, 0 failed**.
+Current verification result: **277 passed, 0 failed**.
 
 ## Not implemented
 

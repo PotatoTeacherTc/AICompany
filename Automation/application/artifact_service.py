@@ -24,6 +24,7 @@ class ArtifactApplicationService:
         artifact_type=None,
         mission_id=None,
         task_id=None,
+        status=None,
         limit=50,
         offset=0,
     ):
@@ -35,12 +36,15 @@ class ArtifactApplicationService:
             self._identifier(mission_id)
         if task_id is not None:
             self._identifier(task_id)
+        if status is not None:
+            self._identifier(status)
         values = [
             artifact
             for artifact in self.artifact_manager.list(workspace_id)
             if (artifact_type is None or artifact.get("artifact_type") == artifact_type)
             and (mission_id is None or artifact.get("mission_id") == mission_id)
             and (task_id is None or artifact.get("task_id") == task_id)
+            and (status is None or artifact.get("status") == status)
         ]
         values.sort(
             key=lambda artifact: (
@@ -60,6 +64,23 @@ class ArtifactApplicationService:
         self._identifier(workspace_id)
         self._identifier(artifact_id)
         artifact = self.artifact_manager.get(artifact_id, workspace_id)
+        return self._safe_dto(artifact) if artifact else None
+
+    def archive(self, workspace_id, artifact_id):
+        return self._change_status(workspace_id, artifact_id, archive=True)
+
+    def restore(self, workspace_id, artifact_id):
+        return self._change_status(workspace_id, artifact_id, archive=False)
+
+    def _change_status(self, workspace_id, artifact_id, *, archive):
+        self._identifier(workspace_id)
+        self._identifier(artifact_id)
+        operation = (
+            self.artifact_manager.archive
+            if archive
+            else self.artifact_manager.restore
+        )
+        artifact = operation(artifact_id, workspace_id)
         return self._safe_dto(artifact) if artifact else None
 
     def content(self, workspace_id, artifact_id):
@@ -127,6 +148,7 @@ class ArtifactApplicationService:
             "task_id",
             "stage",
             "status",
+            "updated_at",
         )
         return sanitize_for_read(
             {field: artifact.get(field) for field in fields if field in artifact}

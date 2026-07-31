@@ -458,7 +458,7 @@ therefore intentionally not invented. Department persistence, optimistic
 revision, lifecycle, and cross-Workspace validation remain in the existing
 DepartmentManager.
 
-### Mission 112 — Artifact Lifecycle
+### Mission 112 — Artifact Lifecycle (Complete)
 
 - Goal: define a reversible result lifecycle over existing Artifact metadata
   and content access.
@@ -473,6 +473,13 @@ DepartmentManager.
 - Tests: archive/restore idempotency, MISSING behavior, result linkage,
   restart recovery, RBAC, path traversal, corrupt metadata, and
   cross-Workspace denial.
+
+Mission 112 extends the existing manager, repository, application service, and
+authenticated API rather than adding storage. `AVAILABLE` remains the
+codebase's established active state; `ARCHIVED` is a reversible metadata-only
+state and missing files remain `MISSING`. OWNER/ADMIN may archive or restore,
+MEMBER may read and filter by status, and existing Job/History references
+remain valid. No physical file is deleted.
 
 ### Mission 113 — Quota & Budget Enforcement
 

@@ -345,13 +345,18 @@ OWNER and ADMIN manage Departments and assignments; MEMBER may read. Worker
 creation or mutation is not exposed because WorkerDirectory contains injected
 live Worker implementations rather than persistent safe configuration.
 
+Artifact lifecycle endpoints now support path-free Workspace reads plus
+OWNER/ADMIN archive and restore. Archive changes persisted metadata only; it
+does not delete content or invalidate Job/History references. `AVAILABLE` is
+the active state, `ARCHIVED` is reversible, and missing content reports
+`MISSING`.
+
 The next defined sequence is:
 
-1. Mission 112 — Artifact Lifecycle
-2. Mission 113 — Quota & Budget Enforcement
-3. Mission 114 — Plans & Entitlements
-4. Mission 115 — Dashboard API
-5. Mission 116 — Web Dashboard
+1. Mission 113 — Quota & Budget Enforcement
+2. Mission 114 — Plans & Entitlements
+3. Mission 115 — Dashboard API
+4. Mission 116 — Web Dashboard
 
 Ollama Text remains explicit and loopback-only. Music, Image, Video, and
 YouTube remain Fake; no paid Provider or external media API is enabled.

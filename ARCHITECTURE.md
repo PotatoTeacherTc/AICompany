@@ -72,6 +72,7 @@ the workflow; `run()` is the explicit entry point.
 | Persistent execution composition | `application/persistent_execution_service.py`, `core/task_queue.py`, `core/execution_history.py`, `application/backend.py` | Mission 109 composes the existing PersistentJobQueue and InProcessJobWorker with ExecutionHistory, ArtifactManager, and UsageEngine. Workspace-qualified idempotency and configured-Workspace restart loading reuse StateRepository. Queue mutation is protected by an in-process lock, abandoned RUNNING claims recover to PENDING, and registered target callbacks return the existing terminal PipelineResult contract. Completion upserts a prompt-free/path-free Job history summary, validates same-Workspace Artifact IDs already registered by the Pipeline, and records only present Usage fields with attempt-aware idempotency. BackendDependencies may inject this service; it does not add Job/Execution/Batch routes or a distributed worker. |
 | Job and execution API | `application/job_execution_api_service.py`, `api/app.py`, `core/batch.py` | Mission 110 exposes authenticated Workspace-scoped persistent Job submit/list/detail/cancel/retry, ExecutionHistory list/detail, and existing Batch list/detail summaries. It reuses Queue transitions and RBAC, keeps the in-memory Task API separate, strips task text and internal paths, and joins recorded Usage plus path-free Artifact references. PENDING-only cancellation and retryable FAILED requeue are local Queue controls; no Batch mutation, WebSocket, distributed cancellation, or Dashboard model is included. |
 | AI organization API | `application/organization_service.py`, `api/app.py`, `core/department.py` | Mission 111 exposes existing persistent Department lifecycle and Worker assignment/removal through Workspace RBAC. OWNER/ADMIN manage and MEMBER reads. WorkerDirectory remains an in-memory registry of injected live BaseWorker instances, so its API is intentionally read-only and returns only IDs and supported task types. No Worker code creation/upload, secret/provider configuration, Worker persistence, or automatic organization generation is added. |
+| Artifact lifecycle | `core/artifact_manager.py`, `core/artifact_repository.py`, `application/artifact_service.py`, `api/app.py` | Mission 112 adds idempotent, Workspace-scoped `AVAILABLE`/`ARCHIVED` metadata transitions to the existing Artifact store. Missing physical content remains `MISSING`. OWNER/ADMIN archive or restore and MEMBER reads or filters by status. Archive is not deletion: content and existing Job, PipelineResult, History, and Usage references remain intact. API DTOs remain path-free and lifecycle state survives JSON repository restart. |
 | Hybrid creative demo | `application/creative_demo.py`, `main.py` | HybridCreativeDemo creates one Mission, selects the persisted Content Department through DepartmentWorkflow, generates lyrics and a content plan, then invokes the existing Fake music/image/video/YouTube ContentOrchestrator. Its composition reuses JSON StateRepository, FileArtifactRepository, SettingsManager, UsageEngine, History, and local structured Logging. Default execution is fully Fake/Offline; `--local-text` only enables the explicit local Ollama text boundary while all media stages remain Fake. |
 
 ## Current pipeline behavior
@@ -136,9 +137,10 @@ AI provider layer: provider adapters used by pipelines, never directly by UI
 - `create_app(auth_required=True)` enables Bearer checks for workspace/task
   access. MEMBER may access workspace work; OWNER and ADMIN may change
   membership. The default remains false solely for legacy API compatibility.
-- Artifact and Usage application services are read-only Workspace boundaries.
-  Persistent Job/Batch/ExecutionHistory access, Department management,
-  Artifact lifecycle, and quota enforcement are not yet Backend APIs.
+- Artifact and Usage application services are Workspace boundaries. Artifact
+  lifecycle is a metadata-only OWNER/ADMIN mutation; persistent
+  Job/Batch/ExecutionHistory and Department APIs are also available. Quota
+  enforcement is not yet implemented.
 - Future Dashboard and billing layers must access Workspace-scoped application
   services, never filesystem Pipelines, repositories, or provider credentials
   directly. Plans, subscriptions, credits, and payments remain outside the

@@ -375,6 +375,7 @@ def create_app(
         artifact_type: str | None = None,
         mission_id: str | None = None,
         task_id: str | None = None,
+        status: str | None = None,
         limit: int = 50,
         offset: int = 0,
         authorization: str | None = Header(default=None),
@@ -390,6 +391,7 @@ def create_app(
                 artifact_type=artifact_type,
                 mission_id=mission_id,
                 task_id=task_id,
+                status=status,
                 limit=limit,
                 offset=offset,
             )
@@ -420,6 +422,32 @@ def create_app(
 
             return error_response(404, "artifact_not_found", "Artifact not found")
         return value
+
+    @app.post("/workspaces/{workspace_id}/artifacts/{artifact_id}/archive")
+    def archive_artifact(
+        workspace_id: str,
+        artifact_id: str,
+        authorization: str | None = Header(default=None),
+    ):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN"})
+        if denied:
+            return denied
+        return _artifact_lifecycle_response(
+            app, workspace_id, artifact_id, archive=True
+        )
+
+    @app.post("/workspaces/{workspace_id}/artifacts/{artifact_id}/restore")
+    def restore_artifact(
+        workspace_id: str,
+        artifact_id: str,
+        authorization: str | None = Header(default=None),
+    ):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN"})
+        if denied:
+            return denied
+        return _artifact_lifecycle_response(
+            app, workspace_id, artifact_id, archive=False
+        )
 
     @app.get("/workspaces/{workspace_id}/artifacts/{artifact_id}/content")
     def get_artifact_content(
@@ -912,3 +940,22 @@ def _authorize_workspace(app, workspace_id, authorization, roles):
         return error_response(403, "workspace_inactive", "Permission denied")
     from api.errors import error_response
     return error_response(403, "permission_denied", "Permission denied")
+
+
+def _artifact_lifecycle_response(app, workspace_id, artifact_id, *, archive):
+    from api.errors import error_response
+
+    try:
+        operation = (
+            app.state.artifact_service.archive
+            if archive
+            else app.state.artifact_service.restore
+        )
+        value = operation(workspace_id, artifact_id)
+    except (TypeError, ValueError) as error:
+        if str(error) == "artifact_missing":
+            return error_response(409, "artifact_missing", "Artifact content is missing")
+        return error_response(400, "invalid_request", "Invalid artifact request")
+    if value is None:
+        return error_response(404, "artifact_not_found", "Artifact not found")
+    return value
