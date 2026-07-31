@@ -1,6 +1,7 @@
 from collections import deque
 from dataclasses import asdict, dataclass, field, replace
 from datetime import datetime, timezone
+from threading import RLock
 import uuid
 
 from core.structured_logging import LogLevel, safe_log
@@ -136,6 +137,7 @@ class PersistentJobQueue:
         self.repository = repository
         self.logger = logger
         self._jobs = {}
+        self._lock = RLock()
         for workspace_id in workspace_ids:
             for value in repository.list("job", workspace_id):
                 job = self._restore(value)
@@ -148,24 +150,25 @@ class PersistentJobQueue:
     def enqueue(
         self, workspace_id, mission_id, target_id, idempotency_key, retry_state=None
     ):
-        for job in self._jobs.values():
-            if (
-                job.workspace_id == workspace_id
-                and job.idempotency_key == idempotency_key
-            ):
-                return job
-        job = Job(
-            uuid.uuid4().hex,
-            workspace_id,
-            mission_id,
-            target_id,
-            JobStatus.PENDING,
-            datetime.now(timezone.utc).isoformat(),
-            idempotency_key,
-            retry_state,
-        )
-        self._jobs[job.job_id] = job
-        self._save(job)
+        with self._lock:
+            for job in self._jobs.values():
+                if (
+                    job.workspace_id == workspace_id
+                    and job.idempotency_key == idempotency_key
+                ):
+                    return job
+            job = Job(
+                uuid.uuid4().hex,
+                workspace_id,
+                mission_id,
+                target_id,
+                JobStatus.PENDING,
+                datetime.now(timezone.utc).isoformat(),
+                idempotency_key,
+                retry_state,
+            )
+            self._jobs[job.job_id] = job
+            self._save(job)
         safe_log(
             self.logger, "QUEUE_ENQUEUED", "PersistentJobQueue",
             workspace_id=workspace_id, mission_id=mission_id, job_id=job.job_id,
@@ -174,19 +177,20 @@ class PersistentJobQueue:
         return job
 
     def claim(self, workspace_id, worker_id):
-        for job in self._jobs.values():
-            if job.workspace_id == workspace_id and job.status == JobStatus.PENDING:
-                claimed = replace(
-                    job, status=JobStatus.RUNNING, claimed_by=worker_id
-                )
-                self._jobs[job.job_id] = claimed
-                self._save(claimed)
-                safe_log(
-                    self.logger, "QUEUE_CLAIMED", "PersistentJobQueue",
-                    workspace_id=workspace_id, mission_id=job.mission_id,
-                    job_id=job.job_id, status=claimed.status,
-                )
-                return claimed
+        with self._lock:
+            for job in self._jobs.values():
+                if job.workspace_id == workspace_id and job.status == JobStatus.PENDING:
+                    claimed = replace(
+                        job, status=JobStatus.RUNNING, claimed_by=worker_id
+                    )
+                    self._jobs[job.job_id] = claimed
+                    self._save(claimed)
+                    safe_log(
+                        self.logger, "QUEUE_CLAIMED", "PersistentJobQueue",
+                        workspace_id=workspace_id, mission_id=job.mission_id,
+                        job_id=job.job_id, status=claimed.status,
+                    )
+                    return claimed
         return None
 
     def complete(self, job_id, workspace_id, worker_id, result):
@@ -200,15 +204,16 @@ class PersistentJobQueue:
         )
 
     def requeue(self, job_id, workspace_id):
-        job = self.get(job_id, workspace_id)
-        if job is None or job.status != JobStatus.FAILED:
-            raise ValueError("failed job not found")
-        retryable = (job.retry_state or {}).get("retryable")
-        if not retryable:
-            raise ValueError("job is not retryable")
-        updated = replace(job, status=JobStatus.PENDING, claimed_by=None)
-        self._jobs[job_id] = updated
-        self._save(updated)
+        with self._lock:
+            job = self.get(job_id, workspace_id)
+            if job is None or job.status != JobStatus.FAILED:
+                raise ValueError("failed job not found")
+            retryable = (job.retry_state or {}).get("retryable")
+            if not retryable:
+                raise ValueError("job is not retryable")
+            updated = replace(job, status=JobStatus.PENDING, claimed_by=None)
+            self._jobs[job_id] = updated
+            self._save(updated)
         safe_log(
             self.logger, "QUEUE_REQUEUED", "PersistentJobQueue",
             workspace_id=workspace_id, mission_id=job.mission_id,
@@ -217,28 +222,34 @@ class PersistentJobQueue:
         return updated
 
     def get(self, job_id, workspace_id):
-        job = self._jobs.get(job_id)
-        return job if job and job.workspace_id == workspace_id else None
+        with self._lock:
+            job = self._jobs.get(job_id)
+            return job if job and job.workspace_id == workspace_id else None
 
     def list(self, workspace_id):
-        return [job for job in self._jobs.values() if job.workspace_id == workspace_id]
+        with self._lock:
+            return [
+                job for job in self._jobs.values()
+                if job.workspace_id == workspace_id
+            ]
 
     def _finish(
         self, job_id, workspace_id, worker_id, status, result, retry_state=None
     ):
-        job = self.get(job_id, workspace_id)
-        if job is None or job.status != JobStatus.RUNNING or job.claimed_by != worker_id:
-            raise ValueError("job claim ownership mismatch")
-        safe_result = {
-            "status": result.get("status"),
-            "error": self._safe_error(result.get("error")),
-        } if isinstance(result, dict) else {}
-        updated = replace(
-            job, status=status, result=safe_result,
-            retry_state=retry_state, claimed_by=None
-        )
-        self._jobs[job_id] = updated
-        self._save(updated)
+        with self._lock:
+            job = self.get(job_id, workspace_id)
+            if job is None or job.status != JobStatus.RUNNING or job.claimed_by != worker_id:
+                raise ValueError("job claim ownership mismatch")
+            safe_result = {
+                "status": result.get("status"),
+                "error": self._safe_error(result.get("error")),
+            } if isinstance(result, dict) else {}
+            updated = replace(
+                job, status=status, result=safe_result,
+                retry_state=retry_state, claimed_by=None
+            )
+            self._jobs[job_id] = updated
+            self._save(updated)
         safe_log(
             self.logger,
             "QUEUE_COMPLETED" if status == JobStatus.COMPLETED else "QUEUE_FAILED",

@@ -20,6 +20,7 @@ def create_app(
     authorization_service=None,
     artifact_service=None,
     usage_service=None,
+    persistent_execution_service=None,
     health_service=None,
     auth_required=False,
 ):
@@ -95,6 +96,7 @@ def create_app(
 
             usage_service = UsageReportingService(usage_engine)
     app.state.usage_service = usage_service
+    app.state.persistent_execution_service = persistent_execution_service
     if audit_service is None:
         from application.audit_service import AuditService
         audit_service = AuditService()

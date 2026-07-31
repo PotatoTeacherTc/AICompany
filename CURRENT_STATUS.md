@@ -2,7 +2,7 @@
 
 ## Mission
 
-Current mission baseline: **Mission 108**.
+Current mission baseline: **Mission 109**.
 
 Roadmap review baseline: `750d755 feat: add workspace usage reporting`
 following `af72f6c feat: expose workspace artifact access`.
@@ -450,8 +450,17 @@ not inferred from a missing historical mission log.
 - FakeTextProvider remains the default. Ollama Text is a verified explicit
   loopback option using `qwen2.5:1.5b`; Music, Image, Video, and YouTube remain
   Fake. Paid providers and external media calls remain disabled.
-- The next defined work is Mission 109 — Persistent Job Execution, followed
-  by Mission 110 — Job & Execution API.
+- The next defined work is Mission 110 — Job & Execution API.
+- Mission 109: `PersistentExecutionService` now composes the existing
+  PersistentJobQueue, InProcessJobWorker, ExecutionHistory, ArtifactManager,
+  and UsageEngine through dependency injection. Workspace-scoped idempotency,
+  configured-Workspace restart recovery, and an in-process Queue lock provide
+  one claim winner. Terminal PipelineResult values produce safe path-free
+  history, validate already-registered same-Workspace Artifact references, and
+  record only present Usage fields. Retry metadata and existing Task controls
+  remain compatible. BackendDependencies accepts the service, while Job,
+  Execution, and Batch APIs remain Mission 110 scope. Eight focused tests and
+  the full 266-test suite pass offline.
 
 ## Implemented pipelines
 
@@ -468,14 +477,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current suite contains **258 tests**. Its expected command is:
+The current suite contains **266 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Current verification result: **258 passed, 0 failed**.
+Current verification result: **266 passed, 0 failed**.
 
 ## Not implemented
 

@@ -8,7 +8,7 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 108
+## Current baseline: Mission 109
 
 The verified implementation currently provides a Task/Queue/Worker execution
 path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,
@@ -373,6 +373,7 @@ new Missions.
 
 ### Mission 109 — Persistent Job Execution
 
+- Status: completed.
 - Goal: connect accepted Backend work to the existing persistent Job contract
   without running a Pipeline inside the HTTP request.
 - Scope: a dependency-injected application coordinator over
@@ -388,6 +389,18 @@ new Missions.
 - Tests: submission/idempotency, Workspace isolation, restart recovery,
   single claim, success/failure/retry, missing target, Logging failure
   isolation, and no network/paid-provider calls.
+
+The implemented `PersistentExecutionService` composes the existing
+PersistentJobQueue, InProcessJobWorker, ExecutionHistory, ArtifactManager, and
+UsageEngine. Registered Pipeline targets remain dependency-injected. Accepted
+Jobs are idempotent per Workspace, abandoned RUNNING Jobs recover as PENDING
+when configured Workspaces are restored, and Queue mutations use an
+in-process lock so concurrent workers have one claim winner. Terminal
+PipelineResult values upsert a prompt-free, path-free history record, validate
+same-Workspace Artifact references already registered by the Pipeline, and
+record only present Usage fields. Integration failures remain safe and retry
+metadata continues through the existing Queue contract. BackendDependencies
+can receive this coordinator, but no Job, Execution, or Batch route is added.
 
 ### Mission 110 — Job & Execution API
 

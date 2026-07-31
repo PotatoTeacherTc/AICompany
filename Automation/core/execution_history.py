@@ -281,6 +281,54 @@ class ExecutionHistory:
             self.records.append(record)
         self.save()
 
+    def record_persistent_job(self, job, pipeline_result, artifacts=None):
+        """Upsert one path-free execution summary for a persistent Job."""
+        data = (
+            pipeline_result.get("data")
+            if isinstance(pipeline_result, dict)
+            and isinstance(pipeline_result.get("data"), dict)
+            else {}
+        )
+        record = {
+            "task_id": job.job_id,
+            "mission_id": job.mission_id,
+            "task": "Persistent job execution",
+            "parameters": {},
+            "workspace_id": job.workspace_id,
+            "parent_task_id": None,
+            "retry_count": (
+                (job.retry_state or {}).get("current_attempt", 0)
+                if isinstance(job.retry_state, dict)
+                else 0
+            ),
+            "max_retries": None,
+            "timeout_seconds": None,
+            "last_error_type": pipeline_result.get("error"),
+            "status": pipeline_result.get("status"),
+            "created_at": job.created_at,
+            "queued_at": job.created_at,
+            "started_at": None,
+            "completed_at": datetime.now().astimezone().isoformat(),
+            "duration_seconds": None,
+            "result": {
+                "status": pipeline_result.get("status"),
+                "pipeline": pipeline_result.get("pipeline"),
+                "task_type": pipeline_result.get("task_type"),
+                "usage": data.get("provider_usage"),
+                "artifacts": list(artifacts or []),
+                "error": pipeline_result.get("error"),
+            },
+            "task_type": pipeline_result.get("task_type"),
+            "pipeline": pipeline_result.get("pipeline"),
+        }
+        for index, existing in enumerate(self.records):
+            if existing.get("task_id") == job.job_id:
+                self.records[index] = record
+                break
+        else:
+            self.records.append(record)
+        self.save()
+
 
     @staticmethod
     def _duration_seconds(started_at, completed_at):

@@ -306,16 +306,23 @@ implemented as persistent domain services but likewise have no management
 API. Artifact archive/restore, quota enforcement, plans, billing, Dashboard,
 and production deployment are not implemented.
 
+Mission 109 now connects the existing persistent Queue and in-process Worker
+to a dependency-injected execution coordinator. It restores configured
+Workspace Jobs after restart, prevents duplicate in-process claims, preserves
+idempotent submission and retry metadata, and links terminal PipelineResult
+summaries to existing History, Artifact metadata, and Usage storage. Pipelines
+still register their own artifacts through ArtifactManager. No Job,
+ExecutionHistory, or Batch API was added.
+
 The next defined sequence is:
 
-1. Mission 109 — Persistent Job Execution
-2. Mission 110 — Job & Execution API
-3. Mission 111 — AI Organization API
-4. Mission 112 — Artifact Lifecycle
-5. Mission 113 — Quota & Budget Enforcement
-6. Mission 114 — Plans & Entitlements
-7. Mission 115 — Dashboard API
-8. Mission 116 — Web Dashboard
+1. Mission 110 — Job & Execution API
+2. Mission 111 — AI Organization API
+3. Mission 112 — Artifact Lifecycle
+4. Mission 113 — Quota & Budget Enforcement
+5. Mission 114 — Plans & Entitlements
+6. Mission 115 — Dashboard API
+7. Mission 116 — Web Dashboard
 
 Ollama Text remains explicit and loopback-only. Music, Image, Video, and
 YouTube remain Fake; no paid Provider or external media API is enabled.
