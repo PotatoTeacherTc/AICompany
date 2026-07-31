@@ -28,6 +28,7 @@ def create_app(
     dashboard_service=None,
     subscription_service=None,
     billing_service=None,
+    admin_service=None,
     health_service=None,
     auth_required=False,
 ):
@@ -111,6 +112,7 @@ def create_app(
     app.state.dashboard_service = dashboard_service
     app.state.subscription_service = subscription_service
     app.state.billing_service = billing_service
+    app.state.admin_service = admin_service
     if audit_service is None:
         from application.audit_service import AuditService
         audit_service = AuditService()
@@ -520,6 +522,110 @@ def create_app(
             from api.errors import error_response
             return error_response(404, "workspace_not_found", "Workspace not found")
         return value
+
+    @app.get("/admin/workspaces")
+    def admin_list_workspaces(
+        authorization: str | None = Header(default=None),
+    ):
+        denied = _authorize_platform_admin(app, authorization)
+        return denied or app.state.admin_service.list_workspaces()
+
+    @app.get("/admin/me")
+    def admin_me(authorization: str | None = Header(default=None)):
+        denied = _authorize_platform_admin(app, authorization)
+        return denied or {"platform_admin": True}
+
+    @app.get("/admin/workspaces/{workspace_id}")
+    def admin_get_workspace(
+        workspace_id: str,
+        authorization: str | None = Header(default=None),
+    ):
+        denied = _authorize_platform_admin(app, authorization)
+        if denied:
+            return denied
+        value = app.state.admin_service.workspace_operations(workspace_id)
+        if value is None:
+            from api.errors import error_response
+            return error_response(404, "workspace_not_found", "Workspace not found")
+        return value
+
+    @app.get("/admin/users")
+    def admin_list_users(authorization: str | None = Header(default=None)):
+        denied = _authorize_platform_admin(app, authorization)
+        return denied or app.state.admin_service.list_users()
+
+    @app.get("/admin/users/{user_id}")
+    def admin_get_user(
+        user_id: str,
+        authorization: str | None = Header(default=None),
+    ):
+        denied = _authorize_platform_admin(app, authorization)
+        if denied:
+            return denied
+        value = app.state.admin_service.get_user(user_id)
+        if value is None:
+            from api.errors import error_response
+            return error_response(404, "user_not_found", "User not found")
+        return value
+
+    @app.get("/admin/plans")
+    def admin_list_plans(authorization: str | None = Header(default=None)):
+        denied = _authorize_platform_admin(app, authorization)
+        return denied or app.state.admin_service.plans_catalog()
+
+    @app.put("/admin/workspaces/{workspace_id}/status")
+    def admin_set_workspace_status(
+        workspace_id: str,
+        payload: dict,
+        authorization: str | None = Header(default=None),
+    ):
+        return _admin_mutation(
+            app, authorization, "set_workspace_status",
+            workspace_id, payload.get("status")
+        )
+
+    @app.put("/admin/workspaces/{workspace_id}/subscription/plan")
+    def admin_change_subscription_plan(
+        workspace_id: str,
+        payload: dict,
+        authorization: str | None = Header(default=None),
+    ):
+        return _admin_mutation(
+            app, authorization, "change_subscription_plan",
+            workspace_id, payload.get("plan_id")
+        )
+
+    @app.post("/admin/workspaces/{workspace_id}/jobs/{job_id}/retry")
+    def admin_retry_job(
+        workspace_id: str,
+        job_id: str,
+        authorization: str | None = Header(default=None),
+    ):
+        return _admin_mutation(
+            app, authorization, "retry_failed_job", workspace_id, job_id
+        )
+
+    @app.post("/admin/workspaces/{workspace_id}/invoices/{invoice_id}/void")
+    def admin_void_invoice(
+        workspace_id: str,
+        invoice_id: str,
+        authorization: str | None = Header(default=None),
+    ):
+        return _admin_mutation(
+            app, authorization, "void_invoice", workspace_id, invoice_id
+        )
+
+    @app.post("/admin/workspaces/{workspace_id}/invoices/{invoice_id}/fake-payment")
+    def admin_fake_payment(
+        workspace_id: str,
+        invoice_id: str,
+        payload: dict,
+        authorization: str | None = Header(default=None),
+    ):
+        return _admin_mutation(
+            app, authorization, "record_fake_payment",
+            workspace_id, invoice_id, payload
+        )
 
     @app.get("/workspaces/{workspace_id}/billing/account")
     def get_billing_account(
@@ -1312,3 +1418,31 @@ def _billing_mutation(
         return error_response(404, "billing_record_not_found", "Billing record not found")
     except (TypeError, ValueError):
         return error_response(409, "billing_conflict", "Billing record cannot be changed")
+
+
+def _authorize_platform_admin(app, authorization):
+    from api.errors import error_response
+
+    service = app.state.admin_service
+    if service is None:
+        return error_response(503, "admin_unavailable", "Admin is unavailable")
+    user = _current_user(app, authorization)
+    if user is None:
+        return _unauthorized()
+    if not service.is_admin(user.get("user_id")):
+        return error_response(403, "platform_admin_required", "Permission denied")
+    return None
+
+
+def _admin_mutation(app, authorization, operation_name, *args):
+    from api.errors import error_response
+
+    denied = _authorize_platform_admin(app, authorization)
+    if denied:
+        return denied
+    try:
+        return getattr(app.state.admin_service, operation_name)(*args)
+    except KeyError:
+        return error_response(404, "admin_resource_not_found", "Resource not found")
+    except (TypeError, ValueError):
+        return error_response(409, "admin_operation_conflict", "Operation cannot be completed")

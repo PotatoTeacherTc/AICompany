@@ -170,6 +170,18 @@ created; mid-period proration is not implemented.
 No real price, checkout, card or account data, tax, exchange, refund, webhook,
 payment SDK/provider, or billing network call is configured.
 
+## Platform operations
+
+Mission 119 adds a small Platform Admin boundary separate from Workspace roles.
+Platform identities are injected at composition time. Authorized operators may
+inspect existing SaaS state and perform only bounded, audited actions:
+Workspace activation, Subscription Plan change, failed Job retry, Invoice void,
+and FAKE payment recording. The browser shows Admin navigation only after
+`/admin/me` succeeds.
+
+There is no impersonation, password/token/secret access, physical deletion,
+arbitrary code execution, real refund/payment, or infrastructure control.
+
 ## User lifecycle
 
 Mission 102 adds lifecycle state to the existing User implementation rather

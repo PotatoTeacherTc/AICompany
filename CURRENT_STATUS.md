@@ -520,6 +520,14 @@ not inferred from a missing historical mission log.
   five Subscription regression tests, and the full 301-test Backend suite pass
   offline. No card/account data, real price, checkout, proration, tax, refund,
   webhook, SDK, payment provider, or network call exists.
+- Mission 119: PlatformAdminService defines an injected platform allowlist
+  separate from Workspace roles. It composes existing services for safe reads
+  and limits mutation to Workspace status, Subscription Plan, failed Job retry,
+  Invoice void, and FAKE payment with audit events. The browser exposes Admin
+  navigation only after `/admin/me` authorization. Five focused tests, the
+  full 306-test Backend suite, two Frontend tests, and production build pass.
+  Impersonation, secret access, deletion, arbitrary code, and real payment are
+  absent.
 
 ## Implemented pipelines
 
@@ -536,14 +544,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current Backend suite contains **301 tests**. Its expected command is:
+The current Backend suite contains **306 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Current verification result: **301 passed, 0 failed**.
+Current verification result: **306 passed, 0 failed**.
 
 ## Not implemented
 

@@ -7,6 +7,8 @@ test("dashboard source keeps credentials out of persistent browser storage", asy
   assert.equal(source.includes("sessionStorage"), false);
   assert.match(source, /Workspace/);
   assert.match(source, /Artifacts/);
+  assert.match(source, /platformAdmin \? \[\.\.\.baseNav, "Admin"\] : baseNav/);
+  assert.match(source, /"\/admin\/me"/);
 });
 test("API client has timeout and bearer injection", async () => {
   const source = await readFile(new URL("../src/api.ts", import.meta.url), "utf8");

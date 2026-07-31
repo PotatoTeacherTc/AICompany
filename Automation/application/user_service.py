@@ -25,6 +25,15 @@ class UserService:
         )
         return self._normalize(value)
 
+    def list(self):
+        operation = getattr(self.repository, "list", None)
+        if operation is None:
+            return []
+        return [
+            normalized for value in operation()
+            if (normalized := self._normalize(value)) is not None
+        ]
+
     def deactivate(self, user_id):
         value = self.repository.get(user_id)
         if value is None:

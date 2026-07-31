@@ -594,9 +594,24 @@ today/7-day/30-day filter is invented.
   restart, Workspace isolation, sensitive-field rejection, and Subscription
   regression.
 
+### Mission 119 — Admin Operations (Complete)
+
+- Goal: provide a narrow SaaS operator boundary distinct from Workspace roles.
+- Scope: injected Platform ADMIN identities; safe Workspace/User,
+  Subscription/Invoice, Usage/Quota, failed Job, audit, and Plan reads; plus
+  Workspace activation, Subscription Plan change, failed Job retry, Invoice
+  void, and FAKE payment recording.
+- Excludes: impersonation, credential/secret access, physical deletion,
+  arbitrary code, real payment/refund, and infrastructure control.
+- Completion: non-platform users receive no Admin access; mutations are
+  bounded and audited, while inactive Workspace data remains.
+- Prerequisites: Missions 110, 117, and 118.
+- Tests: role separation, aggregation, limited actions, data preservation,
+  invalid actions, frontend visibility, regressions, and production build.
+
 ## Longer-term phases
 
-- Missions 119-120: Admin operations, then local SaaS Beta.
+- Mission 120: integrate and document the local Fake/Offline SaaS Beta.
 - Missions 121-130: production cloud/storage/broker choices, CI/CD, security
   hardening, Workflow Builder, Marketplace, Enterprise, and AICompany v1.0.
 - Real music/image/video/YouTube adapters remain separately blocked by

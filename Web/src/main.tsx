@@ -5,16 +5,18 @@ import "./styles.css";
 
 type Workspace = { workspace_id: string; name: string };
 type Dashboard = Record<string, any>;
-const nav = ["Overview", "Jobs", "Executions", "Artifacts", "Organization", "Usage & Plan"];
+const baseNav = ["Overview", "Jobs", "Executions", "Artifacts", "Organization", "Usage & Plan"];
 
 function App() {
   const [token, setToken] = useState("");
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [workspace, setWorkspace] = useState("");
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
-  const [page, setPage] = useState(nav[0]);
+  const [page, setPage] = useState(baseNav[0]);
   const [state, setState] = useState<"idle"|"loading"|"error"|"forbidden">("idle");
   const [message, setMessage] = useState("");
+  const [platformAdmin, setPlatformAdmin] = useState(false);
+  const nav = platformAdmin ? [...baseNav, "Admin"] : baseNav;
 
   async function login(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -28,6 +30,10 @@ function App() {
       const values = await api<{items:Workspace[]}>("/workspaces", result.access_token);
       setWorkspaces(values.items || []);
       setWorkspace(values.items?.[0]?.workspace_id || "");
+      try {
+        const admin = await api<{platform_admin:boolean}>("/admin/me", result.access_token);
+        setPlatformAdmin(admin.platform_admin === true);
+      } catch { setPlatformAdmin(false); }
       setState("idle");
     } catch (error) { setMessage(error instanceof Error ? error.message : "Login failed"); setState("error"); }
   }
