@@ -1,5 +1,30 @@
 # AICompany Architecture
 
+## Baseline and maturity
+
+The official baseline is Mission 130. Completion through Mission 130 refers to
+each Mission's bounded Contract, Foundation, Fake/Offline, or Local Integration
+scope. The overall product is **Local/Fake SaaS Beta + Production Foundation**,
+not Production Ready.
+
+Architecture maturity terms are Contract, Foundation, Fake/Offline, Local
+Integration, Production Integration, and Production Ready. Production
+Integration requires real production dependencies to be composed and
+operationally verified. Production Ready additionally requires accepted
+security, recovery, observability, deployment, and operations.
+
+Mission 121 is a Docker-based Local Development Foundation. Mission 124 is a
+process-local Monitoring Foundation; Mission 125 is a Fake/in-memory metadata
+Backup Foundation; Mission 126 is a PostgreSQL/Redis Repository Adapter
+Foundation without schema, migration, drivers, or default application
+composition; Mission 127 is a Local/Fake Object Storage Foundation; Mission
+128 is a Workflow Definition/Validation Foundation; Mission 129 is a
+Local/Fake Plugin Contract Foundation; and Mission 130 is a Local
+Metadata/Fake Install Marketplace Foundation. Billing remains Manual/Fake.
+
+No Mission after 130 is defined. Enterprise and AICompany v1.0 are
+unimplemented.
+
 ## Current execution flow
 
 ```text

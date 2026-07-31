@@ -1,5 +1,11 @@
 # AICompany - AGENTS.md
 
+## Constitution
+
+`PROJECT_CONSTITUTION.md` is the highest-priority Project APEX rule. Read and
+apply it before this file and all roadmap, status, architecture, and Mission
+instructions.
+
 ## Project
 
 Project APEX / AICompany

@@ -8,7 +8,40 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 111
+## Current baseline: Mission 130
+
+Mission 1-130 completion means completion of each Mission's explicitly bounded
+Contract, Foundation, Fake/Offline, or Local Integration scope. It does not
+mean that Project APEX as a whole is Production Ready.
+
+Current product status: **Local/Fake SaaS Beta + Production Foundation**.
+Mission 121-130 are Foundation work. The official next Mission and Phase after
+Mission 130 are **not defined** and require user approval.
+
+### Completion level vocabulary
+
+- **Contract**: interfaces and data contracts are implemented and tested.
+- **Foundation**: minimum replaceable structure exists; production composition
+  may still be absent.
+- **Fake/Offline**: deterministic local substitutes work without external
+  accounts, networks, or paid services.
+- **Local Integration**: components execute together in the supported local
+  process or Docker development environment.
+- **Production Integration**: real production dependencies are composed and
+  operationally verified.
+- **Production Ready**: production integration, security, recovery,
+  observability, deployment, and operational acceptance are complete.
+
+### Current user-value flow
+
+The verified local product supports authentication and Workspace RBAC; Task
+and persistent Job submission, query, and retry; ExecutionHistory; Artifact;
+Usage and Quota; Department and Worker contracts; explicit loopback Ollama
+Text; Fake media pipelines; Dashboard reads; Local/Fake Subscription, Billing,
+and Admin; and Docker-based local execution.
+
+These capabilities do not imply external media generation, real payment,
+cloud deployment, distributed execution, or Production Ready status.
 
 The verified implementation currently provides a Task/Queue/Worker execution
 path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,
@@ -593,6 +626,8 @@ today/7-day/30-day filter is invented.
 - Tests: account/price/invoice/payment contracts, validation, idempotency,
   restart, Workspace isolation, sensitive-field rejection, and Subscription
   regression.
+- Completion level: **Manual/Fake Foundation**. A real payment Provider is not
+  implemented.
 
 ### Mission 119 — Admin Operations (Complete)
 
@@ -625,6 +660,7 @@ today/7-day/30-day filter is invented.
 - Prerequisites: Missions 109-119.
 - Tests: 40-test integration selection, full Backend suite, Frontend suite,
   production build, readiness/CORS/onboarding/restart/security checks.
+- Completion level: **Local/Fake SaaS Beta**.
 
 ### Mission 121 — Cloud Foundation (Complete, Provider-Neutral)
 
@@ -639,6 +675,7 @@ today/7-day/30-day filter is invented.
 - Prerequisites: Mission 120.
 - Tests: Compose config/build/up/ps/logs/down, Backend 310 tests, Frontend two
   tests, and production build.
+- Completion level: **Docker-based Local Development Foundation**.
 
 ### Mission 122 — CI Pipeline (Complete)
 
@@ -654,6 +691,8 @@ today/7-day/30-day filter is invented.
 - Prerequisites: Mission 121.
 - Tests: workflow safety contract, AST syntax lint, Backend 312 tests,
   Frontend two tests, `tsc --noEmit`, and production build.
+- Completion level: **CI Verification Foundation**. Production deployment is
+  not implemented.
 
 ### Mission 123 — Production Security (Complete, Single-Process)
 
@@ -670,6 +709,8 @@ today/7-day/30-day filter is invented.
 - Tests: environment/secret/origin validation, headers/CSP/HSTS, Cookie policy,
   rate limiting, CORS denial, Auth regression, Backend 317 tests, Frontend
   tests, and production build.
+- Completion level: **Single-process Security Foundation**. TLS termination,
+  distributed enforcement, and managed secrets are not implemented.
 
 ### Mission 124 — Monitoring (Complete, Process-Local)
 
@@ -684,6 +725,8 @@ today/7-day/30-day filter is invented.
   identifiers; logger failure cannot change an HTTP result.
 - Prerequisites: Mission 123.
 - Tests: five focused tests and Backend 322 tests.
+- Completion level: **Process-local Foundation**. Distributed metrics, tracing,
+  and alerting are not implemented.
 
 ### Mission 125 — Backup & Recovery (Complete, Fake/Offline)
 
@@ -699,6 +742,8 @@ today/7-day/30-day filter is invented.
   preserves partial product metadata through the existing repositories.
 - Prerequisites: Mission 124.
 - Tests: five focused tests, 23 related tests, and Backend 327 tests.
+- Completion level: **Fake/In-memory Metadata Foundation**. Real cloud backup
+  and operational disaster recovery are not implemented.
 
 ### Mission 126 — Production Infrastructure (Complete, Adapter Foundation)
 
@@ -714,6 +759,9 @@ today/7-day/30-day filter is invented.
   safe health status, and deterministic resource closure.
 - Tests: five focused tests, Backend 332 tests, Frontend tests/build, and
   healthy Compose verification.
+- Completion level: **PostgreSQL/Redis Repository Adapter Foundation**.
+  Schema, migration, drivers, and default application composition are not
+  implemented.
 
 ### Mission 127 — Object Storage Abstraction (Complete, Offline)
 
@@ -729,6 +777,8 @@ today/7-day/30-day filter is invented.
   path.
 - Tests: five focused tests, 16 related tests, Backend 337 tests, Frontend
   tests/build, and healthy Compose verification.
+- Completion level: **Local/Fake Provider Foundation**. Real cloud Object
+  Storage is not implemented.
 
 ### Mission 128 — Workflow Builder Foundation (Complete, Definition-Only)
 
@@ -742,6 +792,8 @@ today/7-day/30-day filter is invented.
   malformed JSON, and oversized definitions are rejected.
 - Tests: five focused tests, Backend 342 tests, Frontend tests/build, and
   healthy Compose verification.
+- Completion level: **Definition/Validation Foundation**. Execution,
+  persistence, API, and UI are not implemented.
 
 ### Mission 129 — Plugin SDK Foundation (Complete, Local-Only)
 
@@ -755,6 +807,8 @@ today/7-day/30-day filter is invented.
   request shape, and sensitive-field removal are enforced.
 - Tests: five focused tests, Backend 347 tests, Frontend tests/build, and
   healthy Compose verification.
+- Completion level: **Local/Fake Contract Foundation**. External discovery,
+  download, and isolated execution are not implemented.
 
 ### Mission 130 — Marketplace Foundation (Complete, Local/Fake)
 
@@ -769,19 +823,35 @@ today/7-day/30-day filter is invented.
   removal are rejected.
 - Tests: six focused tests, 11 related tests, Backend 353 tests, Frontend
   tests/build, and healthy Compose verification.
+- Completion level: **Local Metadata/Fake Install Foundation**. External
+  Registry, package payload, distribution, and payment are not implemented.
+
+### Unnumbered next-Phase candidates
+
+No candidate below is an approved Phase or Mission:
+
+1. PostgreSQL schema, migration, and real application composition.
+2. Redis-backed Queue/Lock/Broker and distributed Workers.
+3. Real Object Storage integrated with Artifact lifecycle.
+4. Deployment, TLS, and Secret Manager integration.
+5. Real Billing and approved Media Provider integrations.
+
+Workflow, Plugin, and Marketplace expansion are not current priority
+candidates. The first production bottleneck requires explicit user approval
+before a Mission number or implementation scope is assigned.
 
 ## Longer-term phases
 
 - Missions after 130 remain undefined implementation work and must be scoped
-  from the actual code and roadmap before development,
-  distributed execution,
-  security-hardening, Workflow Builder, Marketplace, Enterprise, and v1.0
-  phases; no such feature is implemented by Mission 120.
-- Missions 122-130: production cloud/storage/broker choices, CI/CD, security
-  hardening, Workflow Builder, Marketplace, Enterprise, and AICompany v1.0.
+  from the actual code and roadmap before development.
+- Historical Phase F themes included cloud/storage/broker choices, CI/CD,
+  security hardening, Workflow Builder, Marketplace, Enterprise, and
+  AICompany v1.0. Missions 121-130 implemented only their documented
+  Foundation scopes; Enterprise and v1.0 were not completed.
 - Real music/image/video/YouTube adapters remain separately blocked by
   explicit account, network, credential, legal, and cost approval. They are
   not prerequisites for the Fake/Offline SaaS contract work above.
+- Enterprise and AICompany v1.0 remain unimplemented.
 
 ## Development stages
 

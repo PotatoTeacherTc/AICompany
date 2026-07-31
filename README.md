@@ -1,5 +1,11 @@
 # AICompany
 
+Official baseline: **Mission 130**. Current product status:
+**Local/Fake SaaS Beta + Production Foundation**. Completion through Mission
+130 is limited to each Mission's documented Contract, Foundation,
+Fake/Offline, or Local Integration scope; Project APEX is not Production Ready.
+The official next Mission is undefined and requires user approval.
+
 AI 기반 자동화와 콘텐츠 제작 시스템을 연구하는 개인 AI 프로젝트 워크스페이스입니다.
 
 ## 🎯 Vision
@@ -215,8 +221,10 @@ Completed locally: authenticated Workspace contracts, persistent Job execution
 and recovery, History/Artifact/Usage/Quota, Plan/Subscription, Manual/Fake
 Billing, Dashboard, and bounded Platform Admin operations. Not completed:
 real payment, cloud deployment, distributed Workers, Redis/broker, production
-object storage, real media providers, Workflow Builder, Marketplace, or
-Enterprise functionality. `ALLOW_PAID_PROVIDER=False` remains mandatory.
+object storage, real media providers, Workflow execution/API/UI, external
+Plugin loading, external Marketplace, Enterprise, or AICompany v1.0.
+Workflow Definition and Local/Fake Marketplace foundations exist but are not
+Production Integration. `ALLOW_PAID_PROVIDER=False` remains mandatory.
 
 ## Docker development stack
 
@@ -494,18 +502,13 @@ this feature.
 
 ## Current Backend scope and next work
 
-Missions 101-108 provide the local Backend composition, User and Workspace
-lifecycle, session-backed Auth, Workspace RBAC, authenticated Task context,
-safe Artifact reads, and read-only Usage reporting. The existing Task HTTP
-routes can create, list, inspect, cancel, and retry in-process Tasks.
+The official baseline is Mission 130. Mission 1-130 completion means completion
+of each Mission's bounded Contract, Foundation, Fake/Offline, or Local
+Integration scope; Project APEX is not Production Ready. The current product
+state is **Local/Fake SaaS Beta + Production Foundation**.
 
-The repository also contains a restart-aware `PersistentJobQueue`,
-`InProcessJobWorker`, `BatchManager`, Scheduler, ExecutionHistory, and Monitor.
-Those persistent execution contracts are not yet connected to Backend Task
-submission or exposed as authenticated Job/Execution APIs. AI Departments are
-implemented as persistent domain services but likewise have no management
-API. Artifact archive/restore, quota enforcement, plans, billing, Dashboard,
-and production deployment are not implemented.
+The historical progression below records how Missions 109-116 closed earlier
+Backend gaps. Those gaps are no longer the next-work list.
 
 Mission 109 now connects the existing persistent Queue and in-process Worker
 to a dependency-injected execution coordinator. It restores configured
@@ -562,8 +565,8 @@ Plans are product-policy contracts, not purchases. The injected
 FREE/PRO/BUSINESS catalog supplies quota defaults and feature entitlements;
 Workspace overrides remain higher priority. Workspace members can read the
 current plan and OWNER/ADMIN can assign an active plan. Artifact archive is the
-current enforced feature entitlement. Subscription, pricing, invoices,
-payments, and Billing are not implemented.
+current enforced feature entitlement. Subscription and Manual/Fake Billing
+contracts now exist; real pricing, checkout, and payment Providers do not.
 
 `GET /workspaces/{workspace_id}/dashboard` provides the authenticated,
 read-only Dashboard API. It combines existing Workspace, persistent Job and
@@ -571,16 +574,21 @@ Execution, Artifact, Usage/Quota, Plan, Department, and Worker data. Summary
 aggregation is bounded to 100 records; recent lists accept 1–20 items. No
 analytics database, WebSocket, or control operation is part of this endpoint.
 
-The next defined sequence is:
-
-1. Mission 117 — Subscription
+The official Mission after 130 is undefined. Before implementation, the user
+must approve the first production bottleneck: PostgreSQL
+schema/migration/application composition; Redis Queue/Lock/Broker and
+distributed Workers; real Object Storage integration; deployment/TLS/Secret
+Manager; or real Billing/approved Media Provider integration. These candidates
+have no Mission numbers. Workflow, Plugin, and Marketplace expansion is not a
+current priority candidate.
 
 The initial Web Dashboard is in `Web/`. Run `npm.cmd install`, set
 `VITE_API_BASE_URL` to the Backend loopback URL, then use `npm.cmd run dev`.
 Authentication tokens remain in memory and clear on refresh/logout. The
 current release provides login, Workspace switching, overview metrics, and
 responsive navigation; secondary administration screens remain intentionally
-minimal. Billing and Subscription are not implemented.
+minimal. Subscription and Manual/Fake Billing are Backend contracts, not real
+payment integrations.
 
 Ollama Text remains explicit and loopback-only. Music, Image, Video, and
 YouTube remain Fake; no paid Provider or external media API is enabled.

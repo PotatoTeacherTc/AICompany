@@ -2,10 +2,46 @@
 
 ## Mission
 
-Current mission baseline: **Mission 111**.
+Official current baseline: **Mission 130**.
 
-Roadmap review baseline: `750d755 feat: add workspace usage reporting`
-following `af72f6c feat: expose workspace artifact access`.
+Current product status: **Local/Fake SaaS Beta + Production Foundation**.
+
+Mission 1-130 completion means only that each Mission's bounded Contract,
+Foundation, Fake/Offline, or Local Integration scope is complete. Project APEX
+as a whole is not Production Ready. The official next Mission is undefined.
+
+Current verification baseline: Backend 353 tests, Frontend two tests,
+Frontend production build, and a healthy four-service Docker development
+stack.
+
+## Completion levels
+
+| Area | Verified level | Production boundary still missing |
+|---|---|---|
+| SaaS Beta | Local/Fake SaaS Beta | Production deployment and acceptance |
+| Cloud Foundation | Docker-based Local Development Foundation | Cloud runtime composition |
+| Production Infrastructure | PostgreSQL/Redis Repository Adapter Foundation | Schema, migration, drivers, and application composition |
+| Object Storage | Local/Fake Provider Foundation | Real cloud Object Storage |
+| Workflow Builder | Definition/Validation Foundation | Execution, Persistence, API, and UI |
+| Plugin SDK | Local/Fake Contract Foundation | External discovery, download, and isolated execution |
+| Marketplace | Local Metadata/Fake Install Foundation | External Registry, package payload, distribution, and payment |
+| Monitoring | Process-local Foundation | Distributed metrics, tracing, and alerting |
+| Backup | Fake/In-memory Metadata Foundation | Cloud backup and operational recovery |
+| Billing | Manual/Fake Foundation | Real payment Provider |
+
+The currently usable local flow includes authentication and Workspace RBAC;
+Task and persistent Job submission/query/retry; ExecutionHistory; Artifact;
+Usage and Quota; Department and Worker contracts; explicit loopback Ollama
+Text; Fake media; Dashboard reads; Local/Fake Subscription, Billing, and
+Admin; and Docker-based local execution.
+
+The official next Mission is undefined. Unnumbered production-bottleneck
+candidates are PostgreSQL schema/migration/application composition;
+Redis-backed Queue/Lock/Broker and distributed Workers; real Object Storage
+and Artifact integration; deployment/TLS/Secret Manager; and real Billing or
+approved Media Providers. These are candidates only and require user approval.
+Workflow, Plugin, and Marketplace expansion is not a current priority
+candidate. Enterprise and AICompany v1.0 remain unimplemented.
 
 ## Verified completed capabilities
 
@@ -450,7 +486,8 @@ not inferred from a missing historical mission log.
 - FakeTextProvider remains the default. Ollama Text is a verified explicit
   loopback option using `qwen2.5:1.5b`; Music, Image, Video, and YouTube remain
   Fake. Paid providers and external media calls remain disabled.
-- The next defined work is Mission 117 — Subscription.
+- Historical note: Mission 117 Subscription was the next defined work at this
+  earlier checkpoint; it is now complete within its Local/Fake contract.
 - Mission 109: `PersistentExecutionService` now composes the existing
   PersistentJobQueue, InProcessJobWorker, ExecutionHistory, ArtifactManager,
   and UsageEngine through dependency injection. Workspace-scoped idempotency,
