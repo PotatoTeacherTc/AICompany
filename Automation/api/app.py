@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Header, Request
+from contextlib import asynccontextmanager
 from api.request_context import RequestContext, set_context, reset_context
 import time
 
@@ -40,6 +41,7 @@ def create_app(
     rate_limiter=None,
     logger=None,
     metrics=None,
+    infrastructure_resources=None,
 ):
     """Create the HTTP application without starting a server."""
     if automation_service is None:
@@ -53,7 +55,20 @@ def create_app(
             automation_service._get_task_for_query,
         )
 
-    app = FastAPI(title="AICompany API", version="0.1.0", debug=False)
+    @asynccontextmanager
+    async def lifespan(_app):
+        try:
+            yield
+        finally:
+            if infrastructure_resources is not None:
+                infrastructure_resources.close()
+
+    app = FastAPI(
+        title="AICompany API",
+        version="0.1.0",
+        debug=False,
+        lifespan=lifespan,
+    )
     if allowed_origins:
         from fastapi.middleware.cors import CORSMiddleware
 

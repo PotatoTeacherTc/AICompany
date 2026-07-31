@@ -700,9 +700,25 @@ today/7-day/30-day filter is invented.
 - Prerequisites: Mission 124.
 - Tests: five focused tests, 23 related tests, and Backend 327 tests.
 
+### Mission 126 — Production Infrastructure (Complete, Adapter Foundation)
+
+- Goal: make the shared StateRepository selectable across local and
+  production-oriented infrastructure without changing application services.
+- Scope: PostgreSQL DB-API and Redis-client StateRepository adapters,
+  RepositoryFactory, validated environment configuration, safe health probes,
+  and lifespan-based graceful shutdown.
+- Excludes: schema creation or migration, automatic production activation,
+  cloud-specific code, destructive data operations, and bundled database
+  drivers.
+- Completion: injected adapters preserve Workspace reads, parameterized writes,
+  safe health status, and deterministic resource closure.
+- Tests: five focused tests, Backend 332 tests, Frontend tests/build, and
+  healthy Compose verification.
+
 ## Longer-term phases
 
-- Missions 126-130 remain distributed execution,
+- Missions 127-130 remain object storage, Workflow Builder, Plugin SDK, and
+  Marketplace foundation work,
   distributed execution,
   security-hardening, Workflow Builder, Marketplace, Enterprise, and v1.0
   phases; no such feature is implemented by Mission 120.

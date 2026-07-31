@@ -305,6 +305,18 @@ Workspace ownership before writing and requires explicit permission to
 overwrite an existing Workspace. Cloud/object storage, automatic schedules,
 retention, and destructive cleanup are not implemented.
 
+## Production infrastructure adapters
+
+Mission 126 adds a `RepositoryFactory` for the existing shared StateRepository
+contract. `memory` remains the safe default; `json`, injected PostgreSQL
+DB-API, and injected Redis-client adapters can be selected through validated
+configuration. Production resources expose safe health probes and are closed
+through the FastAPI lifespan boundary.
+
+The adapters assume externally managed PostgreSQL schema and injected clients.
+They do not run migrations, install a database driver, automatically switch
+storage, delete data, or contain cloud-provider code.
+
 ## User lifecycle
 
 Mission 102 adds lifecycle state to the existing User implementation rather

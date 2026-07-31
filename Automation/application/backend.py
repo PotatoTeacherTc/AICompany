@@ -116,6 +116,7 @@ class BackendDependencies:
     rate_limiter: object | None = None
     logger: object | None = None
     metrics: object | None = None
+    infrastructure_resources: object | None = None
 
 
 def create_backend_app(dependencies=None):
@@ -126,14 +127,20 @@ def create_backend_app(dependencies=None):
     logger = dependencies.logger or NullLogger()
     metrics = dependencies.metrics or InMemoryOperationalMetrics()
     health_service = dependencies.health_service or BackendHealthService(
-        logger=logger, metrics=metrics
+        persistence_probe=(
+            dependencies.infrastructure_resources.health
+            if dependencies.infrastructure_resources is not None
+            else None
+        ),
+        logger=logger,
+        metrics=metrics,
     )
     security = dependencies.security_settings or SecuritySettings.from_environment()
     rate_limiter = dependencies.rate_limiter or InMemoryRateLimiter(
         security.rate_limit_requests,
         security.rate_limit_window_seconds,
     )
-    return create_app(
+    app = create_app(
         automation_service=dependencies.automation_service,
         task_query_service=dependencies.task_query_service,
         workspace_service=dependencies.workspace_service,
@@ -168,4 +175,8 @@ def create_backend_app(dependencies=None):
         rate_limiter=rate_limiter,
         logger=logger,
         metrics=metrics,
+        infrastructure_resources=dependencies.infrastructure_resources,
     )
+    if dependencies.infrastructure_resources is not None:
+        app.state.infrastructure_resources = dependencies.infrastructure_resources
+    return app

@@ -576,6 +576,15 @@ not inferred from a missing historical mission log.
   scheduling, retention, and deletion are not implemented. Five focused,
   23 related, and all 327 Backend tests pass.
 
+- Mission 126: RepositoryFactory now selects Memory, JSON, injected PostgreSQL
+  DB-API, or injected Redis-client StateRepository adapters from validated
+  configuration. Both production-oriented adapters retain Workspace-qualified
+  reads, expose safe health probes, and participate in FastAPI lifespan-based
+  graceful shutdown. They do not create/migrate schemas, bundle drivers,
+  auto-enable production storage, delete data, or introduce cloud coupling.
+  Five focused tests, all 332 Backend tests, Frontend tests/build, and the
+  healthy four-service Compose stack pass.
+
 ## Implemented pipelines
 
 | Type | Pipeline | Current result |
@@ -591,14 +600,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current Backend suite contains **327 tests**. Its expected command is:
+The current Backend suite contains **332 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Current verification result: **327 passed, 0 failed**.
+Current verification result: **332 passed, 0 failed**.
 
 ## Not implemented
 
