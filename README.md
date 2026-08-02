@@ -892,11 +892,19 @@ fallback. Tests inject `FakeSecureTokenStore`. Cloud deployment requires a
 separately approved Vault or cloud Secret Manager adapter.
 
 The OAuth contract uses PKCE S256, random state, bounded single-use callback,
-loopback redirect, and only
-`https://www.googleapis.com/auth/youtube.upload`. The publishing Foundation
+loopback redirect, and only `youtube.upload` plus `youtube.readonly`. The latter
+is limited to channel identity verification. The publishing Foundation
 forces private visibility and models resumable upload, processing polling,
 thumbnail application, Publication persistence, idempotency, Usage, and
 Workspace isolation through Fake providers. YouTube quota units are not money
-and no fixed daily quota is assumed. Actual Google client credentials, system
-browser consent, channel verification, Google API calls, uploads, public or
-scheduled publication, blog publishing, and @9 are not implemented or run.
+and no fixed daily quota is assumed.
+
+The explicit real CLI boundary uses `youtube-connect`,
+`youtube-connection-status`, and `youtube-upload`. It requests exactly
+`youtube.upload` plus `youtube.readonly`; read-only access is used to verify the
+selected channel before upload. Local Integration verified the
+`Potato Music Company` channel and one approved three-second private upload
+(`CGL9-UhCXgU`, processing succeeded). Token material remains only in Windows
+Credential Manager. Thumbnail application failed safely and did not change
+upload success. Public/unlisted/scheduled upload, automatic deletion, external
+blog publishing, and @9 are not implemented.

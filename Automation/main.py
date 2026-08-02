@@ -31,6 +31,12 @@ from core.video_package import VideoPackageOrchestrator, VideoPackageRequest
 from core.object_storage import ArtifactStorageAdapter, LocalStorageProvider
 from core.persistence import JsonStateRepository
 from core.usage_engine import UsageEngine
+from core.secure_token_store import WindowsLocalSecureTokenStore
+from core.youtube_publishing import (
+    GoogleYouTubeOAuthFlow, GoogleYouTubeProvider,
+    YouTubeConnectionRepository, YouTubeConnectionService,
+    YouTubeFoundationError, YouTubePublishingService,
+)
 from core.music_pipeline import MusicPipeline
 from core.pipeline import AIPipeline
 from core.registry import PipelineRegistry
@@ -387,8 +393,75 @@ def run_video_package(workspace_id, content_project_id, root=None,
     return result
 
 
+def _youtube_components(root=None):
+    root = Path(root or Path(__file__).parent / "logs" / "music-plans").resolve()
+    storage, state_root = root / "artifacts", root / "state"
+    state = JsonStateRepository(state_root / "music-project-state.json")
+    repository = FileArtifactRepository(state_root / "artifact-metadata.json", storage)
+    artifacts = ArtifactManager(repository, ArtifactStorageAdapter(LocalStorageProvider(storage), repository))
+    connections = YouTubeConnectionService(YouTubeConnectionRepository(state), WindowsLocalSecureTokenStore())
+    return root, state, artifacts, connections
+
+
+def run_youtube_connect(workspace_id, client_secret_file, root=None, flow=None,
+                        expected_channel_title=None, timeout_seconds=900):
+    _, _, _, connections = _youtube_components(root)
+    try:
+        config = json.loads(Path(client_secret_file).read_text(encoding="utf-8"))
+        token, channel = (flow or GoogleYouTubeOAuthFlow()).authorize(
+            config, workspace_id, timeout_seconds=timeout_seconds)
+        if (expected_channel_title is not None and
+                channel["safe_channel_title"] != expected_channel_title):
+            raise YouTubeFoundationError("CHANNEL_TITLE_MISMATCH")
+        connection = connections.connect(workspace_id, channel["channel_id"], channel["safe_channel_title"], token)
+        result = {"status": "CONNECTED", "workspace_id": workspace_id, "connection_id": connection.connection_id,
+                  "channel_id": connection.channel_id, "channel_title": connection.safe_channel_title}
+    except Exception as error:
+        result = {"status": "FAILED", "workspace_id": workspace_id,
+                  "error": "YouTubeConnectionError: " + getattr(error, "code", "CONNECTION_FAILED")}
+    print(json.dumps(result, ensure_ascii=False, indent=2)); return result
+
+
+def run_youtube_connection_status(workspace_id, root=None):
+    _, _, _, connections = _youtube_components(root)
+    values = connections.repository.list(workspace_id)
+    result = {"status": "SUCCESS", "workspace_id": workspace_id, "connections": [
+        {"connection_id": item.connection_id, "channel_id": item.channel_id,
+         "channel_title": item.safe_channel_title, "status": item.status} for item in values]}
+    print(json.dumps(result, ensure_ascii=False, indent=2)); return result
+
+
+def run_youtube_upload(workspace_id, content_project_id, connection_id, idempotency_key, root=None):
+    root, state, artifacts, connections = _youtube_components(root)
+    history = ExecutionHistory(repository=JsonFileExecutionHistoryRepository(root / "state" / "execution-history.json"))
+    result = YouTubePublishingService(GoogleYouTubeProvider(), connections, ContentProjectRepository(state), state,
+        artifacts, history=history, usage=UsageEngine(state)).publish(
+            workspace_id, content_project_id, connection_id, idempotency_key, "private")
+    data = result.get("data") or {}
+    print(json.dumps({"status": result.get("status"), "workspace_id": data.get("workspace_id"),
+        "content_project_id": data.get("content_project_id"), "publication_id": data.get("publication_id"),
+        "video_id": data.get("video_id"), "privacy_status": data.get("privacy_status"),
+        "processing_status": data.get("processing_status"), "thumbnail_status": data.get("thumbnail_status"),
+        "error": result.get("error")}, ensure_ascii=False, indent=2)); return result
+
+
 if __name__ == "__main__":
-    if len(sys.argv) > 1 and sys.argv[1] == "video-package":
+    if len(sys.argv) > 1 and sys.argv[1] in {"youtube-connect", "youtube-connection-status", "youtube-upload"}:
+        command = sys.argv[1]; values = {"--workspace": None, "--client-secret-file": None,
+            "--content-project-id": None, "--connection-id": None, "--idempotency-key": None,
+            "--expected-channel-title": None, "--timeout-seconds": "900"}
+        index = 2
+        while index < len(sys.argv):
+            if sys.argv[index] in values and index + 1 < len(sys.argv): values[sys.argv[index]] = sys.argv[index + 1]; index += 2
+            else: index += 1
+        if command == "youtube-connect": result = run_youtube_connect(
+            values["--workspace"], values["--client-secret-file"],
+            expected_channel_title=values["--expected-channel-title"],
+            timeout_seconds=int(values["--timeout-seconds"]))
+        elif command == "youtube-connection-status": result = run_youtube_connection_status(values["--workspace"])
+        else: result = run_youtube_upload(values["--workspace"], values["--content-project-id"], values["--connection-id"], values["--idempotency-key"])
+        if result.get("status") not in {"SUCCESS", "CONNECTED"}: raise SystemExit(1)
+    elif len(sys.argv) > 1 and sys.argv[1] == "video-package":
         values = {"--workspace-id": None, "--content-project-id": None, "--provider": "ffmpeg", "--idempotency-key": None}
         index = 2
         while index < len(sys.argv):

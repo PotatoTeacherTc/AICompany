@@ -2,3 +2,5 @@ Automation/.git_backup/
 Web/node_modules/
 Web/dist/
 Web/*.tsbuildinfo
+# Local secrets
+secrets/

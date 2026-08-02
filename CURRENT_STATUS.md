@@ -4,6 +4,17 @@
 
 Official current baseline: **Mission 141**.
 
+@8 YouTube Local Integration was verified on 2026-08-02. OAuth requests only
+`youtube.upload` and `youtube.readonly`, uses PKCE/state and a loopback callback,
+and stores Token material only in Windows Credential Manager. The
+`Potato Music Company` channel was confirmed before one approved three-second
+MP4 was uploaded as private (`CGL9-UhCXgU`). The YouTube API reported
+`processed`/`succeeded`; Publication, Usage, History, restart recovery, and
+Workspace isolation passed. Thumbnail application failed safely. The project
+state has YOUTUBE_PACKAGE completed and PUBLISHING pending. External blog
+publishing and @9 remain unimplemented. The current Backend baseline is 485
+tests with four conditional skips.
+
 Current product status: **Local/Fake SaaS Beta + bounded single-host Production Integration**.
 
 Mission 1-141 completion means only that each Mission's bounded Contract,
@@ -31,10 +42,10 @@ OAuth, account connection, browser automation, or external API was used for
 boundary. Windows Credential Manager actual CRUD was verified; OAuth state,
 PKCE, connection metadata, Fake private resumable upload, processing,
 thumbnail, Publication, restart, and isolation contracts are Mock-verified.
-No Google credential, real OAuth consent, channel connection, YouTube upload,
-blog publishing, or @9 work was performed.
+Google OAuth, channel verification, and one private upload are now verified as
+described above. Blog publishing and @9 work were not performed.
 
-Current verification baseline: Backend 484 tests with four conditional skips,
+Current verification baseline: Backend 485 tests with four conditional skips,
 Frontend two tests,
 Frontend production build, and a production-like single-host Docker stack with
 two Backends and two Workers behind a local TLS Gateway.
@@ -78,7 +89,8 @@ candidate. Enterprise and AICompany v1.0 remain unimplemented.
   Connection and Publication records contain no token, authorization code,
   client secret, email, path, or raw API response. The publishing contract
   forces private, preserves one Content Project/video ID through idempotency,
-  and leaves PUBLISHING pending. Real Google integration remains unverified.
+  and leaves PUBLISHING pending. Google YouTube Local Integration is verified;
+  external blog publishing remains unverified.
 
 - @7 Video Package: FFmpeg 7.1.1 CLI converts same-Workspace completed audio
   and the existing COVER into a 1920x1080 H.264/AAC 30fps MP4 with fade in/out

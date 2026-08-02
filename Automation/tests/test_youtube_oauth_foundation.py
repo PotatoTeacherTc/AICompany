@@ -14,7 +14,7 @@ from core.secure_token_store import FakeSecureTokenStore, SecureTokenStoreError,
 from core.status import PipelineStatus
 from core.usage_engine import UsageEngine
 from core.video_package import VIDEO_PACKAGE_KIND
-from core.youtube_publishing import (CONNECTION_KIND, PUBLICATION_KIND, YOUTUBE_SCOPE,
+from core.youtube_publishing import (CONNECTION_KIND, PUBLICATION_KIND, YOUTUBE_SCOPE, YOUTUBE_READONLY_SCOPE,
     YouTubeConnectionRepository, YouTubeConnectionService, YouTubeFoundationError,
     YouTubeOAuthClient, YouTubePublishingService)
 from providers.content_media import FakeYouTubeProvider
@@ -23,7 +23,7 @@ from providers.content_media import FakeYouTubeProvider
 def token(marker="marker-a"):
     return {"access_token": marker + "-access", "refresh_token": marker + "-refresh",
             "expires_at": "2026-08-02T12:00:00+00:00", "token_type": "Bearer",
-            "granted_scopes": (YOUTUBE_SCOPE,)}
+            "granted_scopes": (YOUTUBE_SCOPE, YOUTUBE_READONLY_SCOPE)}
 
 
 class SecureTokenStoreTests(unittest.TestCase):
@@ -58,7 +58,7 @@ class OAuthFoundationTests(unittest.TestCase):
     def test_state_pkce_minimal_scope_loopback_and_single_use(self):
         oauth = YouTubeOAuthClient(clock=lambda: 100)
         session, url = oauth.start("workspace-a", "client-a", port=8765)
-        self.assertIn("youtube.upload", url); self.assertNotIn("force-ssl", url); self.assertNotEqual(session.code_verifier, session.code_challenge)
+        self.assertIn("youtube.upload", url); self.assertIn("youtube.readonly", url); self.assertNotIn("force-ssl", url); self.assertNotEqual(session.code_verifier, session.code_challenge)
         value = oauth.consume_callback(session.session_id, session.state, "code-a"); self.assertEqual(session.code_verifier, value["code_verifier"])
         with self.assertRaisesRegex(YouTubeFoundationError, "CALLBACK_REUSED"): oauth.consume_callback(session.session_id, session.state, "code-a")
     def test_state_mismatch_and_external_redirect_are_blocked(self):
@@ -113,6 +113,21 @@ class PublishingFoundationTests(unittest.TestCase):
         self.assertIn("CONTENT_PROJECT_NOT_FOUND", self.service.publish("workspace-b", "content-a", self.connection.connection_id, "key")["error"])
         self.service.publish("workspace-a", "content-a", self.connection.connection_id, "first")
         self.assertIn("IDEMPOTENCY_CONFLICT", self.service.publish("workspace-a", "content-a", self.connection.connection_id, "second")["error"])
+
+    def test_thumbnail_failure_does_not_change_successful_private_upload(self):
+        class ThumbnailFailureProvider(FakeYouTubeProvider):
+            def set_thumbnail(self, *args, **kwargs):
+                raise RuntimeError("provider detail must remain private")
+        service = YouTubePublishingService(
+            ThumbnailFailureProvider(), self.connections, self.projects,
+            self.states, self.artifacts)
+        result = service.publish(
+            "workspace-a", "content-a", self.connection.connection_id,
+            "thumbnail-failure")
+        self.assertEqual("SUCCESS", result["status"])
+        self.assertEqual("FAILED", result["data"]["thumbnail_status"])
+        self.assertEqual(("THUMBNAIL_NOT_APPLIED",), result["data"]["warnings"])
+        self.assertNotIn("provider detail", repr(result))
 
 
 if __name__ == "__main__": unittest.main()

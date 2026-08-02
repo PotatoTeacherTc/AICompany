@@ -5,7 +5,12 @@ import hashlib
 import json
 import secrets
 import threading
-from urllib.parse import urlencode, urlparse
+import time
+from urllib.error import HTTPError, URLError
+from urllib.parse import parse_qs, urlencode, urlparse
+from urllib.request import Request, urlopen
+import webbrowser
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
 from core.artifact_manager import ArtifactManager
 from core.content_brief_orchestration import ContentProjectRepository
@@ -18,6 +23,8 @@ from providers.content_media import YouTubeProvider
 
 
 YOUTUBE_SCOPE = "https://www.googleapis.com/auth/youtube.upload"
+YOUTUBE_READONLY_SCOPE = "https://www.googleapis.com/auth/youtube.readonly"
+YOUTUBE_SCOPES = (YOUTUBE_SCOPE, YOUTUBE_READONLY_SCOPE)
 CONNECTION_KIND = "youtube_connection"
 PUBLICATION_KIND = "youtube_publication"
 _STATUSES = {"DISCONNECTED", "AUTHORIZATION_PENDING", "CONNECTED", "TOKEN_EXPIRED", "REVOKED", "ERROR"}
@@ -72,8 +79,8 @@ class YouTubeOAuthClient:
                                f"http://{redirect_host}:{port}/oauth/callback", self.clock() + timeout_seconds)
         with self._lock: self._sessions[session.session_id] = session
         query = urlencode({"client_id": client_id, "redirect_uri": session.redirect_uri, "response_type": "code",
-                           "scope": YOUTUBE_SCOPE, "state": state, "code_challenge": challenge, "code_challenge_method": "S256",
-                           "access_type": "offline", "include_granted_scopes": "false"})
+                           "scope": " ".join(YOUTUBE_SCOPES), "state": state, "code_challenge": challenge, "code_challenge_method": "S256",
+                           "access_type": "offline", "include_granted_scopes": "false", "prompt": "consent"})
         return session, "https://accounts.google.com/o/oauth2/v2/auth?" + query
     def consume_callback(self, session_id, state, code):
         with self._lock:
@@ -86,6 +93,123 @@ class YouTubeOAuthClient:
             return {"code": code, "code_verifier": session.code_verifier, "redirect_uri": session.redirect_uri}
 
 
+class GoogleYouTubeOAuthFlow:
+    """Explicit installed-app loopback OAuth flow; never runs at import time."""
+    def __init__(self, oauth=None, opener=None, browser=None):
+        self.oauth = oauth or YouTubeOAuthClient(); self.opener = opener or urlopen; self.browser = browser or webbrowser.open
+    def authorize(self, client_config, workspace_id, timeout_seconds=900):
+        config = _client_config(client_config)
+        callback = {}
+        class Handler(BaseHTTPRequestHandler):
+            def do_GET(self):
+                parsed = urlparse(self.path)
+                if parsed.path != "/oauth/callback": self.send_response(404); self.end_headers(); return
+                values = parse_qs(parsed.query); callback.update({key: values.get(key, [None])[0] for key in ("state", "code", "error")})
+                self.send_response(200); self.send_header("Content-Type", "text/plain; charset=utf-8"); self.end_headers(); self.wfile.write(b"Authorization received. Return to AICompany.")
+            def log_message(self, *_): pass
+        server = HTTPServer(("127.0.0.1", 0), Handler); server.timeout = timeout_seconds
+        session, authorization_url = self.oauth.start(workspace_id, config["client_id"], "127.0.0.1", server.server_port, timeout_seconds)
+        try:
+            if not self.browser(authorization_url): raise YouTubeFoundationError("BROWSER_OPEN_FAILED")
+            server.handle_request()
+        finally: server.server_close()
+        if callback.get("error"):
+            code = {"access_denied": "AUTHORIZATION_DENIED"}.get(
+                callback["error"], "AUTHORIZATION_FAILED")
+            raise YouTubeFoundationError(code)
+        if not callback.get("code"): raise YouTubeFoundationError("AUTHORIZATION_CANCELLED")
+        consumed = self.oauth.consume_callback(session.session_id, callback.get("state"), callback["code"])
+        token = self._exchange(config, consumed)
+        channel = self.channel(token["access_token"])
+        return token, channel
+    def _exchange(self, config, callback):
+        payload = urlencode({"client_id": config["client_id"], "client_secret": config["client_secret"], "code": callback["code"],
+            "code_verifier": callback["code_verifier"], "redirect_uri": callback["redirect_uri"], "grant_type": "authorization_code"}).encode()
+        value = self._json(Request(config["token_uri"], data=payload, headers={"Content-Type": "application/x-www-form-urlencoded"}, method="POST"), 60)
+        if not all(isinstance(value.get(key), str) and value[key] for key in ("access_token", "refresh_token", "token_type")): raise YouTubeFoundationError("TOKEN_EXCHANGE_INVALID")
+        scopes = tuple(str(value.get("scope", " ".join(YOUTUBE_SCOPES))).split())
+        if set(scopes) != set(YOUTUBE_SCOPES) or len(scopes) != 2: raise YouTubeFoundationError("SCOPE_INVALID")
+        return {"access_token": value["access_token"], "refresh_token": value["refresh_token"],
+            "expires_at": datetime.fromtimestamp(time.time() + int(value.get("expires_in", 3600)), timezone.utc).isoformat(),
+            "token_type": value["token_type"], "granted_scopes": scopes}
+    def refresh(self, client_config, refresh_token):
+        config = _client_config(client_config); payload = urlencode({"client_id": config["client_id"], "client_secret": config["client_secret"],
+            "refresh_token": refresh_token, "grant_type": "refresh_token"}).encode()
+        value = self._json(Request(config["token_uri"], data=payload, headers={"Content-Type": "application/x-www-form-urlencoded"}, method="POST"), 60)
+        if not isinstance(value.get("access_token"), str): raise YouTubeFoundationError("TOKEN_REFRESH_FAILED")
+        return {"access_token": value["access_token"], "refresh_token": refresh_token,
+            "expires_at": datetime.fromtimestamp(time.time() + int(value.get("expires_in", 3600)), timezone.utc).isoformat(),
+            "token_type": value.get("token_type", "Bearer"), "granted_scopes": YOUTUBE_SCOPES}
+    def channel(self, access_token):
+        request = Request("https://www.googleapis.com/youtube/v3/channels?" + urlencode({"part": "snippet", "mine": "true"}), headers={"Authorization": "Bearer " + access_token})
+        value = self._json(request, 60); items = value.get("items")
+        if not isinstance(items, list) or len(items) != 1: raise YouTubeFoundationError("CHANNEL_VERIFICATION_FAILED")
+        channel_id, title = items[0].get("id"), (items[0].get("snippet") or {}).get("title")
+        if not isinstance(channel_id, str) or not isinstance(title, str): raise YouTubeFoundationError("CHANNEL_VERIFICATION_FAILED")
+        return {"channel_id": channel_id, "safe_channel_title": _safe_title(title)}
+    def _json(self, request, timeout):
+        try:
+            with self.opener(request, timeout=timeout) as response: return json.loads(response.read().decode("utf-8"))
+        except HTTPError as error:
+            reason = _google_error_reason(error)
+            code = {
+                "accessNotConfigured": "API_NOT_CONFIGURED",
+                "channelForbidden": "CHANNEL_AUTHORIZATION_FAILED",
+                "insufficientPermissions": "CHANNEL_SCOPE_INSUFFICIENT",
+                "quotaExceeded": "QUOTA_EXCEEDED",
+                "rateLimitExceeded": "QUOTA_OR_RATE_LIMIT",
+            }.get(reason, "AUTH_FAILED" if error.code in {401, 403} else
+                  "QUOTA_OR_RATE_LIMIT" if error.code == 429 else "GOOGLE_API_ERROR")
+            error.close(); raise YouTubeFoundationError(code) from None
+        except (URLError, TimeoutError, OSError): raise YouTubeFoundationError("NETWORK_ERROR") from None
+        except Exception: raise YouTubeFoundationError("RESPONSE_INVALID") from None
+
+
+class GoogleYouTubeProvider(YouTubeProvider):
+    def __init__(self, opener=None): self.opener = opener or urlopen
+    @property
+    def name(self): return "youtube"
+    def upload(self, request): raise NotImplementedError
+    def start_resumable_upload(self, request, token_payload):
+        metadata = request["metadata"]
+        if request.get("privacy_status") != "private" or metadata.get("visibility_draft") != "private": raise ValueError("private upload required")
+        content = request.get("video_content")
+        if not isinstance(content, bytes) or not content: raise YouTubeFoundationError("VIDEO_CONTENT_INVALID")
+        body = json.dumps({"snippet": {"title": metadata.get("title", "")[:100], "description": metadata.get("description", "")[:5000],
+            "tags": list(metadata.get("tags", ()))[:12], "categoryId": "10"}, "status": {"privacyStatus": "private"}}).encode()
+        initial = Request("https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status", data=body,
+            headers={"Authorization": "Bearer " + token_payload["access_token"], "Content-Type": "application/json; charset=UTF-8",
+                     "X-Upload-Content-Type": "video/mp4", "X-Upload-Content-Length": str(len(content))}, method="POST")
+        try:
+            with self.opener(initial, timeout=60) as response: location = response.headers.get("Location")
+            if not isinstance(location, str) or not location.startswith("https://www.googleapis.com/"): raise YouTubeFoundationError("RESUMABLE_SESSION_INVALID")
+            upload = Request(location, data=content, headers={"Authorization": "Bearer " + token_payload["access_token"], "Content-Type": "video/mp4"}, method="PUT")
+            with self.opener(upload, timeout=300) as response: value = json.loads(response.read().decode())
+        except YouTubeFoundationError: raise
+        except HTTPError as error:
+            code = "AUTH_FAILED" if error.code in {401, 403} else "QUOTA_OR_RATE_LIMIT" if error.code in {429} else "UPLOAD_FAILED"; error.close(); raise YouTubeFoundationError(code) from None
+        except (URLError, TimeoutError, OSError): raise YouTubeFoundationError("NETWORK_ERROR") from None
+        video_id = value.get("id") if isinstance(value, dict) else None
+        if not isinstance(video_id, str) or not video_id: raise YouTubeFoundationError("UPLOAD_RESULT_INVALID")
+        return {"video_id": video_id, "upload_status": "UPLOADED", "upload_attempts": 1}
+    def poll_processing(self, video_id, token_payload, timeout_seconds):
+        deadline = time.monotonic() + timeout_seconds; polls = 0
+        while time.monotonic() < deadline:
+            polls += 1; request = Request("https://www.googleapis.com/youtube/v3/videos?" + urlencode({"part": "processingDetails,status", "id": video_id}), headers={"Authorization": "Bearer " + token_payload["access_token"]})
+            value = _read_google_json(self.opener, request, min(30, timeout_seconds)); items = value.get("items", [])
+            if len(items) != 1: raise YouTubeFoundationError("VIDEO_NOT_FOUND")
+            status = (items[0].get("processingDetails") or {}).get("processingStatus")
+            if status == "succeeded": return {"processing_status": status, "poll_count": polls}
+            if status in {"failed", "terminated"}: raise YouTubeFoundationError("PROCESSING_FAILED")
+            time.sleep(2)
+        raise YouTubeFoundationError("PROCESSING_TIMEOUT")
+    def set_thumbnail(self, video_id, content, mime_type, token_payload, timeout_seconds):
+        if mime_type not in {"image/png", "image/jpeg"} or not isinstance(content, bytes) or not 0 < len(content) <= 2_000_000: raise ValueError("thumbnail invalid")
+        request = Request("https://www.googleapis.com/upload/youtube/v3/thumbnails/set?" + urlencode({"videoId": video_id}), data=content,
+            headers={"Authorization": "Bearer " + token_payload["access_token"], "Content-Type": mime_type}, method="POST")
+        _read_google_json(self.opener, request, timeout_seconds); return {"thumbnail_status": "APPLIED"}
+
+
 class YouTubeConnectionService:
     def __init__(self, repository, token_store):
         if not isinstance(token_store, SecureTokenStore): raise TypeError("token_store must implement SecureTokenStore")
@@ -93,7 +217,7 @@ class YouTubeConnectionService:
     def connect(self, workspace_id, channel_id, channel_title, token_payload):
         _id(workspace_id); _id(channel_id)
         scopes = tuple(token_payload.get("granted_scopes", ()))
-        if scopes != (YOUTUBE_SCOPE,): raise YouTubeFoundationError("SCOPE_INVALID")
+        if set(scopes) != set(YOUTUBE_SCOPES) or len(scopes) != 2: raise YouTubeFoundationError("SCOPE_INVALID")
         connection_id = "ytc_" + secrets.token_hex(16)
         reference = self.tokens.put(workspace_id, connection_id, token_payload)
         now = _now(); connection = YouTubeConnection(connection_id, workspace_id, "youtube", channel_id,
@@ -102,7 +226,8 @@ class YouTubeConnectionService:
         except Exception: self.tokens.delete(workspace_id, connection_id, reference); raise YouTubeFoundationError("CONNECTION_SAVE_FAILED") from None
     def refresh(self, workspace_id, connection_id, token_payload):
         value = self._connected(workspace_id, connection_id)
-        if tuple(token_payload.get("granted_scopes", ())) != (YOUTUBE_SCOPE,): raise YouTubeFoundationError("SCOPE_INVALID")
+        scopes = tuple(token_payload.get("granted_scopes", ()))
+        if set(scopes) != set(YOUTUBE_SCOPES) or len(scopes) != 2: raise YouTubeFoundationError("SCOPE_INVALID")
         self.tokens.replace(workspace_id, connection_id, value.token_reference, token_payload)
         return self.repository.save(replace(value, refreshed_at=_now(), revision=value.revision + 1))
     def disconnect(self, workspace_id, connection_id):
@@ -159,18 +284,24 @@ class YouTubePublishingService:
                 inputs = self._inputs(video_state, workspace_id)
                 draft = json.loads(self.artifacts.storage_adapter.read(workspace_id, inputs["draft"]["artifact_id"]).decode())
                 if draft.get("visibility_draft") != "private": raise YouTubeFoundationError("PRIVATE_REQUIRED")
+                video_content = self.artifacts.storage_adapter.read(workspace_id, inputs["video"]["artifact_id"])
                 upload = self.provider.start_resumable_upload({"workspace_id": workspace_id, "content_project_id": content_project_id,
-                    "privacy_status": "private", "video_artifact_id": inputs["video"]["artifact_id"], "metadata": draft}, token)
+                    "privacy_status": "private", "video_artifact_id": inputs["video"]["artifact_id"], "video_content": video_content, "metadata": draft}, token)
                 video_id = upload.get("video_id")
                 if not isinstance(video_id, str) or not video_id: raise YouTubeFoundationError("UPLOAD_RESULT_INVALID")
                 processing = self.provider.poll_processing(video_id, token, 60)
                 if processing.get("processing_status") != "succeeded": raise YouTubeFoundationError("PROCESSING_FAILED")
                 thumbnail_content = self.artifacts.storage_adapter.read(workspace_id, inputs["thumbnail"]["artifact_id"])
-                thumb = self.provider.set_thumbnail(video_id, thumbnail_content, inputs["thumbnail"]["mime_type"], token, 30)
+                warnings = ()
+                try:
+                    thumb = self.provider.set_thumbnail(video_id, thumbnail_content, inputs["thumbnail"]["mime_type"], token, 30)
+                except Exception:
+                    thumb = {"thumbnail_status": "FAILED"}
+                    warnings = ("THUMBNAIL_NOT_APPLIED",)
                 now = _now(); publication = YouTubePublication("ytp_" + secrets.token_hex(16), workspace_id, content_project_id,
                     connection_id, "youtube", connection.channel_id, video_id, "private", "UPLOADED", "succeeded",
                     thumb.get("thumbnail_status", "FAILED"), f"https://www.youtube.com/watch?v={video_id}", now, now,
-                    (inputs["video"]["artifact_id"], inputs["draft"]["artifact_id"], inputs["thumbnail"]["artifact_id"]), digest, 0, (),
+                    (inputs["video"]["artifact_id"], inputs["draft"]["artifact_id"], inputs["thumbnail"]["artifact_id"]), digest, 0, warnings,
                     "Review the private video in YouTube Studio.")
                 self.states.save(PUBLICATION_KIND, content_project_id, workspace_id, publication.to_dict())
                 ready = replace(project, revision=project.revision + 1, updated_at=now,
@@ -209,3 +340,23 @@ def _safe_title(value):
     if not isinstance(value, str) or not value.strip(): raise YouTubeFoundationError("CHANNEL_INVALID")
     return value.strip()[:100]
 def _now(): return datetime.now(timezone.utc).isoformat()
+def _client_config(value):
+    if not isinstance(value, dict) or not isinstance(value.get("installed"), dict): raise YouTubeFoundationError("CLIENT_CONFIG_INVALID")
+    data = value["installed"]
+    if not all(isinstance(data.get(key), str) and data[key] for key in ("client_id", "client_secret", "auth_uri", "token_uri")): raise YouTubeFoundationError("CLIENT_CONFIG_INVALID")
+    if data["token_uri"] != "https://oauth2.googleapis.com/token": raise YouTubeFoundationError("CLIENT_CONFIG_INVALID")
+    return data
+def _read_google_json(opener, request, timeout):
+    try:
+        with opener(request, timeout=timeout) as response: return json.loads(response.read().decode())
+    except HTTPError as error: error.close(); raise YouTubeFoundationError("GOOGLE_API_ERROR") from None
+    except (URLError, TimeoutError, OSError): raise YouTubeFoundationError("NETWORK_ERROR") from None
+    except Exception: raise YouTubeFoundationError("RESPONSE_INVALID") from None
+def _google_error_reason(error):
+    try:
+        value = json.loads(error.read().decode("utf-8"))
+        reasons = (((value.get("error") or {}).get("errors") or [{}])[0])
+        reason = reasons.get("reason")
+        return reason if isinstance(reason, str) else None
+    except Exception:
+        return None

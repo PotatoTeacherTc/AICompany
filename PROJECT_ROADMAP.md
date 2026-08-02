@@ -1197,14 +1197,24 @@ added behind the existing Provider abstraction without changing the workflow.
   OAuth token payloads in the current user's Credential Manager; application
   JSON persists only an unguessable `token_reference`. FakeSecureTokenStore
   supports deterministic injection. OAuth state, PKCE S256, one-use callback,
-  loopback-only redirect, exact `youtube.upload` scope, connection/revoke/
+  loopback-only redirect, exact `youtube.upload` and `youtube.readonly` scopes, connection/revoke/
   refresh, private-only resumable Fake upload, processing polling, thumbnail,
   Publication persistence, idempotency, Usage, and Workspace isolation are
-  implemented. A real Windows Credential Manager CRUD Smoke passed. No Google
-  credential, OAuth browser flow, network/API call, actual upload, or blog
-  publishing was executed; therefore @8 is not real-connection complete.
+  implemented. A real Windows Credential Manager CRUD Smoke passed. Google
+  OAuth, channel verification, and one private upload are now Local Integration
+  verified as recorded below; external blog publishing remains unimplemented.
 
 ### @9 — Real-use E2E and Dashboard integration
+
+- @8 YouTube Local Integration verification (2026-08-02): OAuth is restricted
+  to `youtube.upload` and `youtube.readonly`; the latter is used for
+  `channels.list(mine=true)` channel verification. The `Potato Music Company`
+  channel was verified and one approved three-second MP4 was uploaded as
+  private (`CGL9-UhCXgU`). YouTube reported `processed` and `succeeded`.
+  Publication, Usage, History, restart recovery, and Workspace isolation were
+  verified. Thumbnail application failed safely and remains a warning. Tokens
+  remain only in Windows Credential Manager. External blog publishing remains
+  unimplemented, so the broader @8 stage is only partially complete.
 
 - Goal: join request, manual input, resumed automation, and result inspection.
 - Scope: request start, music package, `waiting_for_input`, audio resume,
