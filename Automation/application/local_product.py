@@ -93,7 +93,8 @@ def _bootstrap(values, users, workspaces, memberships, credentials):
     user = users.get_by_email(email)
     if user is None:
         user = users.create(email)
-    credentials.set_password(user["user_id"], password)
+    if credentials.repository.get(user["user_id"]) is None:
+        credentials.set_password(user["user_id"], password)
     for workspace in workspaces.list():
         if not memberships.repository.get(workspace["workspace_id"], user["user_id"]):
             memberships.add(workspace["workspace_id"], user["user_id"], OWNER)

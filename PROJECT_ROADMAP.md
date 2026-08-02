@@ -1275,7 +1275,10 @@ added behind the existing Provider abstraction without changing the workflow.
 - Local product mode: `start-aicompany.ps1` starts the host Backend, Frontend,
   and in-process persistent Worker, waits for readiness, then opens the browser;
   `stop-aicompany.ps1` stops only the recorded processes. Fake Text is the safe
-  default and real Provider connections remain explicit.
+  default and real Provider connections remain explicit. Local owner bootstrap
+  creates a credential only when absent; startup rejects an occupied Backend
+  port and verifies the prompted owner password against its own Backend before
+  reporting success.
 - Verification: Product Workflow/API/security/restart tests, the full Backend
   suite, Frontend tests/build, and one opt-in real Local E2E passed. This remains
   single-host Local Product Integration, not Production Ready. No `@11` stage

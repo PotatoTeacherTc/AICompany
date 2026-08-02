@@ -4,6 +4,25 @@ $automationRoot = Join-Path $projectRoot "Automation"
 $webRoot = Join-Path $projectRoot "Web"
 $python = Join-Path $automationRoot "venv\Scripts\python.exe"
 if (-not (Test-Path -LiteralPath $python)) { throw "AICompany Python environment is unavailable." }
+$runtime = Join-Path $automationRoot "product-data\runtime.json"
+if (Test-Path -LiteralPath $runtime) {
+    try {
+        $existingRuntime = Get-Content -LiteralPath $runtime -Raw | ConvertFrom-Json
+        $running = @($existingRuntime.backend_pid, $existingRuntime.frontend_pid) | Where-Object {
+            Get-Process -Id $_ -ErrorAction SilentlyContinue
+        }
+        if ($running) { throw "AICompany is already running. Run stop-aicompany.ps1 first." }
+    } catch {
+        if ($_.Exception.Message -like "AICompany is already running*") { throw }
+    }
+    Remove-Item -LiteralPath $runtime -Force
+}
+try {
+    $occupied = Invoke-WebRequest -UseBasicParsing -Uri "http://127.0.0.1:8000/ready" -TimeoutSec 2
+    if ($occupied.StatusCode) { throw "Port 8000 is already serving another application. Stop it before starting AICompany." }
+} catch {
+    if ($_.Exception.Message -like "Port 8000 is already serving*") { throw }
+}
 
 $securePassword = Read-Host "AICompany local login password (12+ characters)" -AsSecureString
 $pointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($securePassword)
@@ -29,19 +48,45 @@ $env:AICOMPANY_NAVER_PROFILE_DIR = Join-Path $automationRoot ".browser-profiles\
 $clientSecret = Join-Path $projectRoot "secrets\client_secret.json"
 if (Test-Path -LiteralPath $clientSecret) { $env:AICOMPANY_GOOGLE_CLIENT_SECRET_FILE = $clientSecret }
 
-$backend = Start-Process -FilePath $python -ArgumentList @("-B","-m","uvicorn","application.local_product:create_local_product_app","--factory","--host","127.0.0.1","--port","8000") -WorkingDirectory $automationRoot -WindowStyle Hidden -PassThru
-$frontend = Start-Process -FilePath "npm.cmd" -ArgumentList @("run","dev","--","--host","127.0.0.1","--port","5173") -WorkingDirectory $webRoot -WindowStyle Hidden -PassThru
-$runtime = Join-Path $automationRoot "product-data\runtime.json"
-New-Item -ItemType Directory -Force -Path (Split-Path $runtime) | Out-Null
-@{ backend_pid=$backend.Id; frontend_pid=$frontend.Id } | ConvertTo-Json | Set-Content -LiteralPath $runtime -Encoding UTF8
-$plainPassword = $null
+$backend = $null
+$frontend = $null
+try {
+    $backend = Start-Process -FilePath $python -ArgumentList @("-B","-m","uvicorn","application.local_product:create_local_product_app","--factory","--host","127.0.0.1","--port","8000") -WorkingDirectory $automationRoot -WindowStyle Hidden -PassThru
+    $deadline = (Get-Date).AddMinutes(2)
+    $ready = $false
+    do {
+        if ($backend.HasExited) { throw "AICompany Backend stopped during startup." }
+        try {
+            if ((Invoke-WebRequest -UseBasicParsing -Uri "http://127.0.0.1:8000/ready" -TimeoutSec 2).StatusCode -eq 200) { $ready = $true; break }
+        } catch { }
+        Start-Sleep -Seconds 2
+    } while ((Get-Date) -lt $deadline)
+    if (-not $ready) { throw "AICompany did not become ready." }
 
-$deadline = (Get-Date).AddMinutes(2)
-do {
-    try { if ((Invoke-WebRequest -UseBasicParsing -Uri "http://127.0.0.1:8000/ready" -TimeoutSec 2).StatusCode -eq 200) { break } } catch { }
-    Start-Sleep -Seconds 2
-} while ((Get-Date) -lt $deadline)
-if ((Get-Date) -ge $deadline) { throw "AICompany did not become ready. Run stop-aicompany.ps1 and check local configuration." }
-Start-Process "http://127.0.0.1:5173"
-Write-Host "AICompany is running. Login: owner@localhost"
-Write-Host "Run stop-aicompany.ps1 to stop the local product."
+    $loginBody = @{ email=$env:AICOMPANY_LOCAL_EMAIL; password=$plainPassword } | ConvertTo-Json
+    try {
+        $loginResult = Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/auth/login" -ContentType "application/json" -Body $loginBody -TimeoutSec 15
+    } catch {
+        throw "AICompany local owner login verification failed. On later runs, enter the original owner password."
+    }
+    if (-not $loginResult.access_token) { throw "AICompany local owner login verification failed." }
+    $loginResult = $null
+    $loginBody = $null
+
+    $frontend = Start-Process -FilePath "npm.cmd" -ArgumentList @("run","dev","--","--host","127.0.0.1","--port","5173") -WorkingDirectory $webRoot -WindowStyle Hidden -PassThru
+    Start-Sleep -Seconds 1
+    if ($frontend.HasExited) { throw "AICompany Frontend stopped during startup." }
+    New-Item -ItemType Directory -Force -Path (Split-Path $runtime) | Out-Null
+    @{ backend_pid=$backend.Id; frontend_pid=$frontend.Id } | ConvertTo-Json | Set-Content -LiteralPath $runtime -Encoding UTF8
+    Start-Process "http://127.0.0.1:5173"
+    Write-Host "AICompany is running and local login was verified. Login: owner@localhost"
+    Write-Host "Run stop-aicompany.ps1 to stop the local product."
+} catch {
+    if ($frontend -and -not $frontend.HasExited) { Stop-Process -Id $frontend.Id -ErrorAction SilentlyContinue }
+    if ($backend -and -not $backend.HasExited) { Stop-Process -Id $backend.Id -ErrorAction SilentlyContinue }
+    throw
+} finally {
+    $plainPassword = $null
+    $loginBody = $null
+    $loginResult = $null
+}

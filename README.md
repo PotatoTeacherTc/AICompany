@@ -937,9 +937,12 @@ From the repository root, run:
 Enter a new local password of at least 12 characters when prompted, then sign
 in as `owner@localhost` in the browser opened by the launcher. The password and
 random signing key exist only in the launcher process environment; only the
-password hash is persisted. The launcher starts the host Backend, React
-Frontend, and in-process persistent Worker, waits for readiness, and opens the
-Dashboard. Stop the recorded processes with:
+password hash is persisted. On the first run this creates the local owner and
+credential. Later runs require that original password and never overwrite the
+existing credential. The launcher rejects an occupied Backend port, watches
+the process it started, and performs a real `/auth/login` check before it starts
+the Frontend, opens the Dashboard, or reports success. Stop the recorded
+processes with:
 
 ```powershell
 .\stop-aicompany.ps1

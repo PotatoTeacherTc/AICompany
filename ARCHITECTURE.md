@@ -182,7 +182,12 @@ stops at Suno input, YouTube connection, and Naver final-confirmation boundaries
 and resumes the same state after restart. The React Dashboard polls this safe
 read model and exposes only safe Artifact text/JSON; binary paths remain hidden.
 `application/local_product.py` is the single-host Windows composition used by
-the start/stop scripts. It is not a distributed Worker or Production deployment.
+the start/stop scripts. Its owner bootstrap is create-only for credentials and
+idempotently restores Workspace OWNER memberships. The launcher treats
+readiness as insufficient by itself: it rejects an occupied port, observes the
+specific Backend child process, and verifies the prompted credential through
+`/auth/login` before opening the Dashboard. It is not a distributed Worker or
+Production deployment.
 
 The @9 NaverBlogPublishingAssistant composes BlogPackage, ArtifactManager,
 ProviderFactory, StateRepository, UsageEngine, and ExecutionHistory around an

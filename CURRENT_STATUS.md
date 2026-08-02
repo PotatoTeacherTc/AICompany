@@ -26,9 +26,18 @@ installed small Ollama model did not reliably satisfy the complex Music Plan
 schema; Ollama remains separately verified for free-form local Text and an
 invalid structured response fails safely.
 
-Current verification baseline: Backend **498 tests passed** with five
+Current verification baseline: Backend **499 tests passed** with five
 conditional integration skips, Frontend **2 tests passed**, and Frontend
 production build passed. @11 is undefined and was not started.
+
+The @10 local owner bootstrap was corrected after a real launcher defect: the
+old script could accept `/ready` from another process after its own Backend had
+failed to bind, and the application rewrote an existing owner credential on
+every run. The bootstrap now creates the password hash only when absent. The
+launcher rejects an occupied port, watches its own Backend, and verifies
+`owner@localhost` through the real HTTP login endpoint before reporting
+success. A loopback Uvicorn smoke verified first login, restart recovery with
+the original password, and rejection of a different restart password.
 
 @9 Naver Blog Publishing Assistant is complete at its Local Integration
 boundary. The actual Smoke reused the `youtube-smoke` Workspace BlogPackage and
@@ -82,7 +91,7 @@ Google OAuth, channel verification, and private uploads are verified as
 described above. @9 and @10 are now also complete at their documented Local
 Integration boundaries.
 
-Current verification baseline: Backend 498 tests with five conditional skips,
+Current verification baseline: Backend 499 tests with five conditional skips,
 Frontend two tests,
 Frontend production build, and a production-like single-host Docker stack with
 two Backends and two Workers behind a local TLS Gateway.
@@ -909,14 +918,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current Backend suite contains **498 tests**. Its expected command is:
+The current Backend suite contains **499 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Current verification result: **498 passed, 0 failed, 5 conditional integration
+Current verification result: **499 passed, 0 failed, 5 conditional integration
 skips**. Credential/real Provider tests remain explicit environment-gated;
 Windows Credential Manager coverage passed in the host-permission run.
 

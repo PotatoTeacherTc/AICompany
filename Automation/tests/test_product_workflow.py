@@ -182,16 +182,30 @@ class ProductWorkflowTests(unittest.TestCase):
                 "AICOMPANY_NAVER_BLOG_PROVIDER": "fake",
                 "ALLOW_PAID_PROVIDER": "False",
             }
-            for _ in range(2):
-                client = TestClient(create_local_product_app(environment))
-                login = client.post("/auth/login", json={
-                    "email": "owner@localhost", "password": "safe-local-password",
-                })
-                self.assertEqual(login.status_code, 200)
-                token = login.json()["access_token"]
-                values = client.get("/workspaces", headers={"Authorization": f"Bearer {token}"})
-                self.assertEqual(values.status_code, 200)
-                self.assertEqual(values.json()["items"][0]["workspace_id"], "default")
+            client = TestClient(create_local_product_app(environment))
+            login = client.post("/auth/login", json={
+                "email": "owner@localhost", "password": "safe-local-password",
+            })
+            self.assertEqual(login.status_code, 200)
+            token = login.json()["access_token"]
+            values = client.get("/workspaces", headers={"Authorization": f"Bearer {token}"})
+            self.assertEqual(values.status_code, 200)
+            self.assertEqual(values.json()["items"][0]["workspace_id"], "default")
+
+            changed = dict(environment, AICOMPANY_LOCAL_PASSWORD="different-password")
+            restarted = TestClient(create_local_product_app(changed))
+            self.assertEqual(restarted.post("/auth/login", json={
+                "email": "owner@localhost", "password": "safe-local-password",
+            }).status_code, 200)
+            self.assertEqual(restarted.post("/auth/login", json={
+                "email": "owner@localhost", "password": "different-password",
+            }).status_code, 401)
+
+    def test_launcher_verifies_its_backend_login_before_success(self):
+        source = (Path(__file__).parents[2] / "start-aicompany.ps1").read_text(encoding="utf-8")
+        self.assertIn("$backend.HasExited", source)
+        self.assertIn('http://127.0.0.1:8000/auth/login', source)
+        self.assertLess(source.index('http://127.0.0.1:8000/auth/login'), source.index('AICompany is running and local login was verified'))
 
 
 if __name__ == "__main__":
