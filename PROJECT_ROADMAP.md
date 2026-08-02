@@ -988,7 +988,7 @@ today/7-day/30-day filter is invented.
   Storage, managed databases, and the official next numbered Mission remain
   undefined.
 
-## Real-use connection roadmap: @1-@10 (approved; @1-@2 complete)
+## Real-use connection roadmap: @1-@10 (approved; @1-@3 complete)
 
 This sequence is separate from the historical Mission numbering. Mission
 1-141 records completed Foundation and bounded Production Integration work.
@@ -1060,7 +1060,7 @@ added behind the existing Provider abstraction without changing the workflow.
   logged, or written to History/Artifact metadata. Suno remains a manual user
   action. No actual OpenAI credential smoke was executed for @2.
 
-### @3 — Completed audio intake and project connection
+### @3 — Completed audio intake and project connection (Complete, local integration)
 
 - Goal: safely discover user-produced `mp3`, `wav`, `flac`, or `m4a` audio in
   a Workspace input boundary and attach it to the music project.
@@ -1068,6 +1068,20 @@ added behind the existing Provider abstraction without changing the workflow.
   damaged-file handling; Workspace isolation; path-escape prevention; no
   source mutation; duration/basic metadata; Artifact and Music Project links.
 - Completion: a user command selects the correct audio for the next Pipeline.
+- Implemented boundary: the `music-import` CLI resolves a name only inside
+  `logs/music-plans/inputs/{workspace_id}/music`, accepts `mp3`, `wav`,
+  `flac`, and `m4a`, and rejects missing, ambiguous, unsupported, empty,
+  oversized, escaped, symlinked, signature-mismatched, or damaged input.
+  `AudioInputValidator` combines a bounded signature check with timeout-bound
+  `ffprobe` audio-stream validation and records safe format, duration, codec,
+  optional sample rate/channels, size, and SHA-256 metadata.
+- Project connection: @2 Artifact metadata plus its `WAITING_FOR_INPUT`
+  ExecutionHistory record establish the existing project boundary. The source
+  remains unchanged while a copy is registered as a Workspace-qualified
+  `MUSIC_SOURCE_AUDIO` Artifact through Local Object Storage. A shared
+  StateRepository persists the one-time audio link and `INPUT_READY` state;
+  duplicate links and cross-Workspace access are rejected. @3 performs no AI
+  call and creates no Usage. Suno execution remains manual.
 
 ### @4 — Content brief and project orchestration
 

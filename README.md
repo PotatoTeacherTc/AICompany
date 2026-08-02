@@ -724,6 +724,39 @@ exclude prompts, recommended settings, two or three variations, a quality
 checklist, and the next action. Successful planning returns
 `WAITING_FOR_INPUT` while the user manually generates audio in Suno.
 
-No Suno API, login, browser automation, audio download, or audio intake is
-implemented. The OpenAI path is Mock-verified; no real credential smoke was
-run for @2. Completed audio intake belongs to @3.
+No Suno API, login, browser automation, or audio download is implemented. The
+OpenAI path is Mock-verified; no real credential smoke was run for @2.
+
+## @3 safe completed-audio intake
+
+After manually generating and downloading audio from Suno, place the file in
+the Workspace input directory. This default directory is below the existing
+Git-ignored `Automation/logs` boundary:
+
+```text
+Automation/logs/music-plans/inputs/{workspace_id}/music/
+```
+
+Then reuse the project/request ID printed by `music-plan`:
+
+```powershell
+cd D:\AICompany\Automation
+.\venv\Scripts\python.exe -B main.py music-import --workspace default --project-id <project-id> --audio-name <filename-or-basename>
+```
+
+Supported extensions are `mp3`, `wav`, `flac`, and `m4a`, case-insensitively;
+the extension may be omitted only when exactly one matching file exists.
+Inputs are bounded by size and checked using both a file signature and
+timeout-bound `ffprobe`. A real audio stream and positive duration are
+required. Missing ffprobe returns a safe diagnostic rather than accepting an
+unverified file.
+
+The original input is not modified. AICompany copies it into the existing
+Workspace-qualified Local Object Storage, records checksum and safe media
+metadata, persists the project link, and transitions `WAITING_FOR_INPUT` to
+`INPUT_READY`. CLI output and persisted metadata omit absolute paths. Duplicate
+project links, duplicate checksums, ambiguity, corruption, traversal,
+symlinks, and cross-Workspace access are rejected. This local operation makes
+no AI or external network call and creates no Usage record. @4 remains the
+approved content-brief and project-orchestration stage; it is not Suno account
+integration.

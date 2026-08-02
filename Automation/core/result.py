@@ -56,6 +56,8 @@ class PipelineResult:
 
             PipelineStatus.WAITING_FOR_INPUT,
 
+            PipelineStatus.INPUT_READY,
+
             PipelineStatus.NOT_IMPLEMENTED
 
         ]

@@ -14,6 +14,11 @@ from core.content_pipeline import ContentPipeline
 from core.history_pipeline import HistoryPipeline
 from core.execution_history_repository import JsonFileExecutionHistoryRepository
 from core.music_planning import MusicPlanningRequest, MusicPlanningService
+from core.completed_audio_intake import (
+    AudioInputLocator, AudioInputValidator, MusicProjectAudioLinkService,
+)
+from core.object_storage import ArtifactStorageAdapter, LocalStorageProvider
+from core.persistence import JsonStateRepository
 from core.music_pipeline import MusicPipeline
 from core.pipeline import AIPipeline
 from core.registry import PipelineRegistry
@@ -190,8 +195,56 @@ def run_music_plan(request=None, workspace_id="default", root=None,
     return result
 
 
+def run_music_import(workspace_id, project_id, audio_name, root=None,
+                     probe=None):
+    root = Path(root or Path(__file__).parent / "logs" / "music-plans").resolve()
+    storage = root / "artifacts"
+    state = root / "state"
+    repository = FileArtifactRepository(state / "artifact-metadata.json", storage)
+    artifacts = ArtifactManager(
+        repository,
+        storage_adapter=ArtifactStorageAdapter(LocalStorageProvider(storage), repository),
+    )
+    history = ExecutionHistory(repository=JsonFileExecutionHistoryRepository(
+        state / "execution-history.json"
+    ))
+    service = MusicProjectAudioLinkService(
+        AudioInputLocator(root / "inputs"),
+        AudioInputValidator(probe=probe), artifacts,
+        JsonStateRepository(state / "music-project-state.json"), history,
+    )
+    result = service.import_audio(workspace_id, project_id, audio_name)
+    data = result.get("data") or {}
+    print(json.dumps({
+        "workspace_id": data.get("workspace_id"),
+        "project_id": data.get("project_id") or data.get("mission_id"),
+        "status": data.get("current_status") or result.get("status"),
+        "source_filename": data.get("source_filename"),
+        "detected_format": data.get("detected_format"),
+        "duration_seconds": data.get("duration_seconds"),
+        "audio_artifact_id": data.get("audio_artifact_id"),
+        "next_action": data.get("next_action"),
+        "error": result.get("error"),
+    }, ensure_ascii=False, indent=2))
+    return result
+
+
 if __name__ == "__main__":
-    if len(sys.argv) > 1 and sys.argv[1] == "music-plan":
+    if len(sys.argv) > 1 and sys.argv[1] == "music-import":
+        values = {"--workspace": None, "--project-id": None, "--audio-name": None}
+        index = 2
+        while index < len(sys.argv):
+            if sys.argv[index] in values and index + 1 < len(sys.argv):
+                values[sys.argv[index]] = sys.argv[index + 1]
+                index += 2
+            else:
+                index += 1
+        music_import_result = run_music_import(
+            values["--workspace"], values["--project-id"], values["--audio-name"]
+        )
+        if music_import_result.get("status") != PipelineStatus.INPUT_READY:
+            raise SystemExit(1)
+    elif len(sys.argv) > 1 and sys.argv[1] == "music-plan":
         workspace = "default"
         request_parts = []
         index = 2

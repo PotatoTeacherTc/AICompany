@@ -18,6 +18,9 @@ class StorageProvider(ABC):
     def exists(self, key):
         pass
 
+    def delete(self, key):
+        return False
+
     def health(self):
         return {"ok": True, "backend": self.__class__.__name__}
 
@@ -39,6 +42,13 @@ class LocalStorageProvider(StorageProvider):
 
     def exists(self, key):
         return self._path(key).is_file()
+
+    def delete(self, key):
+        path = self._path(key)
+        if not path.is_file():
+            return False
+        path.unlink()
+        return True
 
     def _path(self, key):
         safe = _key(key)
@@ -67,6 +77,9 @@ class FakeS3StorageProvider(StorageProvider):
 
     def exists(self, key):
         return _key(key) in self.objects
+
+    def delete(self, key):
+        return self.objects.pop(_key(key), None) is not None
 
 
 class SignedUrlService:
@@ -141,6 +154,15 @@ class ArtifactStorageAdapter:
             return None
         key = artifact.get("internal_ref")
         return self.storage.get(key) if isinstance(key, str) else None
+
+    def discard(self, workspace_id, artifact_id):
+        artifact = self.artifacts.get(artifact_id, workspace_id)
+        if artifact is None or artifact.get("workspace_id") != workspace_id:
+            return False
+        key = artifact.get("internal_ref")
+        if not isinstance(key, str) or not self.storage.delete(key):
+            return False
+        return self.artifacts.delete(artifact_id, workspace_id)
 
     def health(self):
         try:

@@ -90,16 +90,23 @@ class ArtifactManager:
             raise ValueError("artifact metadata must be a dictionary")
         allowed = {
             "provider", "model", "prompt_version", "source_request_id",
-            "schema_version",
+            "schema_version", "extension", "detected_format", "duration_seconds",
+            "audio_codec", "sample_rate", "channels", "checksum_sha256",
+            "imported_at",
         }
         if set(value) - allowed:
             raise ValueError("artifact metadata contains unsupported fields")
         clean = {}
         for key, item in value.items():
             if item is not None:
-                if not isinstance(item, str) or not item.strip() or len(item) > 128:
+                if (
+                    not isinstance(item, (str, int, float))
+                    or isinstance(item, bool)
+                    or (isinstance(item, str) and (not item.strip() or len(item) > 128))
+                    or (isinstance(item, (int, float)) and item < 0)
+                ):
                     raise ValueError("artifact metadata value is invalid")
-                clean[key] = item.strip()
+                clean[key] = item.strip() if isinstance(item, str) else item
         return clean
 
     def get(self, artifact_id, workspace_id=None):
@@ -127,6 +134,12 @@ class ArtifactManager:
         if artifact is None:
             return False
         return self.repository.delete(artifact_id, workspace_id)
+
+    def discard_managed_artifact(self, artifact_id, workspace_id):
+        """Remove only an Artifact copy managed by the configured storage adapter."""
+        if self.storage_adapter is None:
+            return False
+        return self.storage_adapter.discard(workspace_id, artifact_id)
 
     def archive(self, artifact_id, workspace_id):
         return self._transition(artifact_id, workspace_id, "ARCHIVED")

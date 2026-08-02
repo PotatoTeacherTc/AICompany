@@ -121,6 +121,14 @@ class Task:
 
         self.result = result
 
+    def mark_input_ready(self, result=None):
+
+        self.status = PipelineStatus.INPUT_READY
+
+        self.completed_at = datetime.now().isoformat()
+
+        self.result = result
+
 
     def cancel(self, result=None):
 
