@@ -21,6 +21,9 @@ from core.content_brief_orchestration import (
     ContentBriefRequest, ContentBriefService, ContentProjectOrchestrator,
     ContentProjectRepository,
 )
+from core.image_package import (
+    ImagePackageOrchestrator, ImagePackageRequest,
+)
 from core.object_storage import ArtifactStorageAdapter, LocalStorageProvider
 from core.persistence import JsonStateRepository
 from core.usage_engine import UsageEngine
@@ -278,8 +281,76 @@ def run_content_brief(workspace_id, music_project_id, root=None,
     return result
 
 
+def run_image_package(workspace_id, content_project_id, root=None,
+                      environment=None, transport=None, seed=1000,
+                      workflow_profile="default"):
+    root = Path(root or Path(__file__).parent / "logs" / "music-plans").resolve()
+    storage = root / "artifacts"
+    state_root = root / "state"
+    state = JsonStateRepository(state_root / "music-project-state.json")
+    repository = FileArtifactRepository(state_root / "artifact-metadata.json", storage)
+    artifacts = ArtifactManager(
+        repository,
+        storage_adapter=ArtifactStorageAdapter(LocalStorageProvider(storage), repository),
+    )
+    history = ExecutionHistory(repository=JsonFileExecutionHistoryRepository(
+        state_root / "execution-history.json"
+    ))
+    selection = ProviderFactory.image_from_environment(
+        dict(os.environ) if environment is None else environment,
+        transport=transport,
+    )
+    orchestrator = ImagePackageOrchestrator(
+        root / "work", selection, ContentProjectRepository(state), state,
+        artifacts, history, usage_engine=UsageEngine(state),
+    )
+    result = orchestrator.run(ImagePackageRequest(
+        workspace_id, content_project_id, seed=int(seed),
+        workflow_profile=workflow_profile,
+    ))
+    data = result.get("data") or {}
+    print(json.dumps({
+        "workspace_id": data.get("workspace_id"),
+        "content_project_id": data.get("content_project_id"),
+        "image_package_status": data.get("image_package_status"),
+        "provider": data.get("provider"), "model": data.get("model"),
+        "image_artifact_ids": data.get("image_artifact_ids"),
+        "manifest_artifact_id": data.get("manifest_artifact_id"),
+        "next_action": data.get("next_action"), "error": result.get("error"),
+    }, ensure_ascii=False, indent=2))
+    return result
+
+
 if __name__ == "__main__":
-    if len(sys.argv) > 1 and sys.argv[1] == "content-brief":
+    if len(sys.argv) > 1 and sys.argv[1] == "image-package":
+        values = {
+            "--workspace": None, "--content-project-id": None,
+            "--provider": None, "--workflow-profile": "default",
+            "--seed": "1000", "--fake": None,
+        }
+        index = 2
+        while index < len(sys.argv):
+            if sys.argv[index] == "--fake":
+                values["--fake"] = "true"
+                index += 1
+            elif sys.argv[index] in values and index + 1 < len(sys.argv):
+                values[sys.argv[index]] = sys.argv[index + 1]
+                index += 2
+            else:
+                index += 1
+        image_environment = dict(os.environ)
+        if values["--fake"] == "true":
+            image_environment["AICOMPANY_IMAGE_PROVIDER"] = "fake"
+        elif values["--provider"] is not None:
+            image_environment["AICOMPANY_IMAGE_PROVIDER"] = values["--provider"]
+        image_result = run_image_package(
+            values["--workspace"], values["--content-project-id"],
+            environment=image_environment, seed=values["--seed"],
+            workflow_profile=values["--workflow-profile"],
+        )
+        if image_result.get("status") != PipelineStatus.SUCCESS:
+            raise SystemExit(1)
+    elif len(sys.argv) > 1 and sys.argv[1] == "content-brief":
         values = {
             "--workspace": None, "--music-project-id": None,
             "--content-goal": None, "--target-audience": None,

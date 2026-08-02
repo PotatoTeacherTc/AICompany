@@ -794,3 +794,44 @@ contains five PENDING definitions only: image, blog, video, YouTube package,
 and publishing. @4 does not enqueue or execute them, generate media or blog
 text, publish content, analyze audio with AI, or connect a Suno account. @5 is
 the separately approved real image-generation stage.
+
+## @5 local image package Foundation
+
+The default remains deterministic Fake image generation. It produces four
+valid PNGs and one Workspace-owned manifest without network access:
+
+```powershell
+cd D:\AICompany\Automation
+.\venv\Scripts\python.exe -B main.py image-package --workspace default --content-project-id <content-project-id> --fake
+```
+
+Purposes are COVER (1:1), YOUTUBE_THUMBNAIL_SOURCE (16:9), VIDEO_BACKGROUND
+(16:9), and BLOG_INLINE (3:2). The Content Brief is formatted
+deterministically; raw prompts are not logged, returned, or stored in History
+or metadata. Metadata contains only a prompt hash/version and safe generation
+facts. PNG/JPEG/WEBP structure, extension, bounded size, positive dimensions,
+aspect ratio, checksum, output boundary, and Workspace ownership are checked
+before four image Artifacts and `image_package_manifest.json` are registered.
+Retry reuses available purpose Artifacts; a completed request is idempotent.
+
+ComfyUI is an explicit local option. Configure, but do not commit, a model
+filename and a reviewed workflow path:
+
+```powershell
+$env:AICOMPANY_IMAGE_PROVIDER="comfyui"
+$env:AICOMPANY_COMFYUI_ENDPOINT="http://127.0.0.1:8188"
+$env:AICOMPANY_COMFYUI_WORKFLOW_PATH="workflows/comfyui/checkpoint-basic-v1.json"
+$env:AICOMPANY_IMAGE_MODEL="<installed-checkpoint-filename>"
+$env:AICOMPANY_IMAGE_PROVIDER_TIMEOUT="30"
+.\venv\Scripts\python.exe -B main.py image-package --workspace default --content-project-id <content-project-id>
+```
+
+Only credential-free `localhost`, `127.0.0.1`, or `::1` HTTP is accepted. LAN
+and external endpoints, URL credentials, arbitrary/custom nodes, path escape,
+unbounded polling, and automatic Fake fallback are blocked. The tracked basic
+checkpoint workflow uses only standard ComfyUI nodes and is not asserted to be
+a FLUX workflow. FLUX.1-schnell is an Apache-2.0 candidate, but no model or
+ComfyUI installation was found during @5 and none was downloaded. Therefore
+real image generation and Artifact smoke remain pending. Zero Usage cost means
+zero external API charge only; electricity and hardware cost are not claimed
+to be zero. OpenAI Image API and @6 blog generation are not implemented.

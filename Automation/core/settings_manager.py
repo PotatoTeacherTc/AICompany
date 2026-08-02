@@ -11,7 +11,7 @@ _SAFE_ID = re.compile(r"^[A-Za-z0-9_.:-]+$")
 _PROVIDERS = {
     "provider": {"mock"},
     "music_provider": {"fake"},
-    "image_provider": {"fake"},
+    "image_provider": {"fake", "comfyui"},
     "video_provider": {"fake"},
     "youtube_provider": {"fake"},
 }

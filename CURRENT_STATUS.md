@@ -15,9 +15,11 @@ complete at their Mock-verified boundaries. `@3 — Completed audio intake and
 project connection` is complete at its local integration boundary. `@4 —
 Content brief and project orchestration` is complete at its Mock-verified
 local integration boundary. Real LLM credential smoke remains unexecuted.
-`@5` has not started.
+`@5 — Free local image generation and image package` has a completed,
+Mock-verified Foundation; its real ComfyUI/model connection remains pending.
+`@6` has not started.
 
-Current verification baseline: Backend 448 tests with three conditional skips,
+Current verification baseline: Backend 462 tests with four conditional skips,
 Frontend two tests,
 Frontend production build, and a production-like single-host Docker stack with
 two Backends and two Workers behind a local TLS Gateway.
@@ -53,6 +55,19 @@ Workflow, Plugin, and Marketplace expansion is not a current priority
 candidate. Enterprise and AICompany v1.0 remain unimplemented.
 
 ## Verified completed capabilities
+
+- @5 Foundation: the existing ImageProvider and ProviderFactory now support an
+  explicit `comfyui` selection that accepts only credential-free loopback HTTP,
+  validates an allowlisted tracked workflow, bounds polling/timeouts, and
+  safely retrieves one output. The image-package application boundary creates
+  deterministic Fake/Mock COVER, thumbnail source, video background, and blog
+  inline images plus a manifest through the existing Artifact/Object Storage,
+  Usage, History, and Content Project repositories. It validates actual image
+  structure, dimensions, aspect ratio, size, extension, checksum, path and
+  Workspace ownership; partial successes are reused after retry/restart.
+  `IMAGE_PACKAGE` alone becomes COMPLETED. The local audit found no ComfyUI
+  installation, running service, or installed model, so real image generation
+  and the @5 real-connection completion criterion remain unverified.
 
 - @4: a revisioned, Workspace-owned Content Project composes the existing
   Music Plan and completed-audio link, generates a bounded provider-neutral

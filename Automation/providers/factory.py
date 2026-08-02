@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from providers.mock_provider import MockProvider
 from providers.music import FakeMusicProvider
 from providers.content_media import (
+    ComfyUIImageProvider,
     FakeImageProvider,
     FakeVideoProvider,
     FakeYouTubeProvider,
@@ -55,10 +56,26 @@ class ProviderFactory:
         raise ValueError(f"Unsupported music provider: {provider_name}")
 
     @classmethod
-    def image_from_environment(cls, environment=None):
-        return cls._offline_selection(
-            environment, "IMAGE", "fake", FakeImageProvider
-        )
+    def image_from_environment(cls, environment=None, transport=None):
+        environment = os.environ if environment is None else environment
+        provider_name = environment.get("AICOMPANY_IMAGE_PROVIDER", "fake").lower()
+        timeout = cls._timeout(environment.get("AICOMPANY_IMAGE_PROVIDER_TIMEOUT", "30"))
+        model = environment.get("AICOMPANY_IMAGE_MODEL")
+        if provider_name == "fake":
+            provider = FakeImageProvider()
+            model = model or "fake-image-default"
+        elif provider_name == "comfyui":
+            workflow = environment.get("AICOMPANY_COMFYUI_WORKFLOW_PATH")
+            if not workflow or not model:
+                raise ValueError("ComfyUI workflow and model are required")
+            provider = ComfyUIImageProvider(
+                environment.get("AICOMPANY_COMFYUI_ENDPOINT", "http://127.0.0.1:8188"),
+                workflow, model, transport=transport,
+            )
+        else:
+            raise ValueError("Unsupported or disabled image provider")
+        provider = cls.ensure_provider_allowed(provider, environment)
+        return ProviderSelection(provider, model, timeout)
 
     @classmethod
     def video_from_environment(cls, environment=None):

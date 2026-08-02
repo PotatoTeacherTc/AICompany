@@ -1108,7 +1108,7 @@ added behind the existing Provider abstraction without changing the workflow.
   ExecutionHistory are recorded. Fake Text is the default and OpenAI remains
   explicit/credential-gated; no real call was made for @4.
 
-### @5 — Real image generation and image package
+### @5 — Free local image generation and image package (Foundation complete; real connection pending)
 
 - Goal: connect one real image Provider through the existing abstraction.
 - Scope: hero image, source thumbnail, video background, and blog images;
@@ -1116,6 +1116,21 @@ added behind the existing Provider abstraction without changing the workflow.
   metadata; partial failure; Artifact registration; Fake tests; and a
   credential-gated real smoke test.
 - Completion: real image files are registered in the content project.
+- Implemented Foundation boundary: `ComfyUIImageProvider` extends the existing
+  ImageProvider/ProviderFactory contract with credential-free loopback-only
+  HTTP, bounded polling, an allowlisted basic-node workflow, safe output
+  references, and no automatic Fake fallback. `ImagePackageOrchestrator`
+  deterministically formats the @4 brief into COVER (1:1),
+  YOUTUBE_THUMBNAIL_SOURCE (16:9), VIDEO_BACKGROUND (16:9), and BLOG_INLINE
+  (3:2), validates PNG/JPEG/WEBP bytes, registers four images plus one manifest,
+  records zero API cost Usage and safe History, and advances only
+  `IMAGE_PACKAGE` to COMPLETED. Workspace isolation, local idempotency, partial
+  retry/reuse, restart recovery, and Mock ComfyUI transport are verified.
+- Real boundary still open: the audited machine has an RTX 2070 SUPER with
+  8 GiB VRAM, but no detected ComfyUI installation, running loopback service,
+  or installed checkpoint. No program, model, or custom node was installed or
+  downloaded. FLUX.1-schnell remains an Apache-2.0 candidate rather than the
+  configured workflow's claimed default; no real image was generated.
 
 ### @6 — Blog package with images
 
