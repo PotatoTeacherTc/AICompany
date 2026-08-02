@@ -1279,6 +1279,8 @@ added behind the existing Provider abstraction without changing the workflow.
   creates a credential only when absent; startup rejects an occupied Backend
   port and verifies the prompted owner password against its own Backend before
   reporting success.
+  Password recovery requires the explicit `-ResetOwnerPassword` launcher
+  switch and changes only `owner@localhost`; ordinary startup cannot reset it.
 - Verification: Product Workflow/API/security/restart tests, the full Backend
   suite, Frontend tests/build, and one opt-in real Local E2E passed. This remains
   single-host Local Product Integration, not Production Ready. No `@11` stage

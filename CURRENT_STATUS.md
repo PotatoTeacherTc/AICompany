@@ -26,7 +26,7 @@ installed small Ollama model did not reliably satisfy the complex Music Plan
 schema; Ollama remains separately verified for free-form local Text and an
 invalid structured response fails safely.
 
-Current verification baseline: Backend **499 tests passed** with five
+Current verification baseline: Backend **502 tests passed** with five
 conditional integration skips, Frontend **2 tests passed**, and Frontend
 production build passed. @11 is undefined and was not started.
 
@@ -38,6 +38,17 @@ launcher rejects an occupied port, watches its own Backend, and verifies
 `owner@localhost` through the real HTTP login endpoint before reporting
 success. A loopback Uvicorn smoke verified first login, restart recovery with
 the original password, and rejection of a different restart password.
+An explicit `-ResetOwnerPassword` recovery switch now replaces only the
+existing `owner@localhost` credential after SecureString/length validation.
+Default startup remains create-only, while reset preserves Workspace,
+Membership, Artifact, Workflow, History, and all non-owner credentials. Tests
+cover reset target isolation and pre-write failure atomicity; the launcher
+clears transient password/signing values after its real login verification.
+The real recovery command was then verified from the repository root. Its
+helper executes only after `Push-Location` to `Automation` and always restores
+the caller location. Secure reset, Backend startup, and loopback owner login
+completed; two Workspaces, two Memberships, 44 Artifact metadata records, and
+the existing Workflow state remained present.
 
 @9 Naver Blog Publishing Assistant is complete at its Local Integration
 boundary. The actual Smoke reused the `youtube-smoke` Workspace BlogPackage and
@@ -91,7 +102,7 @@ Google OAuth, channel verification, and private uploads are verified as
 described above. @9 and @10 are now also complete at their documented Local
 Integration boundaries.
 
-Current verification baseline: Backend 499 tests with five conditional skips,
+Current verification baseline: Backend 502 tests with five conditional skips,
 Frontend two tests,
 Frontend production build, and a production-like single-host Docker stack with
 two Backends and two Workers behind a local TLS Gateway.
@@ -918,14 +929,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current Backend suite contains **499 tests**. Its expected command is:
+The current Backend suite contains **502 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Current verification result: **499 passed, 0 failed, 5 conditional integration
+Current verification result: **502 passed, 0 failed, 5 conditional integration
 skips**. Credential/real Provider tests remain explicit environment-gated;
 Windows Credential Manager coverage passed in the host-permission run.
 

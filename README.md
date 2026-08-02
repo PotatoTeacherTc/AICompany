@@ -948,6 +948,24 @@ processes with:
 .\stop-aicompany.ps1
 ```
 
+If the existing local owner's password is no longer known, reset only that
+credential with an explicit switch:
+
+```powershell
+.\start-aicompany.ps1 -ResetOwnerPassword
+```
+
+The new password is read as a SecureString and must contain at least 12
+characters. Without this switch, startup never changes an existing credential.
+Reset preserves every Workspace, Membership, Artifact, Workflow, History, and
+other User credential. The launcher still reports success only after the new
+owner credential passes the loopback `/auth/login` check. Password text is not
+written to files, logs, History, or Git and is removed from the parent process
+environment after startup.
+The reset helper is launched as an Automation module from the `Automation`
+working directory; it does not modify global `PYTHONPATH` or embed a repository
+path in Python source.
+
 The Dashboard accepts one natural-language content order, displays the Suno
 package and `WAITING_FOR_INPUT`, and accepts MP3/WAV/FLAC/M4A upload directly
 from the browser. The upload is Workspace-authorized, size/MIME/signature/

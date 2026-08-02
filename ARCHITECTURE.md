@@ -188,6 +188,10 @@ readiness as insufficient by itself: it rejects an occupied port, observes the
 specific Backend child process, and verifies the prompted credential through
 `/auth/login` before opening the Dashboard. It is not a distributed Worker or
 Production deployment.
+Password recovery is an explicit launcher-only boundary. The reset entry point
+requires `AICOMPANY_RESET_OWNER_PASSWORD=true`, resolves only the persisted
+`owner@localhost`, validates and hashes the replacement before the repository's
+atomic file replace, and never touches other credentials or product state.
 
 The @9 NaverBlogPublishingAssistant composes BlogPackage, ArtifactManager,
 ProviderFactory, StateRepository, UsageEngine, and ExecutionHistory around an

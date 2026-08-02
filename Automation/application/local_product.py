@@ -98,3 +98,30 @@ def _bootstrap(values, users, workspaces, memberships, credentials):
     for workspace in workspaces.list():
         if not memberships.repository.get(workspace["workspace_id"], user["user_id"]):
             memberships.add(workspace["workspace_id"], user["user_id"], OWNER)
+
+
+def reset_local_owner_password(environment=None):
+    """Explicitly replace only the persisted local owner's credential."""
+    values = dict(os.environ if environment is None else environment)
+    if values.get("AICOMPANY_RESET_OWNER_PASSWORD", "").lower() != "true":
+        raise RuntimeError("local_owner_reset_not_requested")
+    password = values.get("AICOMPANY_LOCAL_PASSWORD")
+    if not isinstance(password, str) or len(password) < 12:
+        raise RuntimeError("local_password_required")
+    root = Path(values.get(
+        "AICOMPANY_PRODUCT_ROOT", Path(__file__).parents[1] / "product-data"
+    )).resolve()
+    local_state = root / "local-product"
+    users = UserService(FileUserRepository(local_state / "users.json"))
+    user = users.get_by_email("owner@localhost")
+    if user is None:
+        raise RuntimeError("local_owner_not_found")
+    repository = FileCredentialRepository(local_state / "credentials.json")
+    if repository.get(user["user_id"]) is None:
+        raise RuntimeError("local_owner_credential_not_found")
+    credentials = CredentialService(users, repository)
+    new_hash = credentials.password_hasher.hash(password)
+    if not credentials.password_hasher.verify(password, new_hash):
+        raise RuntimeError("local_owner_reset_failed")
+    repository.save({"user_id": user["user_id"], "password_hash": new_hash})
+    return {"status": "OWNER_PASSWORD_RESET", "email": "owner@localhost"}

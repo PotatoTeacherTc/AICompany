@@ -15,10 +15,14 @@ from core.persistence import InMemoryStateRepository
 from core.task_queue import InProcessJobWorker, PersistentJobQueue
 from core.usage_engine import UsageEngine
 from application.product_content_runner import ProductContentRunner
-from application.local_product import create_local_product_app
+from application.local_product import create_local_product_app, reset_local_owner_password
+from application.credential_service import CredentialService
+from application.user_service import UserService
 from core.artifact_repository import StateArtifactRepository
+from core.credential_repository import FileCredentialRepository
 from core.object_storage import ArtifactStorageAdapter, LocalStorageProvider
 from core.secure_token_store import FakeSecureTokenStore
+from core.user_repository import FileUserRepository
 from core.youtube_publishing import YouTubeConnectionRepository, YouTubeConnectionService, YOUTUBE_SCOPES
 from providers.content_media import FakeYouTubeProvider
 from providers.naver_blog import FakeNaverBlogBrowser
@@ -206,6 +210,79 @@ class ProductWorkflowTests(unittest.TestCase):
         self.assertIn("$backend.HasExited", source)
         self.assertIn('http://127.0.0.1:8000/auth/login', source)
         self.assertLess(source.index('http://127.0.0.1:8000/auth/login'), source.index('AICompany is running and local login was verified'))
+
+    def test_explicit_owner_reset_changes_only_owner_credential(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            environment = self._local_environment(temporary)
+            create_local_product_app(environment)
+            local = Path(temporary) / "local-product"
+            users = UserService(FileUserRepository(local / "users.json"))
+            other = users.create("other@localhost")
+            credentials = CredentialService(users, FileCredentialRepository(local / "credentials.json"))
+            credentials.set_password(other["user_id"], "other-safe-password")
+            before_other = credentials.repository.get(other["user_id"])
+            protected = {
+                path: path.read_bytes() for path in (
+                    local / "workspaces.json", local / "memberships.json",
+                    Path(temporary) / "state" / "music-project-state.json",
+                ) if path.exists()
+            }
+
+            reset_local_owner_password({
+                **environment, "AICOMPANY_RESET_OWNER_PASSWORD": "true",
+                "AICOMPANY_LOCAL_PASSWORD": "replacement-owner-password",
+            })
+            restarted = TestClient(create_local_product_app({
+                **environment, "AICOMPANY_LOCAL_PASSWORD": "replacement-owner-password",
+            }))
+            self.assertEqual(restarted.post("/auth/login", json={
+                "email": "owner@localhost", "password": "replacement-owner-password",
+            }).status_code, 200)
+            self.assertEqual(restarted.post("/auth/login", json={
+                "email": "owner@localhost", "password": "original-owner-password",
+            }).status_code, 401)
+            reloaded = FileCredentialRepository(local / "credentials.json")
+            self.assertEqual(reloaded.get(other["user_id"]), before_other)
+            self.assertTrue(CredentialService(users, reloaded).verify_password(
+                other["user_id"], "other-safe-password"
+            ))
+            for path, content in protected.items():
+                self.assertEqual(path.read_bytes(), content)
+
+    def test_owner_reset_failure_is_atomic_and_requires_explicit_option(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            environment = self._local_environment(temporary)
+            create_local_product_app(environment)
+            credential_file = Path(temporary) / "local-product" / "credentials.json"
+            original = credential_file.read_bytes()
+            with self.assertRaisesRegex(RuntimeError, "local_owner_reset_not_requested"):
+                reset_local_owner_password(environment)
+            with self.assertRaisesRegex(RuntimeError, "local_password_required"):
+                reset_local_owner_password({
+                    **environment, "AICOMPANY_RESET_OWNER_PASSWORD": "true",
+                    "AICOMPANY_LOCAL_PASSWORD": "short",
+                })
+            self.assertEqual(credential_file.read_bytes(), original)
+
+    def test_launcher_exposes_only_explicit_reset_switch(self):
+        source = (Path(__file__).parents[2] / "start-aicompany.ps1").read_text(encoding="utf-8")
+        self.assertIn("param([switch]$ResetOwnerPassword)", source)
+        self.assertIn("-m application.local_product_reset", source)
+        self.assertIn("Push-Location $automationRoot", source)
+        self.assertIn("Pop-Location", source)
+        self.assertNotIn("PotatoAI", source)
+
+    @staticmethod
+    def _local_environment(root):
+        return {
+            "AICOMPANY_PRODUCT_ROOT": root,
+            "AICOMPANY_LOCAL_EMAIL": "owner@localhost",
+            "AICOMPANY_LOCAL_PASSWORD": "original-owner-password",
+            "AICOMPANY_SIGNING_SECRET": "s" * 48,
+            "AICOMPANY_TEXT_PROVIDER": "fake", "AICOMPANY_IMAGE_PROVIDER": "fake",
+            "AICOMPANY_VIDEO_PROVIDER": "fake", "AICOMPANY_NAVER_BLOG_PROVIDER": "fake",
+            "ALLOW_PAID_PROVIDER": "False",
+        }
 
 
 if __name__ == "__main__":

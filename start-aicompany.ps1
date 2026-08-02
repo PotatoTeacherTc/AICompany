@@ -1,3 +1,6 @@
+[CmdletBinding()]
+param([switch]$ResetOwnerPassword)
+
 $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $automationRoot = Join-Path $projectRoot "Automation"
@@ -24,7 +27,8 @@ try {
     if ($_.Exception.Message -like "Port 8000 is already serving*") { throw }
 }
 
-$securePassword = Read-Host "AICompany local login password (12+ characters)" -AsSecureString
+$passwordPrompt = if ($ResetOwnerPassword) { "New AICompany local owner password (12+ characters)" } else { "AICompany local login password (12+ characters)" }
+$securePassword = Read-Host $passwordPrompt -AsSecureString
 $pointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($securePassword)
 try { $plainPassword = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($pointer) }
 finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($pointer) }
@@ -35,6 +39,23 @@ $env:AICOMPANY_LOCAL_PASSWORD = $plainPassword
 $env:AICOMPANY_SIGNING_SECRET = -join ((1..48) | ForEach-Object { [char](Get-Random -Minimum 33 -Maximum 126) })
 $env:AICOMPANY_PRODUCT_ROOT = Join-Path $automationRoot "logs\music-plans"
 $env:ALLOW_PAID_PROVIDER = "False"
+if ($ResetOwnerPassword) {
+    $env:AICOMPANY_RESET_OWNER_PASSWORD = "true"
+    $resetExitCode = 1
+    Push-Location $automationRoot
+    try {
+        & $python -B -m application.local_product_reset
+        $resetExitCode = $LASTEXITCODE
+    } finally {
+        Pop-Location
+        $env:AICOMPANY_RESET_OWNER_PASSWORD = $null
+    }
+    if ($resetExitCode -ne 0) {
+        $env:AICOMPANY_LOCAL_PASSWORD = $null
+        $env:AICOMPANY_SIGNING_SECRET = $null
+        throw "AICompany local owner password reset failed."
+    }
+}
 if (-not $env:AICOMPANY_TEXT_PROVIDER) { $env:AICOMPANY_TEXT_PROVIDER = "fake" }
 if (-not $env:AICOMPANY_TEXT_MODEL) { $env:AICOMPANY_TEXT_MODEL = "qwen2.5:1.5b" }
 if (-not $env:AICOMPANY_OLLAMA_ENDPOINT) { $env:AICOMPANY_OLLAMA_ENDPOINT = "http://127.0.0.1:11434" }
@@ -89,4 +110,7 @@ try {
     $plainPassword = $null
     $loginBody = $null
     $loginResult = $null
+    $env:AICOMPANY_LOCAL_PASSWORD = $null
+    $env:AICOMPANY_SIGNING_SECRET = $null
+    $env:AICOMPANY_RESET_OWNER_PASSWORD = $null
 }
