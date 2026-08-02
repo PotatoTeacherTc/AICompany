@@ -1159,7 +1159,7 @@ added behind the existing Provider abstraction without changing the workflow.
   Publishing accounts, blog APIs, extra image generation, Dashboard changes, and
   @7 video work are not included.
 
-### @7 — FFmpeg video and YouTube publication package
+### @7 — FFmpeg video and YouTube publication package (Complete, Local Integration)
 
 - Goal: produce a playable MP4 from the completed audio and images plus all
   YouTube publication material.
@@ -1169,6 +1169,16 @@ added behind the existing Provider abstraction without changing the workflow.
   category, visibility recommendation, pinned comment, thumbnail, and upload
   manifest.
 - Completion: a playable MP4 and complete upload package are available.
+- Verified scope: the explicit local FFmpeg Provider renders completed @3
+  audio with the existing @5 COVER into a 1920x1080 H.264/AAC 30fps MP4 with
+  bounded fade-in/out and audio-matched duration. ffprobe validates codec,
+  streams, dimensions, frame rate, and duration before managed storage. The
+  @6 Blog Package supplies publication-draft text and the @5 thumbnail is
+  referenced without regeneration. Five Artifacts contain the MP4, YouTube
+  draft JSON, description Markdown, tags JSON, and video manifest.
+  VIDEO_PACKAGE alone is COMPLETED; YOUTUBE_PACKAGE and PUBLISHING remain
+  PENDING. OAuth, upload, browser automation, external APIs/URLs, and @8 are
+  not implemented.
 
 ### @8 — Real publishing Providers
 

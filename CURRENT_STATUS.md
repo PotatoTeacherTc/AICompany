@@ -22,10 +22,13 @@ loopback ComfyUI/SDXL Turbo smoke.
 Integration boundary. It consumes the existing Content Brief and completed @5
 image manifest, creates five reviewable Artifacts with safe image references,
 and advances only BLOG_PACKAGE. No real blog account or publishing API is
-connected, and no real LLM credential smoke was run for @6. `@7` has not
-started.
+connected, and no real LLM credential smoke was run for @6. `@7 — FFmpeg video
+and YouTube publication package` is complete at its Local Integration boundary:
+an actual local FFmpeg/ffprobe smoke produced and validated an H.264/AAC MP4
+with audio plus four publication-draft metadata Artifacts. No YouTube upload,
+OAuth, account connection, browser automation, external API, or @8 work exists.
 
-Current verification baseline: Backend 472 tests with four conditional skips,
+Current verification baseline: Backend 476 tests with four conditional skips,
 Frontend two tests,
 Frontend production build, and a production-like single-host Docker stack with
 two Backends and two Workers behind a local TLS Gateway.
@@ -61,6 +64,14 @@ Workflow, Plugin, and Marketplace expansion is not a current priority
 candidate. Enterprise and AICompany v1.0 remain unimplemented.
 
 ## Verified completed capabilities
+
+- @7 Video Package: FFmpeg 7.1.1 CLI converts same-Workspace completed audio
+  and the existing COVER into a 1920x1080 H.264/AAC 30fps MP4 with fade in/out
+  and audio-derived duration. ffprobe gates registration. The package references
+  the existing thumbnail and stores YouTube title, description, tags, Music
+  category, private visibility draft, chapters, pinned-comment draft, and
+  `NOT_UPLOADED` status. History, Usage, restart replay, and Workspace isolation
+  are retained. This is local generation, not publishing.
 
 - @6 Blog Package: the new structured contract includes title alternatives,
   safe slug, excerpt/meta description, bounded SEO keywords/tags, three or more

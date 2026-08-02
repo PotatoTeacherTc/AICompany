@@ -27,6 +27,7 @@ from core.image_package import (
 from core.blog_package import (
     BlogPackageOrchestrator, BlogPackageRequest, BlogPackageService,
 )
+from core.video_package import VideoPackageOrchestrator, VideoPackageRequest
 from core.object_storage import ArtifactStorageAdapter, LocalStorageProvider
 from core.persistence import JsonStateRepository
 from core.usage_engine import UsageEngine
@@ -364,8 +365,39 @@ def run_blog_package(workspace_id, content_project_id, root=None,
     return result
 
 
+def run_video_package(workspace_id, content_project_id, root=None,
+                      environment=None, idempotency_key=None):
+    root = Path(root or Path(__file__).parent / "logs" / "music-plans").resolve()
+    storage, state_root = root / "artifacts", root / "state"
+    state = JsonStateRepository(state_root / "music-project-state.json")
+    repository = FileArtifactRepository(state_root / "artifact-metadata.json", storage)
+    artifacts = ArtifactManager(repository, ArtifactStorageAdapter(LocalStorageProvider(storage), repository))
+    history = ExecutionHistory(repository=JsonFileExecutionHistoryRepository(state_root / "execution-history.json"))
+    selection = ProviderFactory.video_from_environment(dict(os.environ) if environment is None else environment)
+    result = VideoPackageOrchestrator(
+        root / "work", selection, ContentProjectRepository(state), state,
+        artifacts, history, UsageEngine(state),
+    ).run(VideoPackageRequest(workspace_id, content_project_id, idempotency_key))
+    data = result.get("data") or {}
+    print(json.dumps({key: data.get(key) for key in (
+        "workspace_id", "content_project_id", "video_package_id",
+        "video_package_status", "duration_seconds", "thumbnail_artifact_id",
+        "artifact_ids", "provider", "model", "next_action",
+    )} | {"error": result.get("error")}, ensure_ascii=False, indent=2))
+    return result
+
+
 if __name__ == "__main__":
-    if len(sys.argv) > 1 and sys.argv[1] == "blog-package":
+    if len(sys.argv) > 1 and sys.argv[1] == "video-package":
+        values = {"--workspace-id": None, "--content-project-id": None, "--provider": "ffmpeg", "--idempotency-key": None}
+        index = 2
+        while index < len(sys.argv):
+            if sys.argv[index] in values and index + 1 < len(sys.argv): values[sys.argv[index]] = sys.argv[index + 1]; index += 2
+            else: index += 1
+        video_environment = dict(os.environ); video_environment["AICOMPANY_VIDEO_PROVIDER"] = values["--provider"]
+        video_result = run_video_package(values["--workspace-id"], values["--content-project-id"], environment=video_environment, idempotency_key=values["--idempotency-key"])
+        if video_result.get("status") != PipelineStatus.SUCCESS: raise SystemExit(1)
+    elif len(sys.argv) > 1 and sys.argv[1] == "blog-package":
         values = {
             "--workspace-id": None, "--content-project-id": None,
             "--provider": None, "--language": None, "--tone": None,

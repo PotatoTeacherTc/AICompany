@@ -3,6 +3,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path, PurePosixPath
 import json
 import re
+import subprocess
 import struct
 import time
 from urllib.parse import urlencode, urlparse
@@ -52,6 +53,12 @@ class VideoGenerationRequest:
     input_artifacts: tuple[dict, ...] = ()
     model: str | None = None
     timeout_seconds: float = 30.0
+    source_audio_path: str | None = None
+    source_image_path: str | None = None
+    duration_seconds: float | None = None
+    width: int = 1920
+    height: int = 1080
+    fps: int = 30
 
 
 @dataclass(frozen=True)
@@ -308,6 +315,68 @@ class FakeVideoProvider(VideoProvider):
             (MediaArtifact(path.name, "video/fake", str(path)),),
             UsageMetadata(input_tokens=len(request.prompt.split()), estimated_cost_usd=0.0),
         )
+
+
+class FFmpegVideoProvider(VideoProvider):
+    """Local CLI-only still-image and audio video renderer."""
+
+    def __init__(self, ffmpeg="ffmpeg", ffprobe="ffprobe", runner=None):
+        self.ffmpeg = ffmpeg
+        self.ffprobe = ffprobe
+        self.runner = runner or subprocess.run
+
+    @property
+    def name(self):
+        return "ffmpeg"
+
+    def generate_video(self, request):
+        if not isinstance(request, VideoGenerationRequest):
+            raise TypeError("request must use VideoGenerationRequest")
+        audio = self._source(request.source_audio_path, "audio")
+        image = self._source(request.source_image_path, "image")
+        if not isinstance(request.duration_seconds, (int, float)) or request.duration_seconds <= 0:
+            raise ValueError("audio duration is invalid")
+        if (request.width, request.height, request.fps) != (1920, 1080, 30):
+            raise ValueError("video profile is unsupported")
+        output = Path(request.output_directory).resolve()
+        output.mkdir(parents=True, exist_ok=True)
+        destination = output / "video.mp4"
+        fade_out = max(0.0, float(request.duration_seconds) - 1.0)
+        video_filter = (
+            "scale=1920:1080:force_original_aspect_ratio=decrease,"
+            "pad=1920:1080:(ow-iw)/2:(oh-ih)/2:black,format=yuv420p,"
+            f"fade=t=in:st=0:d=1,fade=t=out:st={fade_out:.3f}:d=1"
+        )
+        command = [
+            self.ffmpeg, "-hide_banner", "-loglevel", "error", "-y",
+            "-loop", "1", "-i", str(image), "-i", str(audio),
+            "-vf", video_filter, "-r", "30", "-c:v", "libx264",
+            "-preset", "veryfast", "-c:a", "aac", "-b:a", "192k",
+            "-t", f"{float(request.duration_seconds):.3f}", "-movflags", "+faststart",
+            str(destination),
+        ]
+        try:
+            completed = self.runner(command, capture_output=True, timeout=request.timeout_seconds, check=False)
+        except subprocess.TimeoutExpired:
+            raise TimeoutError("FFmpeg rendering timed out") from None
+        except (OSError, ValueError):
+            raise RuntimeError("FFmpeg is unavailable") from None
+        if getattr(completed, "returncode", 1) != 0 or not destination.is_file() or destination.stat().st_size <= 0:
+            raise RuntimeError("FFmpeg rendering failed")
+        return MediaGenerationResult(
+            self.name, request.model or "ffmpeg-h264-aac",
+            (MediaArtifact(destination.name, "video/mp4", str(destination)),),
+            UsageMetadata(estimated_cost_usd=0.0),
+        )
+
+    @staticmethod
+    def _source(value, kind):
+        if not isinstance(value, str):
+            raise ValueError(f"{kind} source is required")
+        path = Path(value).resolve()
+        if not path.is_file() or path.is_symlink():
+            raise ValueError(f"{kind} source is unavailable")
+        return path
 
 
 @dataclass(frozen=True)

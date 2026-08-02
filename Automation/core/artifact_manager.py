@@ -97,6 +97,7 @@ class ArtifactManager:
             "purpose", "width", "height", "seed", "steps", "guidance",
             "blog_package_id", "source_brief_artifact_id",
             "image_manifest_artifact_id",
+            "video_package_id", "thumbnail_artifact_id",
         }
         if set(value) - allowed:
             raise ValueError("artifact metadata contains unsupported fields")

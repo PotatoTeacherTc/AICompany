@@ -7,6 +7,7 @@ from providers.content_media import (
     ComfyUIImageProvider,
     FakeImageProvider,
     FakeVideoProvider,
+    FFmpegVideoProvider,
     FakeYouTubeProvider,
 )
 from providers.text import FakeTextProvider, OllamaTextProvider, OpenAITextProvider
@@ -79,9 +80,20 @@ class ProviderFactory:
 
     @classmethod
     def video_from_environment(cls, environment=None):
-        return cls._offline_selection(
-            environment, "VIDEO", "fake", FakeVideoProvider
-        )
+        environment = os.environ if environment is None else environment
+        provider_name = environment.get("AICOMPANY_VIDEO_PROVIDER", "fake").lower()
+        timeout = cls._timeout(environment.get("AICOMPANY_VIDEO_PROVIDER_TIMEOUT", "120"))
+        if provider_name == "fake":
+            provider, model = FakeVideoProvider(), "fake-video-default"
+        elif provider_name == "ffmpeg":
+            provider, model = FFmpegVideoProvider(
+                environment.get("AICOMPANY_FFMPEG_PATH", "ffmpeg"),
+                environment.get("AICOMPANY_FFPROBE_PATH", "ffprobe"),
+            ), "ffmpeg-h264-aac"
+        else:
+            raise ValueError("Unsupported or disabled video provider")
+        return ProviderSelection(cls.ensure_provider_allowed(provider, environment),
+                                 environment.get("AICOMPANY_VIDEO_MODEL") or model, timeout)
 
     @classmethod
     def youtube_from_environment(cls, environment=None):

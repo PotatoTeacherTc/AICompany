@@ -861,5 +861,22 @@ event-handler/data/javascript syntax before escaped HTML formatting. Fake is
 the default; Ollama and paid-policy-gated OpenAI use the same TextProvider
 contract when explicitly configured and never silently fall back. @6 was
 verified only with Fake/Mock generation. Real blog publishing, account/OAuth
-connection, extra image generation, Dashboard/API work, and @7 video generation
-are not implemented.
+connection, extra image generation, and Dashboard/API work are not implemented.
+
+### @7 local FFmpeg video package
+
+With @3 audio, @5 images, and @6 blog package completed in one Workspace:
+
+```powershell
+cd D:\AICompany\Automation
+.\venv\Scripts\python.exe -B main.py video-package --workspace-id <workspace> --content-project-id <content-project-id> --provider ffmpeg --idempotency-key <safe-key>
+```
+
+The local Provider invokes FFmpeg CLI to create `video.mp4` at 1920x1080,
+H.264/AAC, 30fps, with fade-in/out and duration matched to source audio.
+ffprobe confirms streams, codecs, profile, and duration before registration.
+The other Artifacts are `youtube_package.json`, `youtube_description.md`,
+`youtube_tags.json`, and `video_manifest.json`; these reference the existing
+thumbnail and remain drafts. `YOUTUBE_PACKAGE` and `PUBLISHING` remain PENDING.
+No OAuth, upload, account connection, browser automation, external URL/API
+call, or @8 functionality is implemented.
