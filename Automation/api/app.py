@@ -31,6 +31,7 @@ def create_app(
     billing_service=None,
     admin_service=None,
     onboarding_service=None,
+    product_workflow_service=None,
     health_service=None,
     auth_required=False,
     allowed_origins=(
@@ -233,6 +234,7 @@ def create_app(
     app.state.billing_service = billing_service
     app.state.admin_service = admin_service
     app.state.onboarding_service = onboarding_service
+    app.state.product_workflow_service = product_workflow_service
     if audit_service is None:
         from application.audit_service import AuditService
         audit_service = AuditService()
@@ -1115,6 +1117,103 @@ def create_app(
         except (TypeError, ValueError):
             from api.errors import error_response
             return error_response(400, "invalid_request", "Invalid job request")
+
+    @app.post("/workspaces/{workspace_id}/product-jobs", status_code=201)
+    def submit_product_job(workspace_id: str, payload: dict, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"})
+        if denied: return denied
+        service = app.state.product_workflow_service
+        if service is None:
+            from api.errors import error_response
+            return error_response(503, "product_unavailable", "Product workflow is unavailable")
+        try:
+            return service.submit(workspace_id, payload.get("request"), payload.get("idempotency_key"))
+        except (TypeError, ValueError):
+            from api.errors import error_response
+            return error_response(400, "invalid_request", "Invalid product request")
+
+    @app.get("/workspaces/{workspace_id}/product-jobs")
+    def list_product_jobs(workspace_id: str, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"})
+        if denied: return denied
+        if app.state.product_workflow_service is None:
+            from api.errors import error_response
+            return error_response(503, "product_unavailable", "Product workflow is unavailable")
+        return app.state.product_workflow_service.list(workspace_id)
+
+    @app.get("/workspaces/{workspace_id}/product-jobs/{product_id}")
+    def get_product_job(workspace_id: str, product_id: str, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"})
+        if denied: return denied
+        value = app.state.product_workflow_service.get(workspace_id, product_id) if app.state.product_workflow_service else None
+        if value is None:
+            from api.errors import error_response
+            return error_response(404, "product_not_found", "Product workflow not found")
+        return value
+
+    @app.post("/workspaces/{workspace_id}/product-jobs/{product_id}/audio")
+    async def upload_product_audio(workspace_id: str, product_id: str, request: Request, x_filename: str | None = Header(default=None), authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"})
+        if denied: return denied
+        length = request.headers.get("content-length")
+        mime_type = request.headers.get("content-type", "").split(";", 1)[0].strip().lower()
+        allowed_mime_types = {
+            "audio/mpeg", "audio/mp3", "audio/wav", "audio/x-wav",
+            "audio/flac", "audio/x-flac", "audio/mp4", "audio/x-m4a",
+            "application/octet-stream",
+        }
+        if not x_filename or mime_type not in allowed_mime_types or not length or not length.isdigit() or not 0 < int(length) <= 250 * 1024 * 1024:
+            from api.errors import error_response
+            return error_response(400, "invalid_audio", "Invalid audio upload")
+        try:
+            content = await request.body()
+            if len(content) != int(length) or len(content) > 250 * 1024 * 1024:
+                raise ValueError("invalid audio size")
+            value = app.state.product_workflow_service.upload_audio(workspace_id, product_id, x_filename, content) if app.state.product_workflow_service else None
+        except (TypeError, ValueError):
+            from api.errors import error_response
+            return error_response(400, "invalid_audio", "Audio upload was rejected")
+        if value is None:
+            from api.errors import error_response
+            return error_response(404, "product_not_found", "Product workflow not found")
+        return value
+
+    @app.post("/workspaces/{workspace_id}/product-jobs/{product_id}/resume")
+    def resume_product_job(workspace_id: str, product_id: str, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"})
+        if denied: return denied
+        try:
+            value = app.state.product_workflow_service.resume(workspace_id, product_id) if app.state.product_workflow_service else None
+        except ValueError:
+            from api.errors import error_response
+            return error_response(409, "checkpoint_not_ready", "Product checkpoint cannot be resumed")
+        if value is None:
+            from api.errors import error_response
+            return error_response(404, "product_not_found", "Product workflow not found")
+        return value
+
+    @app.post("/workspaces/{workspace_id}/product-jobs/{product_id}/retry")
+    def retry_product_stage(workspace_id: str, product_id: str, payload: dict, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"})
+        if denied: return denied
+        try:
+            value = app.state.product_workflow_service.retry(workspace_id, product_id, payload.get("stage")) if app.state.product_workflow_service else None
+        except ValueError:
+            from api.errors import error_response
+            return error_response(409, "stage_not_retryable", "Product stage cannot be retried")
+        if value is None:
+            from api.errors import error_response
+            return error_response(404, "product_not_found", "Product workflow not found")
+        return value
+
+    @app.get("/workspaces/{workspace_id}/connections")
+    def product_connections(workspace_id: str, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"})
+        if denied: return denied
+        if app.state.product_workflow_service is None:
+            from api.errors import error_response
+            return error_response(503, "product_unavailable", "Product workflow is unavailable")
+        return app.state.product_workflow_service.connections(workspace_id)
 
     @app.get("/workspaces/{workspace_id}/jobs")
     def list_jobs(workspace_id: str, status: str | None = None, limit: int = 50, offset: int = 0, authorization: str | None = Header(default=None)):

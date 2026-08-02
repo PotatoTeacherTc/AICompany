@@ -84,6 +84,28 @@ class NaverBlogPublishingAssistant:
                 except Exception: pass
                 return self._failure(request.workspace_id, request.content_project_id, code, status)
 
+    def complete_after_confirmation(self, request):
+        """Observe the user-clicked publication without preparing or clicking again."""
+        if not isinstance(request, NaverPublishingRequest): return self._failure(None, None, "INVALID_REQUEST")
+        try: self._validate(request)
+        except Exception: return self._failure(request.workspace_id, request.content_project_id, "INVALID_REQUEST")
+        with self._lock:
+            record = self.states.get(NAVER_PUBLICATION_KIND, request.content_project_id, request.workspace_id)
+            if not isinstance(record, dict) or record.get("status") != "USER_CONFIRM_REQUIRED":
+                return self._failure(request.workspace_id, request.content_project_id, "PUBLICATION_NOT_CONFIRMED")
+            try:
+                published = self.browser.wait_for_publication(request.timeout_seconds)
+                if published.get("status") != "PUBLISHED" or not _published_url(published.get("published_url")):
+                    raise NaverBrowserError("PUBLICATION_NOT_CONFIRMED")
+                record.update({"status": "PUBLISHED", "published_url": published["published_url"],
+                               "published_at": published.get("published_at") or _now(), "updated_at": _now()})
+                receipt = self._save_receipt(record); record["receipt_artifact_id"] = receipt["artifact_id"]
+                self.states.save(NAVER_PUBLICATION_KIND, request.content_project_id, request.workspace_id, record)
+                result = self._success(record); self._history(request, result); self._usage(request); return result
+            except Exception as error:
+                code = error.code if isinstance(error, NaverBrowserError) else type(error).__name__
+                return self._failure(request.workspace_id, request.content_project_id, code, "PUBLICATION_NOT_CONFIRMED")
+
     def _inputs(self, workspace, project):
         state = self.states.get(BLOG_PACKAGE_KIND, project, workspace)
         if not isinstance(state, dict) or state.get("status") != "COMPLETED": raise NaverBrowserError("BLOG_PACKAGE_INCOMPLETE")

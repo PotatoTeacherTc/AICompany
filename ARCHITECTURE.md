@@ -170,6 +170,20 @@ publishing, deletion, blog publishing, and @9 remain outside this boundary.
 
 ## Current pipeline behavior
 
+The @10 local product composition adds `ProductWorkflowService`,
+`ProductContentRunner`, and Workspace-authorized Product Workflow API routes.
+The service persists only safe stage/checkpoint/result metadata and a persistent
+Job link; raw natural-language requests remain process-local and are discarded
+after planning. Its raw-body audio endpoint accepts a bounded client filename
+and bytes, never a server path, then delegates signature and ffprobe validation
+to @3. One injected runner reuses the same StateRepository, ArtifactManager,
+ExecutionHistory, UsageEngine, ProviderFactory, and @2-@9 orchestrators. It
+stops at Suno input, YouTube connection, and Naver final-confirmation boundaries
+and resumes the same state after restart. The React Dashboard polls this safe
+read model and exposes only safe Artifact text/JSON; binary paths remain hidden.
+`application/local_product.py` is the single-host Windows composition used by
+the start/stop scripts. It is not a distributed Worker or Production deployment.
+
 The @9 NaverBlogPublishingAssistant composes BlogPackage, ArtifactManager,
 ProviderFactory, StateRepository, UsageEngine, and ExecutionHistory around an
 injectable NaverBlogBrowser. Fake is offline; Playwright is explicit visible
@@ -178,7 +192,8 @@ one Workspace-owned image, opens settings, commits tags and the exact configured
 category, then returns USER_CONFIRM_REQUIRED. Only the user performs final
 publication. An allowlisted HTTPS Naver PostView URL becomes PUBLISHED state,
 time, and receipt Artifact. No credentials/cookies are inspected or persisted,
-no unofficial API is used, and @10 is outside this layer.
+no unofficial API is used; @10 composes this layer without changing its manual
+final-publish boundary.
 
 - FILE: organizes known file types in a configured folder.
 - MUSIC: uses an injected provider-neutral music generator, with an offline

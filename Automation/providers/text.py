@@ -223,7 +223,11 @@ class OllamaTextProvider(TextProvider):
             "model": request.model,
             "prompt": _structured_prompt(request),
             "stream": False,
-            "format": request.output_format,
+            "format": (
+                request.response_schema
+                if request.output_format == "json" and request.response_schema is not None
+                else request.output_format
+            ),
             "options": {"num_predict": min(request.maximum_output_size // 4, 4096)},
         }
         try:

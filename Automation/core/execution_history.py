@@ -284,6 +284,10 @@ class ExecutionHistory:
                 break
         else:
             self.records.append(record)
+        if self.state_repository is not None:
+            self.state_repository.save(
+                "execution", record["task_id"], record["workspace_id"], record
+            )
         self.save()
 
     def record_persistent_job(self, job, pipeline_result, artifacts=None):

@@ -988,7 +988,7 @@ today/7-day/30-day filter is invented.
   Storage, managed databases, and the official next numbered Mission remain
   undefined.
 
-## Real-use connection roadmap: @1-@10 (approved; @1-@4 complete)
+## Real-use connection roadmap: @1-@10 (approved; @1-@10 complete at documented boundaries)
 
 This sequence is separate from the historical Mission numbering. Mission
 1-141 records completed Foundation and bounded Production Integration work.
@@ -1204,7 +1204,7 @@ added behind the existing Provider abstraction without changing the workflow.
   OAuth, channel verification, and one private upload are now Local Integration
   verified as recorded below; external blog publishing remains unimplemented.
 
-### @9 — Real-use E2E and Dashboard integration
+### @9 — Naver Blog Publishing Assistant (Complete, Local Integration)
 
 - Naver Blog Publishing Assistant Local Integration (2026-08-02): reuses
   BlogPackage and managed image Artifacts through a Workspace-scoped Playwright
@@ -1214,7 +1214,7 @@ added behind the existing Provider abstraction without changing the workflow.
   approved category, opens publication settings, and stops at
   USER_CONFIRM_REQUIRED. It never clicks final publish. After the user clicked
   once, it validated the PostView URL and stored PUBLISHED time/state, receipt
-  Artifact, Usage, and History. @10 remains unimplemented.
+  Artifact, Usage, and History.
 
 - @8 YouTube Local Integration verification (2026-08-02): OAuth is restricted
   to `youtube.upload` and `youtube.readonly`; the latter is used for
@@ -1234,7 +1234,7 @@ added behind the existing Provider abstraction without changing the workflow.
 - Completion: the user starts work in the Dashboard, supplies audio, and
   inspects the completed results there.
 
-### @10 — Real integration verification and v1 decision
+### @10 — Product Workflow Dashboard (Complete, bounded Local Product Integration)
 
 - Goal: validate the product with real connections while retaining the full
   Fake automated suite.
@@ -1248,6 +1248,38 @@ added behind the existing Provider abstraction without changing the workflow.
   real Usage/cost recording.
 - Completion: one real-account content E2E succeeds and all Fake automation
   still passes.
+- Implemented product boundary: `ProductWorkflowService` persists the natural-
+  language order's safe checkpoint/stage state, retry target, result references,
+  and Job link without persisting the request text. The Dashboard creates and
+  polls Workspace-scoped Product Workflows, displays stage progress and user
+  actions, opens safe text/JSON Artifacts, accepts bounded MP3/WAV/FLAC/M4A
+  uploads, and retries only a failed stage. Audio intake reuses @3 signature and
+  ffprobe validation and never accepts a server path.
+- Orchestration: one injected `ProductContentRunner` reuses StateRepository,
+  ArtifactManager, ExecutionHistory, Usage, ProviderFactory, and existing @2-@9
+  services. It stops after @2 at `WAITING_FOR_INPUT`, restores the same Workflow
+  after restart, requires a real YouTube connection, and stops at Naver
+  `USER_CONFIRM_REQUIRED` until the user clicks the final publish control. No
+  stage receives synthetic success.
+- Real verification (2026-08-02): one persisted `youtube-smoke` Workflow used
+  real audio intake, ComfyUI/SDXL Turbo, FFmpeg, the existing Credential Manager
+  YouTube connection, one private upload (`H8FQBaJiBP4`, processing succeeded),
+  and the existing Playwright Naver profile. The user performed the final Naver
+  publish action; its validated PostView URL was recovered and the Workflow
+  reached COMPLETED with 21 managed Artifacts and recorded History/Usage.
+- Text limitation: the successful full local smoke explicitly used deterministic
+  Fake Text for structured @2/@4 generation. The installed small Ollama model
+  remains valid for the separately verified free-form Text integration, but did
+  not reliably satisfy the complex Music Plan schema. There is no silent
+  fallback; an invalid explicit Ollama result fails the stage.
+- Local product mode: `start-aicompany.ps1` starts the host Backend, Frontend,
+  and in-process persistent Worker, waits for readiness, then opens the browser;
+  `stop-aicompany.ps1` stops only the recorded processes. Fake Text is the safe
+  default and real Provider connections remain explicit.
+- Verification: Product Workflow/API/security/restart tests, the full Backend
+  suite, Frontend tests/build, and one opt-in real Local E2E passed. This remains
+  single-host Local Product Integration, not Production Ready. No `@11` stage
+  is defined or implemented.
 
 ### @ stage constitutional verification
 

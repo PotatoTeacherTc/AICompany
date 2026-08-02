@@ -35,7 +35,8 @@ def _string():
 
 
 def _strings():
-    return {"type": "array", "items": {"type": "string"}}
+    return {"type": "array", "minItems": 1, "maxItems": 20,
+            "items": {"type": "string", "maxLength": 300}}
 
 
 CONTENT_BRIEF_SCHEMA = {
@@ -304,7 +305,10 @@ class ContentBriefService:
         if not isinstance(generated, TextGenerationResult):
             raise ContentBriefError("INVALID_PROVIDER_RESULT")
         try:
-            brief = ContentBrief.from_dict(json.loads(generated.output_text))
+            value = json.loads(generated.output_text)
+            if isinstance(value, dict):
+                value["next_steps"] = list(_PENDING_STEPS)
+            brief = ContentBrief.from_dict(value)
         except (TypeError, json.JSONDecodeError, ValueError):
             raise ContentBriefError("SCHEMA_VALIDATION_FAILED") from None
         return brief, generated

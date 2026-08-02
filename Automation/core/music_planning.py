@@ -120,11 +120,11 @@ MUSIC_PLAN_SCHEMA = {
     "type": "object",
     "additionalProperties": False,
     "properties": {
-        "title_candidates": _array("string"),
+        "title_candidates": {**_array("string"), "minItems": 2, "maxItems": 5},
         "primary_title": _string(), "concept_summary": _string(),
         "target_listener": _string(), "genre": _string(),
         "subgenres": _array("string"), "mood": _array("string"),
-        "tempo_bpm": {"type": "integer"}, "key_or_tonality": _string(),
+        "tempo_bpm": {"type": "integer", "minimum": 40, "maximum": 240}, "key_or_tonality": _string(),
         "time_signature": _string(), "song_structure": _array("string"),
         "instrumentation": _array("string"), "vocal_style": _string(),
         "language": _string(), "lyrical_theme": _string(),
@@ -136,14 +136,14 @@ MUSIC_PLAN_SCHEMA = {
         "recommended_settings": {
             "type": "object", "additionalProperties": False,
             "properties": {
-                "duration_seconds": {"type": "integer"},
+                "duration_seconds": {"type": "integer", "minimum": 30, "maximum": 900},
                 "explicit_content": {"type": "boolean"},
                 "vocal_mode": _string(),
             },
             "required": ["duration_seconds", "explicit_content", "vocal_mode"],
         },
         "variations": {
-            "type": "array", "items": {
+            "type": "array", "minItems": 2, "maxItems": 3, "items": {
                 "type": "object", "additionalProperties": False,
                 "properties": {
                     "name": _string(), "style_prompt": _string(),
@@ -267,7 +267,9 @@ class MusicPlanningService:
             if not isinstance(generated, TextGenerationResult):
                 raise ValueError("text provider returned invalid result")
             try:
-                plan = MusicPlanningResult.from_dict(json.loads(generated.output_text))
+                plan = MusicPlanningResult.from_dict(
+                    _normalize_music_plan(json.loads(generated.output_text))
+                )
             except (TypeError, json.JSONDecodeError, ValueError):
                 raise ValueError("music plan schema validation failed") from None
             package = SunoPackageFormatter.build(plan)
@@ -383,6 +385,23 @@ def validate_music_plan(value):
             or not isinstance(settings["vocal_mode"], str)
             or not settings["vocal_mode"].strip()):
         raise ValueError("recommended_settings are invalid")
+
+
+def _normalize_music_plan(value):
+    """Repair only the schema relationship JSON Schema cannot express."""
+    if not isinstance(value, dict):
+        return value
+    primary = value.get("primary_title")
+    candidates = value.get("title_candidates")
+    if (
+        isinstance(primary, str) and primary.strip()
+        and isinstance(candidates, list) and 2 <= len(candidates) <= 5
+        and all(isinstance(item, str) and item.strip() for item in candidates)
+        and primary not in candidates
+    ):
+        value = dict(value)
+        value["title_candidates"] = [primary, *candidates[1:]]
+    return value
 
 
 def _identifier(value, name):

@@ -1,0 +1,198 @@
+import unittest
+import shutil
+import tempfile
+import wave
+from pathlib import Path
+
+from fastapi.testclient import TestClient
+
+from api.app import create_app
+from application.product_workflow_service import ProductWorkflowService, PRODUCT_STAGES
+from application.persistent_execution_service import PersistentExecutionService
+from core.artifact_manager import ArtifactManager
+from core.execution_history import ExecutionHistory
+from core.persistence import InMemoryStateRepository
+from core.task_queue import InProcessJobWorker, PersistentJobQueue
+from core.usage_engine import UsageEngine
+from application.product_content_runner import ProductContentRunner
+from application.local_product import create_local_product_app
+from core.artifact_repository import StateArtifactRepository
+from core.object_storage import ArtifactStorageAdapter, LocalStorageProvider
+from core.secure_token_store import FakeSecureTokenStore
+from core.youtube_publishing import YouTubeConnectionRepository, YouTubeConnectionService, YOUTUBE_SCOPES
+from providers.content_media import FakeYouTubeProvider
+from providers.naver_blog import FakeNaverBlogBrowser
+
+
+class ProductWorkflowTests(unittest.TestCase):
+    def setUp(self):
+        self.repository = InMemoryStateRepository()
+        queue = PersistentJobQueue(self.repository)
+        execution = PersistentExecutionService(
+            queue, InProcessJobWorker(queue),
+            ExecutionHistory(state_repository=self.repository),
+            ArtifactManager(), UsageEngine(self.repository),
+        )
+        self.calls = []
+
+        def runner(stage, workspace_id, product_id, request_text, _record=None):
+            self.calls.append((stage, workspace_id, request_text))
+            return {
+                "status": "COMPLETED",
+                "result": {"kind": stage.lower(), "safe_ref": product_id},
+            }
+
+        self.service = ProductWorkflowService(
+            self.repository, execution, runner,
+            {"comfyui": lambda _workspace: True, "youtube": lambda _workspace: "CONNECTED"},
+        )
+
+    def test_one_request_runs_all_stages_without_persisting_text(self):
+        value = self.service.submit("workspace-a", "private user request", "request-1")
+        self.assertEqual(value["status"], "PENDING")
+        self.service.run_once("workspace-a")
+        result = self.service.get("workspace-a", value["product_id"])
+        self.assertEqual(result["status"], "COMPLETED")
+        self.assertEqual(result["progress"], 100)
+        self.assertEqual([call[0] for call in self.calls], list(PRODUCT_STAGES))
+        self.assertNotIn("private user request", str(self.repository._records))
+        self.assertIsNone(self.service.get("workspace-b", value["product_id"]))
+
+    def test_duplicate_submission_and_waiting_boundary(self):
+        waiting = ProductWorkflowService(
+            InMemoryStateRepository(),
+            self.service.execution,
+            lambda stage, *_: {"status": "WAITING_FOR_INPUT"} if stage == "MUSIC" else {"status": "COMPLETED"},
+        )
+        first = waiting.submit("workspace-a", "request", "same-key")
+        second = waiting.submit("workspace-a", "different", "same-key")
+        self.assertEqual(first["product_id"], second["product_id"])
+
+    def test_failed_stage_only_retry_and_connections_are_safe(self):
+        def failing(stage, *_):
+            return {"status": "FAILED", "safe_error": "PROVIDER_UNAVAILABLE"} if stage == "IMAGE" else {"status": "COMPLETED"}
+        repository = InMemoryStateRepository()
+        queue = PersistentJobQueue(repository)
+        execution = PersistentExecutionService(queue, InProcessJobWorker(queue), ExecutionHistory(state_repository=repository), ArtifactManager(), UsageEngine(repository))
+        service = ProductWorkflowService(repository, execution, failing, {"naver": lambda _: (_ for _ in ()).throw(RuntimeError("cookie=secret"))})
+        item = service.submit("workspace-a", "request", "failure-key")
+        service.run_once("workspace-a")
+        failed = service.get("workspace-a", item["product_id"])
+        self.assertEqual(failed["current_stage"], "IMAGE")
+        self.assertEqual(failed["status"], "FAILED")
+        retried = service.retry("workspace-a", item["product_id"], "IMAGE")
+        self.assertEqual(retried["stages"]["IMAGE"]["status"], "PENDING")
+        self.assertEqual(service.connections("workspace-a")["items"][2]["status"], "UNAVAILABLE")
+
+    def test_product_http_contract(self):
+        client = TestClient(create_app(product_workflow_service=self.service))
+        response = client.post("/workspaces/workspace-a/product-jobs", json={"request": "make content", "idempotency_key": "http-1"})
+        self.assertEqual(response.status_code, 201)
+        product_id = response.json()["product_id"]
+        self.service.run_once("workspace-a")
+        self.assertEqual(client.get(f"/workspaces/workspace-a/product-jobs/{product_id}").json()["status"], "COMPLETED")
+        self.assertEqual(client.get("/workspaces/workspace-a/product-jobs").json()["items"][0]["workspace_id"], "workspace-a")
+        self.assertEqual(client.get("/workspaces/workspace-a/connections").status_code, 200)
+
+    @unittest.skipUnless(shutil.which("ffmpeg") and shutil.which("ffprobe"), "FFmpeg local integration required")
+    def test_existing_orchestrators_complete_fake_product_e2e(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); repository = InMemoryStateRepository()
+            metadata = StateArtifactRepository(repository)
+            artifacts = ArtifactManager(metadata, ArtifactStorageAdapter(LocalStorageProvider(root / "artifacts"), metadata))
+            history = ExecutionHistory(state_repository=repository); usage = UsageEngine(repository)
+            tokens = FakeSecureTokenStore(); connections = YouTubeConnectionService(YouTubeConnectionRepository(repository), tokens)
+            connections.connect("workspace-a", "channel-a", "Potato Music Company", {"access_token":"fake-a","refresh_token":"fake-r","expires_at":"2099-01-01T00:00:00+00:00","token_type":"Bearer","granted_scopes":YOUTUBE_SCOPES})
+            runner = ProductContentRunner(root, repository, artifacts, history, usage, {
+                "AICOMPANY_TEXT_PROVIDER":"fake", "AICOMPANY_IMAGE_PROVIDER":"fake",
+                "AICOMPANY_VIDEO_PROVIDER":"ffmpeg", "AICOMPANY_NAVER_BLOG_PROVIDER":"fake",
+                "ALLOW_PAID_PROVIDER":"False",
+            }, connections, FakeYouTubeProvider(), FakeNaverBlogBrowser())
+            queue = PersistentJobQueue(repository)
+            execution = PersistentExecutionService(queue, InProcessJobWorker(queue), history, artifacts, usage)
+            service = ProductWorkflowService(repository, execution, runner)
+            item = service.submit("workspace-a", "make a calm piano video", "actual-contracts")
+            service.run_once("workspace-a")
+            audio = root / "source.wav"
+            with wave.open(str(audio), "wb") as stream:
+                stream.setnchannels(1); stream.setsampwidth(2); stream.setframerate(8000); stream.writeframes(b"\0\0" * 8000)
+            service.upload_audio("workspace-a", item["product_id"], "source.wav", audio.read_bytes())
+            restarted_queue = PersistentJobQueue(repository, workspace_ids=("workspace-a",))
+            restarted_execution = PersistentExecutionService(restarted_queue, InProcessJobWorker(restarted_queue), history, artifacts, usage)
+            restarted = ProductWorkflowService(repository, restarted_execution, runner)
+            restarted.run_once("workspace-a")
+            waiting = restarted.get("workspace-a", item["product_id"])
+            self.assertEqual(waiting["status"], "USER_CONFIRM_REQUIRED")
+            restarted.resume("workspace-a", item["product_id"])
+            restarted.run_once("workspace-a")
+            completed = restarted.get("workspace-a", item["product_id"])
+            self.assertEqual(completed["status"], "COMPLETED")
+            self.assertEqual(completed["stages"]["YOUTUBE"]["status"], "COMPLETED")
+            self.assertEqual(completed["stages"]["NAVER"]["status"], "PUBLISHED")
+            self.assertTrue(completed["results"]["youtube"]["published_url"])
+            self.assertTrue(completed["results"]["naver"]["published_url"])
+
+    def test_audio_checkpoint_resumes_complete_fake_product(self):
+        class Runner:
+            def __call__(self, stage, workspace, product, text, record=None):
+                if stage == "PLANNING":
+                    return {"status": "WAITING_FOR_INPUT", "result": {"project_id": "music-a"}}
+                return {"status": "COMPLETED", "result": {"stage": stage}}
+            def upload_audio(self, workspace, project, filename, content):
+                if workspace != "workspace-a" or project != "music-a" or filename != "song.mp3" or not content:
+                    raise ValueError("invalid")
+                return {"status": "INPUT_READY", "data": {"audio_artifact_id": "audio-a", "source_filename": filename, "detected_format": "mp3", "duration_seconds": 1.0}}
+        repository = InMemoryStateRepository(); queue = PersistentJobQueue(repository)
+        execution = PersistentExecutionService(queue, InProcessJobWorker(queue), ExecutionHistory(state_repository=repository), ArtifactManager(), UsageEngine(repository))
+        service = ProductWorkflowService(repository, execution, Runner())
+        item = service.submit("workspace-a", "request", "audio-flow")
+        service.run_once("workspace-a")
+        waiting = service.get("workspace-a", item["product_id"])
+        self.assertEqual(waiting["status"], "WAITING_FOR_INPUT")
+        service.upload_audio("workspace-a", item["product_id"], "song.mp3", b"audio")
+        service.run_once("workspace-a")
+        self.assertEqual(service.get("workspace-a", item["product_id"])["status"], "COMPLETED")
+        self.assertIsNone(service.get("workspace-b", item["product_id"]))
+
+    def test_audio_http_upload_rejects_paths_and_foreign_workspace(self):
+        class Runner:
+            def __call__(self, stage, workspace, product, text, record=None):
+                return {"status":"WAITING_FOR_INPUT","result":{"project_id":"music-http"}} if stage == "PLANNING" else {"status":"COMPLETED"}
+            def upload_audio(self, workspace, project, filename, content):
+                if "/" in filename or "\\" in filename: raise ValueError("path")
+                return {"status":"INPUT_READY","data":{"audio_artifact_id":"a","source_filename":filename,"detected_format":"mp3","duration_seconds":1}}
+        repository=InMemoryStateRepository(); queue=PersistentJobQueue(repository)
+        execution=PersistentExecutionService(queue,InProcessJobWorker(queue),ExecutionHistory(state_repository=repository),ArtifactManager(),UsageEngine(repository))
+        service=ProductWorkflowService(repository,execution,Runner()); client=TestClient(create_app(product_workflow_service=service))
+        item=service.submit("workspace-a","request","http-audio"); service.run_once("workspace-a")
+        self.assertEqual(client.post(f"/workspaces/workspace-a/product-jobs/{item['product_id']}/audio",content=b"audio",headers={"X-Filename":"../song.mp3","Content-Type":"audio/mpeg"}).status_code,400)
+        self.assertEqual(client.post(f"/workspaces/workspace-a/product-jobs/{item['product_id']}/audio",content=b"audio",headers={"X-Filename":"song.mp3","Content-Type":"text/plain"}).status_code,400)
+        self.assertEqual(client.post(f"/workspaces/workspace-b/product-jobs/{item['product_id']}/audio",content=b"audio",headers={"X-Filename":"song.mp3","Content-Type":"audio/mpeg"}).status_code,404)
+
+    def test_local_product_bootstrap_has_workspace_and_restart_login(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            environment = {
+                "AICOMPANY_PRODUCT_ROOT": temporary,
+                "AICOMPANY_LOCAL_EMAIL": "owner@localhost",
+                "AICOMPANY_LOCAL_PASSWORD": "safe-local-password",
+                "AICOMPANY_SIGNING_SECRET": "s" * 48,
+                "AICOMPANY_TEXT_PROVIDER": "fake",
+                "AICOMPANY_IMAGE_PROVIDER": "fake",
+                "AICOMPANY_VIDEO_PROVIDER": "fake",
+                "AICOMPANY_NAVER_BLOG_PROVIDER": "fake",
+                "ALLOW_PAID_PROVIDER": "False",
+            }
+            for _ in range(2):
+                client = TestClient(create_local_product_app(environment))
+                login = client.post("/auth/login", json={
+                    "email": "owner@localhost", "password": "safe-local-password",
+                })
+                self.assertEqual(login.status_code, 200)
+                token = login.json()["access_token"]
+                values = client.get("/workspaces", headers={"Authorization": f"Bearer {token}"})
+                self.assertEqual(values.status_code, 200)
+                self.assertEqual(values.json()["items"][0]["workspace_id"], "default")
+
+
+if __name__ == "__main__":
+    unittest.main()

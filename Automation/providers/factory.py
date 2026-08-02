@@ -73,6 +73,7 @@ class ProviderFactory:
             provider = ComfyUIImageProvider(
                 environment.get("AICOMPANY_COMFYUI_ENDPOINT", "http://127.0.0.1:8188"),
                 workflow, model, transport=transport,
+                max_polls=min(1000, int(timeout / 0.25) + 1),
             )
         else:
             raise ValueError("Unsupported or disabled image provider")

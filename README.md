@@ -924,5 +924,44 @@ publish selector or automatic click. After one user confirmation, it validates
 the Naver PostView URL and stores PUBLISHED time/state, receipt Artifact, Usage,
 and History. The real Smoke passed with `Potato Company`. CAPTCHA, session
 expiry, upload failure, editor changes, and missing confirmation stop safely.
-This is browser Local Integration, not an official Naver API. @10 is not
-implemented.
+This is browser Local Integration, not an official Naver API.
+
+### @10 Local Product mode
+
+From the repository root, run:
+
+```powershell
+.\start-aicompany.ps1
+```
+
+Enter a new local password of at least 12 characters when prompted, then sign
+in as `owner@localhost` in the browser opened by the launcher. The password and
+random signing key exist only in the launcher process environment; only the
+password hash is persisted. The launcher starts the host Backend, React
+Frontend, and in-process persistent Worker, waits for readiness, and opens the
+Dashboard. Stop the recorded processes with:
+
+```powershell
+.\stop-aicompany.ps1
+```
+
+The Dashboard accepts one natural-language content order, displays the Suno
+package and `WAITING_FOR_INPUT`, and accepts MP3/WAV/FLAC/M4A upload directly
+from the browser. The upload is Workspace-authorized, size/MIME/signature/
+ffprobe validated, and connected to the existing Music Project; arbitrary
+server paths are not accepted. The persistent Workflow then composes @3 audio
+intake, @4 brief, @5 image, @6 blog, @7 video, @8 private YouTube, and @9 Naver
+assistant. It stops for missing YouTube connection and for the user's final
+Naver publish click, supports failed-stage retry, and shows safe results and
+Artifact content without internal paths.
+
+Fake Text is the launcher default so structured Music Plan and Content Brief
+generation is deterministic and offline. Ollama can still be selected
+explicitly with the existing environment contract, but the installed small
+model is not claimed to reliably satisfy the complex @2/@4 schemas; invalid
+structure fails and never silently falls back. ComfyUI, YouTube, and Naver real
+connections remain explicit and their existing local services/profiles must be
+available. The verified full local smoke used real ComfyUI/SDXL Turbo, FFmpeg,
+a private YouTube upload, and user-confirmed Naver publication. It recorded
+Artifact, Usage, and ExecutionHistory in one Workspace. This is Local Product
+Integration, not Production Ready; no `@11` work is defined or implemented.

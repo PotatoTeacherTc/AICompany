@@ -4,6 +4,32 @@
 
 Official current baseline: **Mission 141**.
 
+`@10 — Product Workflow Dashboard` is complete at a bounded Local Product
+Integration boundary. A Workspace user can submit one natural-language order
+in the Web Dashboard, inspect the generated Suno package, upload completed
+MP3/WAV/FLAC/M4A audio through the Workspace-scoped API, recover the same
+checkpoint after restart, and continue through the existing @3-@9
+orchestrators. The Dashboard shows progress, connection/user-action states,
+safe Artifact content, failed-stage retry, and final platform links. The local
+launcher starts Backend, Frontend, and the in-process persistent Worker and
+opens the browser; its companion stops only those recorded processes.
+
+One real Local E2E completed on 2026-08-02 in the `youtube-smoke` Workspace:
+real audio intake, ComfyUI SDXL Turbo image, FFmpeg MP4, private YouTube upload
+(`H8FQBaJiBP4`, processing succeeded), and user-confirmed Naver publication
+were recorded through shared Artifact, Usage, ExecutionHistory, and persistent
+Workflow state. The Naver result was validated as an allowlisted PostView URL
+and retained only in Workspace-scoped state. The run retained 21 managed
+Artifacts and used no implicit Fake fallback.
+Structured @2/@4 text used explicit deterministic Fake Text because the
+installed small Ollama model did not reliably satisfy the complex Music Plan
+schema; Ollama remains separately verified for free-form local Text and an
+invalid structured response fails safely.
+
+Current verification baseline: Backend **498 tests passed** with five
+conditional integration skips, Frontend **2 tests passed**, and Frontend
+production build passed. @11 is undefined and was not started.
+
 @9 Naver Blog Publishing Assistant is complete at its Local Integration
 boundary. The actual Smoke reused the `youtube-smoke` Workspace BlogPackage and
 managed image, filled SmartEditor title/body/image/tags, selected exact category
@@ -11,8 +37,8 @@ managed image, filled SmartEditor title/body/image/tags, selected exact category
 click final publish. After one user click it stored validated PostView URL,
 PUBLISHED time/state, receipt Artifact, zero-cost Usage, and ExecutionHistory.
 Foreign-Workspace reads were rejected. Credentials, OTP, cookies, and raw
-session values were not stored. Backend verification is 489 tests with four
-conditional skips. @10 remains unimplemented.
+session values were not stored. This is the verified @9 boundary now composed
+by @10.
 
 @8 YouTube Local Integration was verified on 2026-08-02. OAuth requests only
 `youtube.upload` and `youtube.readonly`, uses PKCE/state and a loopback callback,
@@ -20,10 +46,10 @@ and stores Token material only in Windows Credential Manager. The
 `Potato Music Company` channel was confirmed before one approved three-second
 MP4 was uploaded as private (`CGL9-UhCXgU`). The YouTube API reported
 `processed`/`succeeded`; Publication, Usage, History, restart recovery, and
-Workspace isolation passed. Thumbnail application failed safely. The project
-state has YOUTUBE_PACKAGE completed and PUBLISHING pending. External blog
-publishing and @9 remain unimplemented. The current Backend baseline is 485
-tests with four conditional skips.
+Workspace isolation passed. Thumbnail application failed safely. The original
+@8 project state has YOUTUBE_PACKAGE completed and PUBLISHING pending; @10 now
+reuses this connection through the Product Workflow without changing @8's
+private-only contract.
 
 Current product status: **Local/Fake SaaS Beta + bounded single-host Production Integration**.
 
@@ -52,10 +78,11 @@ OAuth, account connection, browser automation, or external API was used for
 boundary. Windows Credential Manager actual CRUD was verified; OAuth state,
 PKCE, connection metadata, Fake private resumable upload, processing,
 thumbnail, Publication, restart, and isolation contracts are Mock-verified.
-Google OAuth, channel verification, and one private upload are now verified as
-described above. Blog publishing and @9 work were not performed.
+Google OAuth, channel verification, and private uploads are verified as
+described above. @9 and @10 are now also complete at their documented Local
+Integration boundaries.
 
-Current verification baseline: Backend 485 tests with four conditional skips,
+Current verification baseline: Backend 498 tests with five conditional skips,
 Frontend two tests,
 Frontend production build, and a production-like single-host Docker stack with
 two Backends and two Workers behind a local TLS Gateway.
@@ -882,16 +909,16 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current Backend suite contains **373 tests**. Its expected command is:
+The current Backend suite contains **498 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Current verification result: **373 passed, 0 failed** (one Docker PostgreSQL
-integration test is conditionally skipped outside the integration environment
-and passed against Compose PostgreSQL).
+Current verification result: **498 passed, 0 failed, 5 conditional integration
+skips**. Credential/real Provider tests remain explicit environment-gated;
+Windows Credential Manager coverage passed in the host-permission run.
 
 ## Not implemented
 

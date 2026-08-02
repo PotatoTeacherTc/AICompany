@@ -7,6 +7,8 @@ from application.backend import BackendDependencies, BackendHealthService, creat
 from application.plan_service import PlanApplicationService
 from application.job_execution_api_service import JobExecutionApiService
 from application.persistent_execution_service import PersistentExecutionService
+from application.product_workflow_service import ProductWorkflowService
+from application.product_content_runner import ProductContentRunner
 from core.artifact_manager import ArtifactManager
 from core.artifact_repository import StateArtifactRepository
 from core.object_storage import ArtifactStorageAdapter, StorageFactory
@@ -28,6 +30,9 @@ from core.production_config import validate_production_configuration
 from core.security import SecuritySettings
 from core.task_queue import InProcessJobWorker
 from core.usage_engine import UsageEngine
+from core.secure_token_store import WindowsLocalSecureTokenStore
+from core.youtube_publishing import YouTubeConnectionRepository, YouTubeConnectionService
+from providers.factory import ProviderFactory
 
 
 def create_state_repository_from_environment(environment=None):
@@ -68,6 +73,35 @@ def create_production_app(environment=None):
     artifacts = create_artifact_manager(values, repository)
     usage = UsageEngine(repository)
     execution = PersistentExecutionService(queue, worker, history, artifacts, usage)
+    youtube_connections = None
+    if os.name == "nt":
+        try:
+            youtube_connections = YouTubeConnectionService(
+                YouTubeConnectionRepository(repository), WindowsLocalSecureTokenStore()
+            )
+        except Exception:
+            youtube_connections = None
+    try:
+        naver_browser = ProviderFactory.naver_blog_from_environment(values).provider
+    except Exception:
+        naver_browser = None
+    product_runner = ProductContentRunner(
+        values.get("AICOMPANY_PRODUCT_ROOT", str(os.path.join(os.getcwd(), "product-data"))),
+        repository, artifacts, history, usage, values,
+        youtube_connections=youtube_connections, naver_browser=naver_browser,
+    )
+    product = ProductWorkflowService(
+        repository, execution, product_runner,
+        connection_probes={
+            "comfyui": lambda _workspace: "CONFIGURED" if values.get("AICOMPANY_COMFYUI_ENDPOINT") else "NOT_CONFIGURED",
+            "youtube": lambda _workspace: "CONFIGURED" if values.get("AICOMPANY_YOUTUBE_PROVIDER") == "youtube" else "NOT_CONFIGURED",
+            "naver": lambda _workspace: "CONFIGURED" if values.get("AICOMPANY_NAVER_PROFILE_DIR") else "NOT_CONFIGURED",
+        },
+        # The raw request is intentionally never persisted. Consume this
+        # first local product job in-process while the existing queue still
+        # provides idempotency and single-claim protection.
+        auto_run=True,
+    )
     job_api = JobExecutionApiService(
         execution, history, artifacts, usage, BatchManager(queue, repository)
     )
@@ -87,6 +121,7 @@ def create_production_app(environment=None):
         artifact_service=ArtifactApplicationService(artifacts),
         persistent_execution_service=execution,
         job_execution_api_service=job_api,
+        product_workflow_service=product,
         health_service=BackendHealthService(
             persistence_probe=repository.health,
             queue_probe=queue.health if hasattr(queue, "health") else lambda: True,
