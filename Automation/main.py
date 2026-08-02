@@ -24,6 +24,9 @@ from core.content_brief_orchestration import (
 from core.image_package import (
     ImagePackageOrchestrator, ImagePackageRequest,
 )
+from core.blog_package import (
+    BlogPackageOrchestrator, BlogPackageRequest, BlogPackageService,
+)
 from core.object_storage import ArtifactStorageAdapter, LocalStorageProvider
 from core.persistence import JsonStateRepository
 from core.usage_engine import UsageEngine
@@ -321,8 +324,74 @@ def run_image_package(workspace_id, content_project_id, root=None,
     return result
 
 
+def run_blog_package(workspace_id, content_project_id, root=None,
+                     environment=None, transport=None, **options):
+    root = Path(root or Path(__file__).parent / "logs" / "music-plans").resolve()
+    storage = root / "artifacts"
+    state_root = root / "state"
+    state = JsonStateRepository(state_root / "music-project-state.json")
+    repository = FileArtifactRepository(state_root / "artifact-metadata.json", storage)
+    artifacts = ArtifactManager(
+        repository,
+        storage_adapter=ArtifactStorageAdapter(LocalStorageProvider(storage), repository),
+    )
+    history = ExecutionHistory(repository=JsonFileExecutionHistoryRepository(
+        state_root / "execution-history.json"
+    ))
+    selection = ProviderFactory.text_from_environment(
+        dict(os.environ) if environment is None else environment,
+        transport=transport,
+    )
+    orchestrator = BlogPackageOrchestrator(
+        root / "work", BlogPackageService(selection=selection),
+        ContentProjectRepository(state), state, artifacts, history,
+        usage_engine=UsageEngine(state),
+    )
+    result = orchestrator.run(BlogPackageRequest(
+        workspace_id, content_project_id, **options
+    ))
+    data = result.get("data") or {}
+    print(json.dumps({
+        "workspace_id": data.get("workspace_id"),
+        "content_project_id": data.get("content_project_id"),
+        "blog_package_id": data.get("blog_package_id"),
+        "status": data.get("blog_package_status") or result.get("status"),
+        "title": data.get("title"), "artifact_ids": data.get("artifact_ids"),
+        "image_count": data.get("image_count"), "provider": data.get("provider"),
+        "model": data.get("model"), "next_action": data.get("next_action"),
+        "error": result.get("error"),
+    }, ensure_ascii=False, indent=2))
+    return result
+
+
 if __name__ == "__main__":
-    if len(sys.argv) > 1 and sys.argv[1] == "image-package":
+    if len(sys.argv) > 1 and sys.argv[1] == "blog-package":
+        values = {
+            "--workspace-id": None, "--content-project-id": None,
+            "--provider": None, "--language": None, "--tone": None,
+            "--target-platform": "generic_blog", "--article-length": None,
+            "--idempotency-key": None,
+        }
+        index = 2
+        while index < len(sys.argv):
+            if sys.argv[index] in values and index + 1 < len(sys.argv):
+                values[sys.argv[index]] = sys.argv[index + 1]
+                index += 2
+            else:
+                index += 1
+        blog_environment = dict(os.environ)
+        if values["--provider"] is not None:
+            blog_environment["AICOMPANY_TEXT_PROVIDER"] = values.pop("--provider")
+        else:
+            values.pop("--provider")
+        blog_result = run_blog_package(
+            values.pop("--workspace-id"), values.pop("--content-project-id"),
+            environment=blog_environment,
+            **{key[2:].replace("-", "_"): value for key, value in values.items() if value is not None},
+        )
+        if blog_result.get("status") != PipelineStatus.SUCCESS:
+            raise SystemExit(1)
+    elif len(sys.argv) > 1 and sys.argv[1] == "image-package":
         values = {
             "--workspace": None, "--content-project-id": None,
             "--provider": None, "--workflow-profile": "default",

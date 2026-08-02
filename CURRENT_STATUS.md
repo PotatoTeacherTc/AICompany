@@ -18,9 +18,14 @@ local integration boundary. Real LLM credential smoke remains unexecuted.
 `@5 — Free local image generation and image package` is complete at its Local
 Integration boundary with both Fake/Mock regression coverage and one real
 loopback ComfyUI/SDXL Turbo smoke.
-`@6` has not started.
+`@6 — Blog package with images` is complete at its Mock-verified Local
+Integration boundary. It consumes the existing Content Brief and completed @5
+image manifest, creates five reviewable Artifacts with safe image references,
+and advances only BLOG_PACKAGE. No real blog account or publishing API is
+connected, and no real LLM credential smoke was run for @6. `@7` has not
+started.
 
-Current verification baseline: Backend 462 tests with four conditional skips,
+Current verification baseline: Backend 472 tests with four conditional skips,
 Frontend two tests,
 Frontend production build, and a production-like single-host Docker stack with
 two Backends and two Workers behind a local TLS Gateway.
@@ -56,6 +61,18 @@ Workflow, Plugin, and Marketplace expansion is not a current priority
 candidate. Enterprise and AICompany v1.0 remain unimplemented.
 
 ## Verified completed capabilities
+
+- @6 Blog Package: the new structured contract includes title alternatives,
+  safe slug, excerpt/meta description, bounded SEO keywords/tags, three or more
+  ordered sections, CTA, assumptions/warnings, reading estimate, and two
+  same-Workspace image placements. The Fake Text default produces deterministic
+  JSON through the existing Schema path. The orchestrator stores JSON,
+  Markdown, escaped HTML, SEO JSON, and image-manifest JSON through managed
+  Object Storage, records available Usage and safe ExecutionHistory, supports
+  local idempotent replay/restart/retry, and leaves VIDEO_PACKAGE,
+  YOUTUBE_PACKAGE, and PUBLISHING pending. HTML tags and active URL/event syntax
+  supplied by generated text are removed before formatting; HTML then escapes
+  all content. There is no publishing, account connection, API route, or UI.
 
 - @5 Foundation: the existing ImageProvider and ProviderFactory now support an
   explicit `comfyui` selection that accepts only credential-free loopback HTTP,

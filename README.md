@@ -839,4 +839,27 @@ Usage, and denied cross-Workspace Artifact lookup. The isolated smoke Artifact
 is temporary test evidence, not a retained user Content Project output. Fake
 remains the default regression Provider. Zero Usage cost means zero external
 API charge only; electricity and hardware cost are not claimed to be zero.
-OpenAI Image API and @6 blog generation are not implemented.
+OpenAI Image API is not implemented.
+
+### @6 image-backed blog package
+
+After the Content Project is `READY_FOR_CONTENT` and @5 `IMAGE_PACKAGE` is
+`COMPLETED`, create a local review package with the offline Fake Text Provider:
+
+```powershell
+cd D:\AICompany\Automation
+.\venv\Scripts\python.exe -B main.py blog-package --workspace-id <workspace> --content-project-id <content-project-id> --provider fake --language ko --tone informative --target-platform generic_blog --idempotency-key <safe-key>
+```
+
+The command returns identifiers and status only. Full article text is retained
+inside managed Artifacts: `blog_package.json`, `blog_article.md`,
+`blog_article.html`, `blog_seo_metadata.json`, and
+`blog_image_manifest.json`. COVER is placed near the start and BLOG_INLINE in
+the body using `artifact:` references; image bytes, storage paths, prompts, and
+Secrets are not embedded. Generated text is bounded and stripped of HTML tags,
+event-handler/data/javascript syntax before escaped HTML formatting. Fake is
+the default; Ollama and paid-policy-gated OpenAI use the same TextProvider
+contract when explicitly configured and never silently fall back. @6 was
+verified only with Fake/Mock generation. Real blog publishing, account/OAuth
+connection, extra image generation, Dashboard/API work, and @7 video generation
+are not implemented.

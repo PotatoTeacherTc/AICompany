@@ -1137,7 +1137,7 @@ added behind the existing Provider abstraction without changing the workflow.
   custom node, external endpoint, paid image API, or automatic fallback was
   used.
 
-### @6 — Blog package with images
+### @6 — Blog package with images (Complete, Mock-verified Local Integration)
 
 - Goal: create a directly reviewable and publishable package from the shared
   brief and generated images.
@@ -1145,6 +1145,19 @@ added behind the existing Provider abstraction without changing the workflow.
   placement, captions/alt text, conclusion, tags, Markdown, HTML, hero image,
   and metadata.
 - Completion: a complete package is produced without missing image references.
+- Verified implementation: `BlogPackageService` reuses the existing TextProvider
+  JSON Schema path and `BlogPackageOrchestrator` reuses ContentProject,
+  StateRepository, ArtifactManager/Object Storage, PipelineResult, Usage, History,
+  and structured Logging. It accepts only a same-Workspace READY_FOR_CONTENT
+  project whose IMAGE_PACKAGE is COMPLETED and whose COVER/BLOG_INLINE Artifacts
+  are AVAILABLE. It creates `blog_package.json`, editable Markdown, escaped
+  allowlisted HTML, SEO metadata, and an image-reference manifest, then advances
+  only BLOG_PACKAGE. Fake Text is the default; Ollama/OpenAI remain explicit
+  selections with no automatic fallback, and no real LLM call was made for @6.
+  Local idempotency, concurrent convergence, restart replay, failed-state retry,
+  safe History/Usage isolation, and cross-Workspace rejection are covered.
+  Publishing accounts, blog APIs, extra image generation, Dashboard changes, and
+  @7 video work are not included.
 
 ### @7 — FFmpeg video and YouTube publication package
 

@@ -95,6 +95,8 @@ class ArtifactManager:
             "imported_at", "content_project_id", "music_project_id",
             "source_audio_artifact_id", "prompt_hash", "workflow_version",
             "purpose", "width", "height", "seed", "steps", "guidance",
+            "blog_package_id", "source_brief_artifact_id",
+            "image_manifest_artifact_id",
         }
         if set(value) - allowed:
             raise ValueError("artifact metadata contains unsupported fields")

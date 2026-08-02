@@ -11,6 +11,7 @@ TEXT_TASK_TYPES = {
     "LYRICS", "CONTENT_PLAN", "VIDEO_SCRIPT", "TITLE_DESCRIPTION",
     "MUSIC_PLAN",
     "CONTENT_BRIEF",
+    "BLOG_PACKAGE",
 }
 
 
@@ -159,6 +160,29 @@ class FakeTextProvider(TextProvider):
                 "assumptions": ["추가 타깃 입력이 없어 음악 기획의 청자를 유지"],
                 "source_summary": "한국어 발라드 음악 기획과 검증된 완성 음원 metadata를 기반으로 함",
                 "next_steps": ["IMAGE_PACKAGE", "BLOG_PACKAGE", "VIDEO_PACKAGE", "YOUTUBE_PACKAGE", "PUBLISHING"]
+            },
+            "BLOG_PACKAGE": {
+                "title": "다시 걷는 밤, 음악이 건네는 회복의 순간",
+                "alternative_titles": ["상실 뒤에 다시 피어나는 멜로디", "새벽길에서 만난 작은 희망"],
+                "excerpt": "상실 이후 다시 일어서는 마음을 음악과 이미지로 천천히 따라갑니다.",
+                "meta_description": "한국 발라드 프로젝트의 회복 서사와 창작 방향을 이미지와 함께 소개합니다.",
+                "primary_keyword": "회복 음악",
+                "secondary_keywords": ["한국 발라드", "감성 음악", "이별 후 회복"],
+                "tags": ["음악", "발라드", "회복", "창작 프로젝트"],
+                "target_audience": "감성적인 한국 음악 콘텐츠를 찾는 성인 독자",
+                "tone": "informative",
+                "language": "ko",
+                "sections": [
+                    {"heading": "다시 걷기 시작하는 이야기", "body": "이 프로젝트는 상실의 밤을 지나 다시 앞으로 나아가는 마음에서 출발합니다."},
+                    {"heading": "음악에 담긴 감정과 맥락", "body": "절제된 피아노와 따뜻한 흐름은 기억을 외면하지 않으면서도 회복의 방향을 보여 줍니다."},
+                    {"heading": "창작 프로젝트의 시각 언어", "body": "차가운 새벽빛에서 따뜻한 빛으로 이어지는 이미지는 음악의 감정선을 시각적으로 연결합니다."},
+                    {"heading": "첫인상과 감상 포인트", "body": "도입의 여백, 점진적인 고조, 마지막의 안정감을 차례로 느껴 보세요."},
+                    {"heading": "마무리", "body": "회복은 단번에 완성되지 않지만 음악은 다음 걸음을 위한 조용한 동행이 될 수 있습니다."}
+                ],
+                "call_to_action": "프로젝트의 음악과 이미지를 함께 감상하며 자신만의 회복 장면을 떠올려 보세요.",
+                "warnings": [],
+                "assumptions": ["추가 독자 정보가 없어 승인된 콘텐츠 브리프의 대상을 유지했습니다."],
+                "next_action": "Review and edit the package before manual publishing."
             },
         }
         output = json.dumps(templates[request.task_type], ensure_ascii=False)
@@ -408,6 +432,7 @@ def _structured_prompt(request):
         ),
         "MUSIC_PLAN": '{"music_plan":"use the caller supplied response_schema"}',
         "CONTENT_BRIEF": '{"content_brief":"use the caller supplied response_schema"}',
+        "BLOG_PACKAGE": '{"blog_package":"use the caller supplied response_schema"}',
     }
     return (
         "Return exactly one valid JSON object with no markdown or commentary. "
