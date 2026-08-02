@@ -15,8 +15,9 @@ complete at their Mock-verified boundaries. `@3 — Completed audio intake and
 project connection` is complete at its local integration boundary. `@4 —
 Content brief and project orchestration` is complete at its Mock-verified
 local integration boundary. Real LLM credential smoke remains unexecuted.
-`@5 — Free local image generation and image package` has a completed,
-Mock-verified Foundation; its real ComfyUI/model connection remains pending.
+`@5 — Free local image generation and image package` is complete at its Local
+Integration boundary with both Fake/Mock regression coverage and one real
+loopback ComfyUI/SDXL Turbo smoke.
 `@6` has not started.
 
 Current verification baseline: Backend 462 tests with four conditional skips,
@@ -65,9 +66,14 @@ candidate. Enterprise and AICompany v1.0 remain unimplemented.
   Usage, History, and Content Project repositories. It validates actual image
   structure, dimensions, aspect ratio, size, extension, checksum, path and
   Workspace ownership; partial successes are reused after retry/restart.
-  `IMAGE_PACKAGE` alone becomes COMPLETED. The local audit found no ComfyUI
-  installation, running service, or installed model, so real image generation
-  and the @5 real-connection completion criterion remain unverified.
+  `IMAGE_PACKAGE` alone becomes COMPLETED. Real Local Integration was verified
+  against ComfyUI Desktop 0.29.2 and
+  `sd_xl_turbo_1.0_fp16.safetensors` on an RTX 2070 SUPER (8 GiB): a fixed-seed
+  512x512 PNG was generated with 2 steps/CFG 1.0, decoded and checksummed,
+  stored through Local Object Storage, and tied to safe History, Usage, and
+  Workspace access checks. The isolated smoke Artifact was intentionally held
+  only for the test lifetime. Fake remains the default; no external or paid
+  image API was called.
 
 - @4: a revisioned, Workspace-owned Content Project composes the existing
   Music Plan and completed-audio link, generates a bounded provider-neutral

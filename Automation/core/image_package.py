@@ -126,6 +126,97 @@ class ImagePackageOrchestrator:
         with self._lock:
             return self._run_locked(request)
 
+    def smoke(self, request, width=512, height=512):
+        """Generate one real-or-injected image without completing IMAGE_PACKAGE."""
+        if not isinstance(request, ImagePackageRequest):
+            return self._failure(None, None, "INVALID_REQUEST")
+        try:
+            request.validate()
+        except Exception:
+            return self._failure(None, request, "INVALID_REQUEST")
+        task = _task(request)
+        task.task_type = "IMAGE_PACKAGE_SMOKE"
+        started = time.monotonic()
+        try:
+            if (
+                not isinstance(width, int) or not isinstance(height, int)
+                or not 64 <= width <= 2048 or not 64 <= height <= 2048
+            ):
+                raise ImagePackageError("SMOKE_DIMENSIONS_INVALID")
+            project = self.projects.get(request.workspace_id, request.content_project_id)
+            if project is None:
+                raise ImagePackageError(self._missing_code(request))
+            if project.status != PipelineStatus.READY_FOR_CONTENT:
+                raise ImagePackageError("CONTENT_PROJECT_NOT_READY")
+            brief = self._brief(project)
+            prompt, negative = ImagePromptFormatter.build(brief, "COVER")
+            with tempfile.TemporaryDirectory(dir=self.root) as temporary:
+                generated = self.provider.generate_image(ImageGenerationRequest(
+                    prompt, request.workspace_id, project.music_project_id,
+                    temporary, model=self.model, timeout_seconds=self.timeout,
+                    purpose="COVER", width=width, height=height, seed=request.seed,
+                    steps=self.steps, guidance=self.guidance,
+                    negative_prompt=negative,
+                    workflow_profile=request.workflow_profile,
+                ))
+                path, info = self._validate_generation(
+                    generated, temporary, width, height
+                )
+                artifact = self.artifacts.register_file(
+                    path, "CONTENT_COVER_IMAGE", "Image Package Orchestrator",
+                    workspace_id=request.workspace_id,
+                    mission_id=project.music_project_id,
+                    task_id=project.content_project_id,
+                    stage="IMAGE_PACKAGE_SMOKE",
+                    metadata={
+                        "provider": generated.provider, "model": generated.model,
+                        "prompt_version": IMAGE_PROMPT_VERSION,
+                        "prompt_hash": hashlib.sha256(prompt.encode("utf-8")).hexdigest(),
+                        "workflow_version": IMAGE_WORKFLOW_VERSION,
+                        "content_project_id": project.content_project_id,
+                        "purpose": "COVER", "width": info[1], "height": info[2],
+                        "seed": request.seed, "steps": self.steps,
+                        "guidance": self.guidance,
+                        "checksum_sha256": info[3],
+                    },
+                )
+            if self.artifacts.get(artifact["artifact_id"], request.workspace_id) is None:
+                raise ImagePackageError("ARTIFACT_SAVE_FAILED")
+            duration = round(time.monotonic() - started, 6)
+            usage = {
+                "provider": generated.provider, "model": generated.model,
+                "estimated_cost_usd": 0.0,
+            }
+            result = PipelineResult(
+                PipelineStatus.SUCCESS, "Image Package Orchestrator",
+                "Image package smoke", "IMAGE_PACKAGE_SMOKE",
+                data={
+                    "workspace_id": request.workspace_id,
+                    "mission_id": project.music_project_id,
+                    "content_project_id": project.content_project_id,
+                    "image_package_status": "SMOKE_COMPLETED",
+                    "provider": generated.provider, "model": generated.model,
+                    "provider_usage": usage, "format": info[0],
+                    "width": info[1], "height": info[2],
+                    "checksum_sha256": info[3], "duration_seconds": duration,
+                    "artifact_id": artifact["artifact_id"],
+                    "task_redacted": True,
+                }, artifacts=[_safe_artifact(artifact)],
+            ).to_dict()
+            result["task_id"] = task.id
+            self._history(task, result, "IMAGE_PACKAGE_SMOKE")
+            if self.usage is not None:
+                self.usage.record_safe(
+                    request.workspace_id,
+                    f"image-package-smoke-{project.content_project_id}", usage,
+                    mission_id=project.music_project_id,
+                    usage_id=f"image-package-smoke-{project.content_project_id}",
+                )
+            return result
+        except Exception as error:
+            code = error.code if isinstance(error, ImagePackageError) else type(error).__name__
+            return self._failure(task, request, code)
+
     def _run_locked(self, request):
         task = _task(request)
         project = self.projects.get(request.workspace_id, request.content_project_id)
@@ -372,21 +463,21 @@ class ImagePackageOrchestrator:
         ).to_dict()
         result["task_id"] = getattr(task, "id", None)
         if task is not None:
-            self._history(task, result)
+            self._history(task, result, getattr(task, "task_type", "IMAGE_PACKAGE"))
         safe_log(self.logger, "IMAGE_PACKAGE_FAILED", "ImagePackageOrchestrator",
                  level=LogLevel.ERROR, workspace_id=workspace,
                  execution_id=content_id, status="FAILED",
                  error=f"ImagePackageError: {code}")
         return result
 
-    def _history(self, task, result):
+    def _history(self, task, result, task_type="IMAGE_PACKAGE"):
         if self.history is None:
             return
         result.setdefault("data", {})["stages"] = {
             "IMAGE_PACKAGE": result.get("data", {}).get("image_package_status")
         }
         try:
-            self.history.record_content_stage(task, result, "IMAGE_PACKAGE")
+            self.history.record_content_stage(task, result, task_type)
         except Exception:
             pass
 

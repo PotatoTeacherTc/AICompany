@@ -1108,7 +1108,7 @@ added behind the existing Provider abstraction without changing the workflow.
   ExecutionHistory are recorded. Fake Text is the default and OpenAI remains
   explicit/credential-gated; no real call was made for @4.
 
-### @5 — Free local image generation and image package (Foundation complete; real connection pending)
+### @5 — Free local image generation and image package (Complete, Local Integration)
 
 - Goal: connect one real image Provider through the existing abstraction.
 - Scope: hero image, source thumbnail, video background, and blog images;
@@ -1126,11 +1126,16 @@ added behind the existing Provider abstraction without changing the workflow.
   records zero API cost Usage and safe History, and advances only
   `IMAGE_PACKAGE` to COMPLETED. Workspace isolation, local idempotency, partial
   retry/reuse, restart recovery, and Mock ComfyUI transport are verified.
-- Real boundary still open: the audited machine has an RTX 2070 SUPER with
-  8 GiB VRAM, but no detected ComfyUI installation, running loopback service,
-  or installed checkpoint. No program, model, or custom node was installed or
-  downloaded. FLUX.1-schnell remains an Apache-2.0 candidate rather than the
-  configured workflow's claimed default; no real image was generated.
+- Real verification: ComfyUI Desktop 0.29.2 on loopback was verified with an
+  RTX 2070 SUPER (8 GiB) and the installed
+  `sd_xl_turbo_1.0_fp16.safetensors` checkpoint. The tracked basic workflow
+  generated and retrieved a real 512x512 PNG with 2 steps, CFG 1.0, Euler,
+  normal scheduling, and a fixed seed. AICompany decoded dimensions, computed
+  SHA-256, stored the image through managed Local Object Storage, recorded safe
+  ExecutionHistory and zero external-API-cost Usage, and rejected foreign
+  Workspace lookup. Fake/Mock remains the default regression boundary; no
+  custom node, external endpoint, paid image API, or automatic fallback was
+  used.
 
 ### @6 — Blog package with images
 

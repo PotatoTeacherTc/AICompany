@@ -1,3 +1,4 @@
+import hashlib
 import json
 import os
 import tempfile
@@ -289,13 +290,69 @@ class ComfyUIProviderTests(unittest.TestCase):
     )
     def test_real_comfyui_one_image_smoke(self):
         selection = ProviderFactory.image_from_environment(os.environ)
-        result = selection.provider.generate_image(replace(
-            self.request(), model=selection.default_model, width=512, height=512,
+        states = JsonStateRepository(self.root / "smoke-state.json")
+        repository = FileArtifactRepository(
+            self.root / "smoke-artifacts.json", self.root / "smoke-storage"
+        )
+        artifacts = ArtifactManager(
+            repository,
+            ArtifactStorageAdapter(
+                LocalStorageProvider(self.root / "smoke-storage"), repository
+            ),
+        )
+        projects = ContentProjectRepository(states)
+        brief_path = self.root / "brief.json"
+        brief_path.write_text(json.dumps({
+            "visual_concept": "calm abstract sunrise landscape",
+            "visual_style": "safe editorial composition",
+            "color_direction": "cool blue to warm gold",
+            "thumbnail_direction": "one clear focal point",
+            "target_audience": "general adult audience",
+            "core_message": "renewal and hope",
+            "image_requirements": ["no embedded text"],
+            "mood_keywords": ["calm", "hopeful"],
+            "prohibited_elements": ["artist imitation", "watermark"],
+        }), encoding="utf-8")
+        brief = artifacts.register_file(
+            brief_path, "CONTENT_BRIEF", "smoke-setup",
+            workspace_id="smoke-workspace", mission_id="smoke-music",
+            task_id="smoke-content", stage="CONTENT_BRIEF",
+        )
+        now = "2026-08-02T00:00:00+00:00"
+        projects.save(ContentProject(
+            "smoke-content", "smoke-workspace", "smoke-music",
+            "smoke-plan", "smoke-audio", PipelineStatus.READY_FOR_CONTENT,
+            1, brief["artifact_id"], "smoke-execution", now, now,
+            completed_steps=("MUSIC_PLAN", "AUDIO_INPUT", "CONTENT_BRIEF"),
         ))
-        path = Path(result.artifacts[0].path)
-        self.assertEqual("comfyui", result.provider)
-        self.assertEqual(("PNG", 512, 512), inspect_image(path.read_bytes()))
-        self.assertEqual(0.0, result.usage.estimated_cost_usd)
+        history_repository = MemoryHistoryRepository()
+        usage = UsageEngine(states)
+        orchestrator = ImagePackageOrchestrator(
+            self.root / "smoke-work", selection, projects, states, artifacts,
+            ExecutionHistory(repository=history_repository), usage,
+            steps=2, guidance=1.0,
+        )
+        result = orchestrator.smoke(ImagePackageRequest(
+            "smoke-workspace", "smoke-content", seed=20260802
+        ))
+        self.assertEqual(PipelineStatus.SUCCESS, result["status"])
+        self.assertEqual("comfyui", result["data"]["provider"])
+        self.assertEqual(selection.default_model, result["data"]["model"])
+        artifact_id = result["data"]["artifact_id"]
+        content = artifacts.storage_adapter.read("smoke-workspace", artifact_id)
+        self.assertEqual(("PNG", 512, 512), inspect_image(content))
+        self.assertEqual(hashlib.sha256(content).hexdigest(), result["data"]["checksum_sha256"])
+        self.assertIsNone(artifacts.get(artifact_id, "foreign-workspace"))
+        history_record = history_repository.records[0]
+        self.assertEqual("IMAGE_PACKAGE_SMOKE", history_record["task_type"])
+        self.assertEqual("comfyui", history_record["result"]["provider"])
+        self.assertEqual(artifact_id, history_record["result"]["artifacts"][0]["artifact_id"])
+        usage_record = usage.get("image-package-smoke-smoke-content", "smoke-workspace")
+        self.assertEqual(0.0, usage_record["estimated_cost_usd"])
+        self.assertEqual("comfyui", usage_record["provider"])
+        self.assertEqual(selection.default_model, usage_record["model"])
+        self.assertNotIn(str(self.root), repr(result))
+        self.assertNotIn("calm abstract sunrise", repr(result))
 
 
 if __name__ == "__main__": unittest.main()

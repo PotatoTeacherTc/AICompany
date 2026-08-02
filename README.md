@@ -830,8 +830,13 @@ Only credential-free `localhost`, `127.0.0.1`, or `::1` HTTP is accepted. LAN
 and external endpoints, URL credentials, arbitrary/custom nodes, path escape,
 unbounded polling, and automatic Fake fallback are blocked. The tracked basic
 checkpoint workflow uses only standard ComfyUI nodes and is not asserted to be
-a FLUX workflow. FLUX.1-schnell is an Apache-2.0 candidate, but no model or
-ComfyUI installation was found during @5 and none was downloaded. Therefore
-real image generation and Artifact smoke remain pending. Zero Usage cost means
-zero external API charge only; electricity and hardware cost are not claimed
-to be zero. OpenAI Image API and @6 blog generation are not implemented.
+a FLUX workflow. The real Local Integration smoke was completed with ComfyUI
+Desktop 0.29.2, `sd_xl_turbo_1.0_fp16.safetensors`, and an RTX 2070 SUPER
+(8 GiB). AICompany generated a fixed-seed 512x512 PNG using 2 steps, CFG 1.0,
+Euler, and normal scheduling; then decoded it, checked dimensions and SHA-256,
+stored it through managed Local Object Storage, recorded ExecutionHistory and
+Usage, and denied cross-Workspace Artifact lookup. The isolated smoke Artifact
+is temporary test evidence, not a retained user Content Project output. Fake
+remains the default regression Provider. Zero Usage cost means zero external
+API charge only; electricity and hardware cost are not claimed to be zero.
+OpenAI Image API and @6 blog generation are not implemented.
