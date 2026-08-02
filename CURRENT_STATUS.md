@@ -26,9 +26,15 @@ connected, and no real LLM credential smoke was run for @6. `@7 — FFmpeg video
 and YouTube publication package` is complete at its Local Integration boundary:
 an actual local FFmpeg/ffprobe smoke produced and validated an H.264/AAC MP4
 with audio plus four publication-draft metadata Artifacts. No YouTube upload,
-OAuth, account connection, browser automation, external API, or @8 work exists.
+OAuth, account connection, browser automation, or external API was used for
+@7. `@8` is complete only at its Secure OAuth/YouTube Publishing Foundation
+boundary. Windows Credential Manager actual CRUD was verified; OAuth state,
+PKCE, connection metadata, Fake private resumable upload, processing,
+thumbnail, Publication, restart, and isolation contracts are Mock-verified.
+No Google credential, real OAuth consent, channel connection, YouTube upload,
+blog publishing, or @9 work was performed.
 
-Current verification baseline: Backend 476 tests with four conditional skips,
+Current verification baseline: Backend 484 tests with four conditional skips,
 Frontend two tests,
 Frontend production build, and a production-like single-host Docker stack with
 two Backends and two Workers behind a local TLS Gateway.
@@ -64,6 +70,15 @@ Workflow, Plugin, and Marketplace expansion is not a current priority
 candidate. Enterprise and AICompany v1.0 remain unimplemented.
 
 ## Verified completed capabilities
+
+- @8 Secure OAuth Foundation: `SecureTokenStore` separates OAuth secrets from
+  application persistence. The Windows adapter uses current-user Credential
+  Manager and has no plaintext fallback; the Fake adapter is injected in tests.
+  StateRepository explicitly permits only opaque `token_reference` metadata.
+  Connection and Publication records contain no token, authorization code,
+  client secret, email, path, or raw API response. The publishing contract
+  forces private, preserves one Content Project/video ID through idempotency,
+  and leaves PUBLISHING pending. Real Google integration remains unverified.
 
 - @7 Video Package: FFmpeg 7.1.1 CLI converts same-Workspace completed audio
   and the existing COVER into a 1920x1080 H.264/AAC 30fps MP4 with fade in/out

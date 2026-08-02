@@ -879,4 +879,24 @@ The other Artifacts are `youtube_package.json`, `youtube_description.md`,
 `youtube_tags.json`, and `video_manifest.json`; these reference the existing
 thumbnail and remain drafts. `YOUTUBE_PACKAGE` and `PUBLISHING` remain PENDING.
 No OAuth, upload, account connection, browser automation, external URL/API
-call, or @8 functionality is implemented.
+call was made by @7.
+
+### @8 secure YouTube OAuth publishing foundation
+
+OAuth token payloads are isolated behind `SecureTokenStore`. On Windows,
+`WindowsLocalSecureTokenStore` uses the current user's Credential Manager;
+StateRepository contains only an unguessable Workspace/connection-bound
+`token_reference`. There is no JSON, PostgreSQL, Artifact, environment, log,
+History, or Git token persistence and no automatic plaintext/non-Windows
+fallback. Tests inject `FakeSecureTokenStore`. Cloud deployment requires a
+separately approved Vault or cloud Secret Manager adapter.
+
+The OAuth contract uses PKCE S256, random state, bounded single-use callback,
+loopback redirect, and only
+`https://www.googleapis.com/auth/youtube.upload`. The publishing Foundation
+forces private visibility and models resumable upload, processing polling,
+thumbnail application, Publication persistence, idempotency, Usage, and
+Workspace isolation through Fake providers. YouTube quota units are not money
+and no fixed daily quota is assumed. Actual Google client credentials, system
+browser consent, channel verification, Google API calls, uploads, public or
+scheduled publication, blog publishing, and @9 are not implemented or run.

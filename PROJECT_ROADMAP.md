@@ -1180,7 +1180,7 @@ added behind the existing Provider abstraction without changing the workflow.
   PENDING. OAuth, upload, browser automation, external APIs/URLs, and @8 are
   not implemented.
 
-### @8 — Real publishing Providers
+### @8 — Real publishing Providers (Foundation complete; real integration pending)
 
 - Goal: place external publication behind common Provider boundaries.
 - YouTube scope: OAuth, private-first upload, title/description/tags/thumbnail,
@@ -1192,6 +1192,17 @@ added behind the existing Provider abstraction without changing the workflow.
 - Completion: a real private YouTube upload and supported blog draft succeed.
 - Gate: stop for explicit user approval before using a real account or any
   external cost.
+- Verified Foundation: SecureTokenStore defines Workspace/connection-bound
+  put/get/replace/delete/exists operations. Windows local integration stores
+  OAuth token payloads in the current user's Credential Manager; application
+  JSON persists only an unguessable `token_reference`. FakeSecureTokenStore
+  supports deterministic injection. OAuth state, PKCE S256, one-use callback,
+  loopback-only redirect, exact `youtube.upload` scope, connection/revoke/
+  refresh, private-only resumable Fake upload, processing polling, thumbnail,
+  Publication persistence, idempotency, Usage, and Workspace isolation are
+  implemented. A real Windows Credential Manager CRUD Smoke passed. No Google
+  credential, OAuth browser flow, network/API call, actual upload, or blog
+  publishing was executed; therefore @8 is not real-connection complete.
 
 ### @9 — Real-use E2E and Dashboard integration
 

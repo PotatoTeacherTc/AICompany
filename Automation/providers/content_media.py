@@ -412,6 +412,15 @@ class YouTubeProvider(ABC):
     def upload(self, request):
         pass
 
+    def start_resumable_upload(self, request, token_payload):
+        raise NotImplementedError
+
+    def poll_processing(self, video_id, token_payload, timeout_seconds):
+        raise NotImplementedError
+
+    def set_thumbnail(self, video_id, content, mime_type, token_payload, timeout_seconds):
+        raise NotImplementedError
+
 
 class FakeYouTubeProvider(YouTubeProvider):
     @property
@@ -430,3 +439,14 @@ class FakeYouTubeProvider(YouTubeProvider):
             request.visibility,
             UsageMetadata(estimated_cost_usd=0.0),
         )
+
+    def start_resumable_upload(self, request, token_payload):
+        if request.get("privacy_status") != "private": raise ValueError("private upload required")
+        return {"video_id": "fake-" + request["content_project_id"], "upload_status": "UPLOADED", "upload_attempts": 1}
+
+    def poll_processing(self, video_id, token_payload, timeout_seconds):
+        return {"processing_status": "succeeded", "poll_count": 1}
+
+    def set_thumbnail(self, video_id, content, mime_type, token_payload, timeout_seconds):
+        if mime_type not in {"image/png", "image/jpeg"} or not content or len(content) > 2_000_000: raise ValueError("thumbnail invalid")
+        return {"thumbnail_status": "APPLIED"}

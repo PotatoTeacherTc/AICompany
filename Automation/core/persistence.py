@@ -8,6 +8,7 @@ from pathlib import Path
 SCHEMA_VERSION = 1
 _SENSITIVE = ("prompt", "objective", "api_key", "oauth", "token", "password", "secret")
 _USAGE_KEYS = {"input_tokens", "output_tokens", "total_tokens"}
+_OPAQUE_REFERENCE_KEYS = {"token_reference"}
 _ABSOLUTE_PATH = re.compile(r"^(?:[A-Za-z]:[\\/]|/)")
 
 
@@ -124,7 +125,7 @@ def _sanitize(value):
             for key, item in value.items()
             if isinstance(key, str)
             and (
-                key.lower() in _USAGE_KEYS
+                key.lower() in _USAGE_KEYS | _OPAQUE_REFERENCE_KEYS
                 or not any(token in key.lower() for token in _SENSITIVE)
             )
         }
