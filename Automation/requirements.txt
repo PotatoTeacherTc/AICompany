@@ -6,3 +6,5 @@ uvicorn>=0.30,<1
 # PostgreSQL production persistence (Mission 131).
 psycopg[binary]>=3.2,<4
 redis>=5,<7
+# Explicit local browser assistant for @9. Uses installed Edge; no bundled browser.
+playwright>=1.48,<2

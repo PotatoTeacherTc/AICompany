@@ -37,6 +37,7 @@ from core.youtube_publishing import (
     YouTubeConnectionRepository, YouTubeConnectionService,
     YouTubeFoundationError, YouTubePublishingService,
 )
+from core.naver_blog_publishing import NaverBlogPublishingAssistant, NaverPublishingRequest
 from core.music_pipeline import MusicPipeline
 from core.pipeline import AIPipeline
 from core.registry import PipelineRegistry
@@ -445,8 +446,43 @@ def run_youtube_upload(workspace_id, content_project_id, connection_id, idempote
         "error": result.get("error")}, ensure_ascii=False, indent=2)); return result
 
 
+def run_naver_blog_login(environment=None):
+    selection = ProviderFactory.naver_blog_from_environment(environment or dict(os.environ)); browser = selection.provider
+    try: result = browser.open_login(selection.timeout_seconds)
+    except Exception as error: result = {"status": "FAILED", "error": "NaverPublishingError: " + getattr(error, "code", "LOGIN_FAILED")}
+    finally:
+        if hasattr(browser, "close"): browser.close()
+    print(json.dumps(result, ensure_ascii=False, indent=2)); return result
+
+
+def run_naver_blog_publish(workspace_id, content_project_id, category=None, root=None, environment=None):
+    root = Path(root or Path(__file__).parent / "logs" / "music-plans").resolve(); storage, state_root = root / "artifacts", root / "state"
+    state = JsonStateRepository(state_root / "music-project-state.json"); repository = FileArtifactRepository(state_root / "artifact-metadata.json", storage)
+    artifacts = ArtifactManager(repository, ArtifactStorageAdapter(LocalStorageProvider(storage), repository))
+    history = ExecutionHistory(repository=JsonFileExecutionHistoryRepository(state_root / "execution-history.json"))
+    selection = ProviderFactory.naver_blog_from_environment(environment or dict(os.environ)); browser = selection.provider
+    try:
+        result = NaverBlogPublishingAssistant(browser, state, artifacts, history, root / "work" / "naver", UsageEngine(state)).run(
+            NaverPublishingRequest(workspace_id, content_project_id, category, True, selection.timeout_seconds))
+    finally:
+        if hasattr(browser, "close"): browser.close()
+    data = result.get("data") or {}; print(json.dumps({"status": result.get("status"), "workspace_id": data.get("workspace_id"),
+        "content_project_id": data.get("content_project_id"), "publication_status": data.get("status") or data.get("publication_status"),
+        "published_url": data.get("published_url"), "published_at": data.get("published_at"), "error": result.get("error")}, ensure_ascii=False, indent=2)); return result
+
+
 if __name__ == "__main__":
-    if len(sys.argv) > 1 and sys.argv[1] in {"youtube-connect", "youtube-connection-status", "youtube-upload"}:
+    if len(sys.argv) > 1 and sys.argv[1] in {"naver-blog-login", "naver-blog-publish"}:
+        values = {"--workspace": None, "--content-project-id": None, "--category": None}; index = 2
+        while index < len(sys.argv):
+            if sys.argv[index] in values and index + 1 < len(sys.argv): values[sys.argv[index]] = sys.argv[index + 1]; index += 2
+            else: index += 1
+        environment = dict(os.environ); environment["AICOMPANY_NAVER_BLOG_PROVIDER"] = "playwright"
+        environment.setdefault("AICOMPANY_NAVER_PROFILE_DIR", str(Path(__file__).parent / ".browser-profiles" / "naver"))
+        result = run_naver_blog_login(environment) if sys.argv[1] == "naver-blog-login" else run_naver_blog_publish(
+            values["--workspace"], values["--content-project-id"], values["--category"], environment=environment)
+        if result.get("status") not in {"LOGIN_READY", PipelineStatus.SUCCESS}: raise SystemExit(1)
+    elif len(sys.argv) > 1 and sys.argv[1] in {"youtube-connect", "youtube-connection-status", "youtube-upload"}:
         command = sys.argv[1]; values = {"--workspace": None, "--client-secret-file": None,
             "--content-project-id": None, "--connection-id": None, "--idempotency-key": None,
             "--expected-channel-title": None, "--timeout-seconds": "900"}

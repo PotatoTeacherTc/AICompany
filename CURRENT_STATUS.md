@@ -4,6 +4,16 @@
 
 Official current baseline: **Mission 141**.
 
+@9 Naver Blog Publishing Assistant is complete at its Local Integration
+boundary. The actual Smoke reused the `youtube-smoke` Workspace BlogPackage and
+managed image, filled SmartEditor title/body/image/tags, selected exact category
+`Potato Company`, and opened publication settings. The application did not
+click final publish. After one user click it stored validated PostView URL,
+PUBLISHED time/state, receipt Artifact, zero-cost Usage, and ExecutionHistory.
+Foreign-Workspace reads were rejected. Credentials, OTP, cookies, and raw
+session values were not stored. Backend verification is 489 tests with four
+conditional skips. @10 remains unimplemented.
+
 @8 YouTube Local Integration was verified on 2026-08-02. OAuth requests only
 `youtube.upload` and `youtube.readonly`, uses PKCE/state and a loopback callback,
 and stores Token material only in Windows Credential Manager. The

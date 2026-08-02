@@ -4,3 +4,5 @@ Web/dist/
 Web/*.tsbuildinfo
 # Local secrets
 secrets/
+# Local Naver login session; never commit cookies/profile data.
+Automation/.browser-profiles/

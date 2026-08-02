@@ -11,6 +11,7 @@ from providers.content_media import (
     FakeYouTubeProvider,
 )
 from providers.text import FakeTextProvider, OllamaTextProvider, OpenAITextProvider
+from providers.naver_blog import FakeNaverBlogBrowser, PlaywrightNaverBlogBrowser
 from core.production_config import resolve_secret_value
 from core.structured_logging import LogLevel, safe_log
 
@@ -100,6 +101,19 @@ class ProviderFactory:
         return cls._offline_selection(
             environment, "YOUTUBE", "fake", FakeYouTubeProvider
         )
+
+    @classmethod
+    def naver_blog_from_environment(cls, environment=None):
+        environment = os.environ if environment is None else environment
+        name = environment.get("AICOMPANY_NAVER_BLOG_PROVIDER", "fake").lower()
+        timeout = cls._timeout(environment.get("AICOMPANY_NAVER_BLOG_TIMEOUT", "900"))
+        if name == "fake": provider = FakeNaverBlogBrowser()
+        elif name == "playwright":
+            profile = environment.get("AICOMPANY_NAVER_PROFILE_DIR")
+            if not profile: raise ValueError("AICOMPANY_NAVER_PROFILE_DIR is required")
+            provider = PlaywrightNaverBlogBrowser(profile)
+        else: raise ValueError("Unsupported Naver blog provider")
+        return ProviderSelection(provider, "naver-smart-editor", timeout)
 
     @classmethod
     def text_from_environment(cls, environment=None, transport=None):

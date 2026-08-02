@@ -1206,6 +1206,16 @@ added behind the existing Provider abstraction without changing the workflow.
 
 ### @9 — Real-use E2E and Dashboard integration
 
+- Naver Blog Publishing Assistant Local Integration (2026-08-02): reuses
+  BlogPackage and managed image Artifacts through a Workspace-scoped Playwright
+  boundary. A dedicated ignored Edge profile holds only the local browser
+  session; credentials, OTP, cookies, and session payloads are never copied to
+  application state. The assistant fills title, body, image, tags, and the exact
+  approved category, opens publication settings, and stops at
+  USER_CONFIRM_REQUIRED. It never clicks final publish. After the user clicked
+  once, it validated the PostView URL and stored PUBLISHED time/state, receipt
+  Artifact, Usage, and History. @10 remains unimplemented.
+
 - @8 YouTube Local Integration verification (2026-08-02): OAuth is restricted
   to `youtube.upload` and `youtube.readonly`; the latter is used for
   `channels.list(mine=true)` channel verification. The `Potato Music Company`

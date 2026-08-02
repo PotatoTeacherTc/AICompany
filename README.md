@@ -907,4 +907,22 @@ selected channel before upload. Local Integration verified the
 (`CGL9-UhCXgU`, processing succeeded). Token material remains only in Windows
 Credential Manager. Thumbnail application failed safely and did not change
 upload success. Public/unlisted/scheduled upload, automatic deletion, external
-blog publishing, and @9 are not implemented.
+blog publishing was not part of @8.
+
+### @9 Naver Blog publishing assistant
+
+The explicit local commands are `naver-blog-login` and
+`naver-blog-publish --workspace <id> --content-project-id <id> --category
+"Potato Company"`. Playwright uses installed Edge and an ignored dedicated
+profile under `Automation/.browser-profiles/`; it does not read or persist IDs,
+passwords, OTP values, or raw cookies. Fake remains the ProviderFactory default.
+
+The assistant reuses a completed BlogPackage and same-Workspace image, fills
+SmartEditor title/body/image/tags, opens publication settings, selects the exact
+requested category, and stops at USER_CONFIRM_REQUIRED. There is no final
+publish selector or automatic click. After one user confirmation, it validates
+the Naver PostView URL and stores PUBLISHED time/state, receipt Artifact, Usage,
+and History. The real Smoke passed with `Potato Company`. CAPTCHA, session
+expiry, upload failure, editor changes, and missing confirmation stop safely.
+This is browser Local Integration, not an official Naver API. @10 is not
+implemented.

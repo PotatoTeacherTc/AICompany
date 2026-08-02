@@ -170,6 +170,16 @@ publishing, deletion, blog publishing, and @9 remain outside this boundary.
 
 ## Current pipeline behavior
 
+The @9 NaverBlogPublishingAssistant composes BlogPackage, ArtifactManager,
+ProviderFactory, StateRepository, UsageEngine, and ExecutionHistory around an
+injectable NaverBlogBrowser. Fake is offline; Playwright is explicit visible
+Edge Local Integration using an ignored dedicated profile. It fills content and
+one Workspace-owned image, opens settings, commits tags and the exact configured
+category, then returns USER_CONFIRM_REQUIRED. Only the user performs final
+publication. An allowlisted HTTPS Naver PostView URL becomes PUBLISHED state,
+time, and receipt Artifact. No credentials/cookies are inspected or persisted,
+no unofficial API is used, and @10 is outside this layer.
+
 - FILE: organizes known file types in a configured folder.
 - MUSIC: uses an injected provider-neutral music generator, with an offline
   FakeMusicProvider default, and returns workspace-scoped safe artifact
