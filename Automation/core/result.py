@@ -58,6 +58,10 @@ class PipelineResult:
 
             PipelineStatus.INPUT_READY,
 
+            PipelineStatus.BRIEF_GENERATING,
+
+            PipelineStatus.READY_FOR_CONTENT,
+
             PipelineStatus.NOT_IMPLEMENTED
 
         ]

@@ -988,7 +988,7 @@ today/7-day/30-day filter is invented.
   Storage, managed databases, and the official next numbered Mission remain
   undefined.
 
-## Real-use connection roadmap: @1-@10 (approved; @1-@3 complete)
+## Real-use connection roadmap: @1-@10 (approved; @1-@4 complete)
 
 This sequence is separate from the historical Mission numbering. Mission
 1-141 records completed Foundation and bounded Production Integration work.
@@ -1083,7 +1083,7 @@ added behind the existing Provider abstraction without changing the workflow.
   duplicate links and cross-Workspace access are rejected. @3 performs no AI
   call and creates no Usage. Suno execution remains manual.
 
-### @4 — Content brief and project orchestration
+### @4 — Content brief and project orchestration (Complete, Mock-verified local integration)
 
 - Goal: make music, image, blog, video, and YouTube outputs share one project
   and content brief.
@@ -1093,6 +1093,20 @@ added behind the existing Provider abstraction without changing the workflow.
   `waiting_for_input` for manual Suno, and same-project resume after intake.
 - Completion: every downstream Pipeline consumes the same brief/project
   contract.
+- Implemented boundary: one deterministic, Workspace-qualified Content Project
+  is created from the existing @2 `MUSIC_PLAN` Artifact and @3
+  `MUSIC_SOURCE_AUDIO`/`INPUT_READY` link. It persists revisioned
+  `BRIEF_GENERATING`, retryable `FAILED`, and `READY_FOR_CONTENT` states in the
+  shared StateRepository. Repeated or concurrent local requests converge on
+  the same project; completed briefs are returned without regeneration.
+- Brief and plan: the existing TextProvider JSON Schema path produces one
+  provider-neutral brief for image, blog, video, YouTube, SEO, audience,
+  message, safety, and prohibited elements. Existing WorkflowDefinition only
+  validates a five-step PENDING plan (`IMAGE_PACKAGE`, `BLOG_PACKAGE`,
+  `VIDEO_PACKAGE`, `YOUTUBE_PACKAGE`, `PUBLISHING`); it does not execute or
+  enqueue those steps. Three path-free Artifacts, optional Usage, and safe
+  ExecutionHistory are recorded. Fake Text is the default and OpenAI remains
+  explicit/credential-gated; no real call was made for @4.
 
 ### @5 — Real image generation and image package
 

@@ -760,3 +760,37 @@ symlinks, and cross-Workspace access are rejected. This local operation makes
 no AI or external network call and creates no Usage record. @4 remains the
 approved content-brief and project-orchestration stage; it is not Suno account
 integration.
+
+## @4 shared content brief and project
+
+After @3 returns `INPUT_READY`, create the shared downstream brief with the
+same Music Project ID:
+
+```powershell
+cd D:\AICompany\Automation
+.\venv\Scripts\python.exe -B main.py content-brief --workspace default --music-project-id <project-id>
+```
+
+Optional bounded inputs are `--content-goal`, `--target-audience`,
+`--language`, `--additional-notes`, and `--idempotency-key`. They are sent to
+the selected TextProvider but are not echoed in the CLI result, History, or
+Artifact metadata. Fake Text is the default. OpenAI requires the explicit @1
+paid opt-in, model, and untracked Secret configuration; no automatic fallback
+exists.
+
+The command revalidates the Workspace-owned Music Plan and completed-audio
+Artifact, then persists one revisioned Content Project and three Artifacts:
+
+- `content_brief.json`
+- `content_brief.md`
+- `content_execution_plan.json`
+
+The brief carries shared audience, core message, emotional and visual
+direction, image/blog/video/YouTube requirements, SEO keywords, safety notes,
+and prohibited elements. Success transitions `INPUT_READY` through
+`BRIEF_GENERATING` to `READY_FOR_CONTENT`. Repeating a completed request returns
+the same Content Project without another Provider call. The execution plan
+contains five PENDING definitions only: image, blog, video, YouTube package,
+and publishing. @4 does not enqueue or execute them, generate media or blog
+text, publish content, analyze audio with AI, or connect a Suno account. @5 is
+the separately approved real image-generation stage.

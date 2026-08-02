@@ -92,7 +92,8 @@ class ArtifactManager:
             "provider", "model", "prompt_version", "source_request_id",
             "schema_version", "extension", "detected_format", "duration_seconds",
             "audio_codec", "sample_rate", "channels", "checksum_sha256",
-            "imported_at",
+            "imported_at", "content_project_id", "music_project_id",
+            "source_audio_artifact_id",
         }
         if set(value) - allowed:
             raise ValueError("artifact metadata contains unsupported fields")

@@ -18,7 +18,7 @@ from core.task import Task
 SUPPORTED_AUDIO_EXTENSIONS = {".mp3", ".wav", ".flac", ".m4a"}
 _SAFE_ID = re.compile(r"^[A-Za-z0-9_.:-]+$")
 _AUDIO_NAME = re.compile(r"^[^/\\:]+$")
-_PROJECT_KIND = "music_audio_link"
+MUSIC_AUDIO_LINK_KIND = "music_audio_link"
 
 
 class AudioIntakeError(RuntimeError):
@@ -238,7 +238,7 @@ class MusicProjectAudioLinkService:
             if correlation_id is not None:
                 _identifier(correlation_id, "correlation_id")
             self._project_waiting(workspace_id, project_id)
-            existing_link = self.states.get(_PROJECT_KIND, project_id, workspace_id)
+            existing_link = self.states.get(MUSIC_AUDIO_LINK_KIND, project_id, workspace_id)
             if existing_link is not None:
                 previous_status = existing_link.get("status", PipelineStatus.INPUT_READY)
                 raise AudioIntakeError("AUDIO_ALREADY_LINKED")
@@ -281,7 +281,7 @@ class MusicProjectAudioLinkService:
                 "Use this audio Artifact as the input for the approved @4 content brief.",
             )
             try:
-                self.states.save(_PROJECT_KIND, project_id, workspace_id, link.to_dict())
+                self.states.save(MUSIC_AUDIO_LINK_KIND, project_id, workspace_id, link.to_dict())
             except Exception:
                 self.artifacts.discard_managed_artifact(
                     artifact["artifact_id"], workspace_id
@@ -320,7 +320,7 @@ class MusicProjectAudioLinkService:
     def get_link(self, workspace_id, project_id):
         _identifier(workspace_id, "workspace_id")
         _identifier(project_id, "project_id")
-        value = self.states.get(_PROJECT_KIND, project_id, workspace_id)
+        value = self.states.get(MUSIC_AUDIO_LINK_KIND, project_id, workspace_id)
         if not isinstance(value, dict):
             return None
         try:

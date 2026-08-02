@@ -17,8 +17,13 @@ from core.music_planning import MusicPlanningRequest, MusicPlanningService
 from core.completed_audio_intake import (
     AudioInputLocator, AudioInputValidator, MusicProjectAudioLinkService,
 )
+from core.content_brief_orchestration import (
+    ContentBriefRequest, ContentBriefService, ContentProjectOrchestrator,
+    ContentProjectRepository,
+)
 from core.object_storage import ArtifactStorageAdapter, LocalStorageProvider
 from core.persistence import JsonStateRepository
+from core.usage_engine import UsageEngine
 from core.music_pipeline import MusicPipeline
 from core.pipeline import AIPipeline
 from core.registry import PipelineRegistry
@@ -229,8 +234,72 @@ def run_music_import(workspace_id, project_id, audio_name, root=None,
     return result
 
 
+def run_content_brief(workspace_id, music_project_id, root=None,
+                      environment=None, transport=None, **preferences):
+    root = Path(root or Path(__file__).parent / "logs" / "music-plans").resolve()
+    storage = root / "artifacts"
+    state_root = root / "state"
+    state = JsonStateRepository(state_root / "music-project-state.json")
+    repository = FileArtifactRepository(
+        state_root / "artifact-metadata.json", storage
+    )
+    artifacts = ArtifactManager(
+        repository,
+        storage_adapter=ArtifactStorageAdapter(LocalStorageProvider(storage), repository),
+    )
+    history = ExecutionHistory(repository=JsonFileExecutionHistoryRepository(
+        state_root / "execution-history.json"
+    ))
+    selection = ProviderFactory.text_from_environment(
+        dict(os.environ) if environment is None else environment,
+        transport=transport,
+    )
+    orchestrator = ContentProjectOrchestrator(
+        root / "work", ContentBriefService(selection=selection),
+        ContentProjectRepository(state), state, artifacts, history,
+        usage_engine=UsageEngine(state),
+    )
+    result = orchestrator.run(ContentBriefRequest(
+        workspace_id, music_project_id, **preferences
+    ))
+    data = result.get("data") or {}
+    print(json.dumps({
+        "workspace_id": data.get("workspace_id"),
+        "music_project_id": data.get("music_project_id"),
+        "content_project_id": data.get("content_project_id"),
+        "project_title": data.get("project_title"),
+        "status": data.get("current_status") or result.get("status"),
+        "brief_artifact_id": data.get("brief_artifact_id"),
+        "execution_plan_artifact_id": data.get("execution_plan_artifact_id"),
+        "pending_steps": data.get("pending_steps"),
+        "next_action": data.get("next_action"),
+        "error": result.get("error"),
+    }, ensure_ascii=False, indent=2))
+    return result
+
+
 if __name__ == "__main__":
-    if len(sys.argv) > 1 and sys.argv[1] == "music-import":
+    if len(sys.argv) > 1 and sys.argv[1] == "content-brief":
+        values = {
+            "--workspace": None, "--music-project-id": None,
+            "--content-goal": None, "--target-audience": None,
+            "--language": None, "--additional-notes": None,
+            "--idempotency-key": None,
+        }
+        index = 2
+        while index < len(sys.argv):
+            if sys.argv[index] in values and index + 1 < len(sys.argv):
+                values[sys.argv[index]] = sys.argv[index + 1]
+                index += 2
+            else:
+                index += 1
+        content_brief_result = run_content_brief(
+            values.pop("--workspace"), values.pop("--music-project-id"),
+            **{key[2:].replace("-", "_"): value for key, value in values.items() if value is not None},
+        )
+        if content_brief_result.get("status") != PipelineStatus.READY_FOR_CONTENT:
+            raise SystemExit(1)
+    elif len(sys.argv) > 1 and sys.argv[1] == "music-import":
         values = {"--workspace": None, "--project-id": None, "--audio-name": None}
         index = 2
         while index < len(sys.argv):

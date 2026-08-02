@@ -10,6 +10,7 @@ from providers.models import UsageMetadata
 TEXT_TASK_TYPES = {
     "LYRICS", "CONTENT_PLAN", "VIDEO_SCRIPT", "TITLE_DESCRIPTION",
     "MUSIC_PLAN",
+    "CONTENT_BRIEF",
 }
 
 
@@ -130,6 +131,34 @@ class FakeTextProvider(TextProvider):
                 "assumptions": ["선택 입력이 없어 한국어 솔로 보컬을 가정"],
                 "warnings": ["생성 서비스의 결과는 시도마다 달라질 수 있음"],
                 "next_action": "Suno에서 제목, 스타일, 가사 지시와 제외 요소를 복사해 2~3개 변형을 수동 생성한 뒤 선호 음원을 보관하세요."
+            },
+            "CONTENT_BRIEF": {
+                "project_title": "다시 걷는 밤 콘텐츠 프로젝트",
+                "core_message": "상실 이후에도 다시 앞으로 나아갈 수 있다",
+                "content_goal": "음악의 회복 서사를 일관된 시각·글·영상 콘텐츠로 전달",
+                "target_audience": "감성적인 한국어 음악 콘텐츠를 찾는 성인 청자",
+                "listener_profile": "조용한 공감과 희망적인 결말을 선호하는 모바일 중심 청자",
+                "emotional_arc": ["고요한 상실", "내면의 성찰", "작은 결심", "따뜻한 회복"],
+                "mood_keywords": ["reflective", "warm", "hopeful", "cinematic"],
+                "visual_concept": "비가 그친 새벽 도시에서 햇빛이 드는 열린 길로 이동",
+                "visual_style": "cinematic editorial realism with restrained symbolism",
+                "color_direction": "차가운 청회색에서 부드러운 금색으로 전환",
+                "thumbnail_direction": "새벽빛 속 한 인물과 열린 길, 간결한 제목 공간",
+                "video_direction": "음악 구조에 맞춰 정적인 도입에서 넓은 풍경의 마지막 후렴으로 확장",
+                "blog_direction": "곡의 회복 메시지와 제작 의도를 설명하는 짧은 에디토리얼",
+                "youtube_direction": "음악과 회복 서사를 중심으로 과장 없는 제목·설명 구성",
+                "seo_primary_keywords": ["한국어 발라드", "회복 노래", "감성 음악"],
+                "seo_secondary_keywords": ["이별 후 희망", "새벽 감성", "힐링 음악"],
+                "title_keywords": ["다시", "새벽", "회복"],
+                "image_requirements": ["16:9 landscape", "no embedded text", "consistent lead character"],
+                "blog_requirements": ["공감형 도입", "곡의 핵심 메시지", "과장 없는 제작 노트"],
+                "video_requirements": ["audio-synced pacing", "safe transitions", "source attribution checklist"],
+                "youtube_requirements": ["private-first workflow", "concise description", "relevant tags only"],
+                "prohibited_elements": ["named artist imitation", "misleading claims", "graphic imagery"],
+                "safety_notes": ["사용 권리가 확인된 시각 자료만 사용"],
+                "assumptions": ["추가 타깃 입력이 없어 음악 기획의 청자를 유지"],
+                "source_summary": "한국어 발라드 음악 기획과 검증된 완성 음원 metadata를 기반으로 함",
+                "next_steps": ["IMAGE_PACKAGE", "BLOG_PACKAGE", "VIDEO_PACKAGE", "YOUTUBE_PACKAGE", "PUBLISHING"]
             },
         }
         output = json.dumps(templates[request.task_type], ensure_ascii=False)
@@ -378,6 +407,7 @@ def _structured_prompt(request):
             '{"title":"string","description":"string","tags":["string"]}'
         ),
         "MUSIC_PLAN": '{"music_plan":"use the caller supplied response_schema"}',
+        "CONTENT_BRIEF": '{"content_brief":"use the caller supplied response_schema"}',
     }
     return (
         "Return exactly one valid JSON object with no markdown or commentary. "

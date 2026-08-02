@@ -12,10 +12,12 @@ as a whole is not Production Ready. The next numbered Mission is undefined.
 The separately approved real-use roadmap is `@1` through `@10`. `@1 — Real LLM
 foundation` and `@2 — Music planning employee and Suno creation package` are
 complete at their Mock-verified boundaries. `@3 — Completed audio intake and
-project connection` is complete at its local integration boundary. Real LLM
-credential smoke remains unexecuted. `@4` has not started.
+project connection` is complete at its local integration boundary. `@4 —
+Content brief and project orchestration` is complete at its Mock-verified
+local integration boundary. Real LLM credential smoke remains unexecuted.
+`@5` has not started.
 
-Current verification baseline: Backend 432 tests with three conditional skips,
+Current verification baseline: Backend 448 tests with three conditional skips,
 Frontend two tests,
 Frontend production build, and a production-like single-host Docker stack with
 two Backends and two Workers behind a local TLS Gateway.
@@ -51,6 +53,17 @@ Workflow, Plugin, and Marketplace expansion is not a current priority
 candidate. Enterprise and AICompany v1.0 remain unimplemented.
 
 ## Verified completed capabilities
+
+- @4: a revisioned, Workspace-owned Content Project composes the existing
+  Music Plan and completed-audio link, generates a bounded provider-neutral
+  brief through TextProvider DI, and persists `READY_FOR_CONTENT`. It creates
+  `content_brief.json`, `content_brief.md`, and
+  `content_execution_plan.json`, records present Usage and safe History, and
+  supports local idempotent replay, retry after failure, restart recovery, and
+  managed-Artifact cleanup after final state failure. The five downstream
+  steps remain PENDING definitions only. The `content-brief` CLI is the local
+  entry point. Fake is default; OpenAI is Mock-verified and no real paid call
+  occurred.
 
 - @3: a Workspace-specific, Git-ignored local input boundary accepts
   case-insensitive `mp3`, `wav`, `flac`, and `m4a` names with an optional
