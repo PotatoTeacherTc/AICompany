@@ -192,6 +192,11 @@ Password recovery is an explicit launcher-only boundary. The reset entry point
 requires `AICOMPANY_RESET_OWNER_PASSWORD=true`, resolves only the persisted
 `owner@localhost`, validates and hashes the replacement before the repository's
 atomic file replace, and never touches other credentials or product state.
+Browser audio intake carries the display filename as a percent-encoded query
+value and raw audio in the body. It no longer uses `X-Filename`. The common Web
+API client accepts only printable ASCII header names/values, preventing
+Workspace labels, Artifact names, user input, or localized filenames from
+entering the Fetch header serialization boundary.
 
 The @9 NaverBlogPublishingAssistant composes BlogPackage, ArtifactManager,
 ProviderFactory, StateRepository, UsageEngine, and ExecutionHistory around an

@@ -67,7 +67,8 @@ function App() {
     catch(error){fail(error,"Unable to retry stage");}
   }
   async function uploadAudio(job:ProductJob,file:File){
-    try{await api(`/workspaces/${workspace}/product-jobs/${job.product_id}/audio`,token,{method:"POST",body:file,headers:{"Content-Type":file.type||"application/octet-stream","X-Filename":file.name}},300000);await refresh();}
+    const filename=encodeURIComponent(file.name);
+    try{await api(`/workspaces/${workspace}/product-jobs/${job.product_id}/audio?filename=${filename}`,token,{method:"POST",body:file,headers:{"Content-Type":file.type||"application/octet-stream"}},300000);await refresh();}
     catch(error){fail(error,"Audio upload was rejected");}
   }
   async function resume(job:ProductJob){try{await api(`/workspaces/${workspace}/product-jobs/${job.product_id}/resume`,token,{method:"POST"});await refresh();}catch(error){fail(error,"Checkpoint is not ready");}}

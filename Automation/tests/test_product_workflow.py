@@ -169,9 +169,29 @@ class ProductWorkflowTests(unittest.TestCase):
         execution=PersistentExecutionService(queue,InProcessJobWorker(queue),ExecutionHistory(state_repository=repository),ArtifactManager(),UsageEngine(repository))
         service=ProductWorkflowService(repository,execution,Runner()); client=TestClient(create_app(product_workflow_service=service))
         item=service.submit("workspace-a","request","http-audio"); service.run_once("workspace-a")
-        self.assertEqual(client.post(f"/workspaces/workspace-a/product-jobs/{item['product_id']}/audio",content=b"audio",headers={"X-Filename":"../song.mp3","Content-Type":"audio/mpeg"}).status_code,400)
-        self.assertEqual(client.post(f"/workspaces/workspace-a/product-jobs/{item['product_id']}/audio",content=b"audio",headers={"X-Filename":"song.mp3","Content-Type":"text/plain"}).status_code,400)
-        self.assertEqual(client.post(f"/workspaces/workspace-b/product-jobs/{item['product_id']}/audio",content=b"audio",headers={"X-Filename":"song.mp3","Content-Type":"audio/mpeg"}).status_code,404)
+        self.assertEqual(client.post(f"/workspaces/workspace-a/product-jobs/{item['product_id']}/audio?filename=../song.mp3",content=b"audio",headers={"Content-Type":"audio/mpeg"}).status_code,400)
+        self.assertEqual(client.post(f"/workspaces/workspace-a/product-jobs/{item['product_id']}/audio?filename=song.mp3",content=b"audio",headers={"Content-Type":"text/plain"}).status_code,400)
+        self.assertEqual(client.post(f"/workspaces/workspace-b/product-jobs/{item['product_id']}/audio?filename=song.mp3",content=b"audio",headers={"Content-Type":"audio/mpeg"}).status_code,404)
+
+    def test_audio_http_accepts_unicode_filename_without_a_header(self):
+        class Runner:
+            def __call__(self, stage, *_args, **_kwargs):
+                return {"status":"WAITING_FOR_INPUT","result":{"project_id":"music-unicode"}}
+            def upload_audio(self, workspace, project, filename, content):
+                self.received = (workspace, project, filename, content)
+                return {"status":"INPUT_READY","data":{"audio_artifact_id":"a","source_filename":filename,"detected_format":"mp3","duration_seconds":1}}
+        runner=Runner(); repository=InMemoryStateRepository(); queue=PersistentJobQueue(repository)
+        execution=PersistentExecutionService(queue,InProcessJobWorker(queue),ExecutionHistory(state_repository=repository),ArtifactManager(),UsageEngine(repository))
+        service=ProductWorkflowService(repository,execution,runner); client=TestClient(create_app(product_workflow_service=service))
+        item=service.submit("workspace-a","request","unicode-audio"); service.run_once("workspace-a")
+        response=client.post(f"/workspaces/workspace-a/product-jobs/{item['product_id']}/audio?filename=%ED%95%9C%EA%B8%80-%EC%9D%8C%EC%95%85.mp3",content=b"audio",headers={"Content-Type":"audio/mpeg"})
+        self.assertEqual(response.status_code,200)
+        self.assertEqual(runner.received[2],"한글-음악.mp3")
+        legacy=service.submit("workspace-a","request","legacy-ascii-audio")
+        service.run_once("workspace-a"); service.run_once("workspace-a")
+        legacy_response=client.post(f"/workspaces/workspace-a/product-jobs/{legacy['product_id']}/audio",content=b"audio",headers={"Content-Type":"audio/mpeg","X-Filename":"legacy.mp3"})
+        self.assertEqual(legacy_response.status_code,200)
+        self.assertEqual(runner.received[2],"legacy.mp3")
 
     def test_local_product_bootstrap_has_workspace_and_restart_login(self):
         with tempfile.TemporaryDirectory() as temporary:

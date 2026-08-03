@@ -17,9 +17,13 @@ test("dashboard source keeps credentials out of persistent browser storage", asy
   assert.match(source, /\/retry/);
   assert.match(source, /\/artifacts\/.*\/content/);
   assert.equal(source.includes("internal_ref"), false);
+  assert.equal(source.includes("X-Filename"), false);
+  assert.match(source, /encodeURIComponent\(file\.name\)/);
 });
 test("API client has timeout and bearer injection", async () => {
   const source = await readFile(new URL("../src/api.ts", import.meta.url), "utf8");
   assert.match(source, /AbortController/);
   assert.match(source, /Bearer/);
+  assert.match(source, /ASCII-safe values only/);
+  assert.match(source, /\\x20-\\x7e/);
 });

@@ -1254,7 +1254,9 @@ added behind the existing Provider abstraction without changing the workflow.
   polls Workspace-scoped Product Workflows, displays stage progress and user
   actions, opens safe text/JSON Artifacts, accepts bounded MP3/WAV/FLAC/M4A
   uploads, and retries only a failed stage. Audio intake reuses @3 signature and
-  ffprobe validation and never accepts a server path.
+  ffprobe validation and never accepts a server path. Localized display
+  filenames are percent-encoded outside headers; all Fetch headers are
+  ASCII-safe.
 - Orchestration: one injected `ProductContentRunner` reuses StateRepository,
   ArtifactManager, ExecutionHistory, Usage, ProviderFactory, and existing @2-@9
   services. It stops after @2 at `WAITING_FOR_INPUT`, restores the same Workflow

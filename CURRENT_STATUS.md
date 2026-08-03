@@ -26,7 +26,7 @@ installed small Ollama model did not reliably satisfy the complex Music Plan
 schema; Ollama remains separately verified for free-form local Text and an
 invalid structured response fails safely.
 
-Current verification baseline: Backend **502 tests passed** with five
+Current verification baseline: Backend **503 tests passed** with five
 conditional integration skips, Frontend **2 tests passed**, and Frontend
 production build passed. @11 is undefined and was not started.
 
@@ -49,6 +49,16 @@ helper executes only after `Push-Location` to `Automation` and always restores
 the caller location. Secure reset, Backend startup, and loopback owner login
 completed; two Workspaces, two Memberships, 44 Artifact metadata records, and
 the existing Workflow state remained present.
+
+The @10 browser audio upload no longer places the user-visible filename in an
+HTTP header. A real Edge smoke reproduced the former non-ISO-8859-1
+`X-Filename` construction failure, while the corrected percent-encoded query
+contract reached the Backend successfully. The shared Frontend API client now
+rejects every non-ASCII custom header value before `fetch`; Workspace IDs,
+Bearer tokens, and content types remain ASCII-only transport metadata.
+An authenticated Edge smoke against a freshly started temporary Local Product
+Backend logged in successfully and delivered the encoded Korean filename to
+the Workspace upload route, which returned the expected missing-Workflow 404.
 
 @9 Naver Blog Publishing Assistant is complete at its Local Integration
 boundary. The actual Smoke reused the `youtube-smoke` Workspace BlogPackage and
@@ -102,7 +112,7 @@ Google OAuth, channel verification, and private uploads are verified as
 described above. @9 and @10 are now also complete at their documented Local
 Integration boundaries.
 
-Current verification baseline: Backend 502 tests with five conditional skips,
+Current verification baseline: Backend 503 tests with five conditional skips,
 Frontend two tests,
 Frontend production build, and a production-like single-host Docker stack with
 two Backends and two Workers behind a local TLS Gateway.
@@ -929,14 +939,14 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current Backend suite contains **502 tests**. Its expected command is:
+The current Backend suite contains **503 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Current verification result: **502 passed, 0 failed, 5 conditional integration
+Current verification result: **503 passed, 0 failed, 5 conditional integration
 skips**. Credential/real Provider tests remain explicit environment-gated;
 Windows Credential Manager coverage passed in the host-permission run.
 

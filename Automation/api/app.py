@@ -1152,7 +1152,7 @@ def create_app(
         return value
 
     @app.post("/workspaces/{workspace_id}/product-jobs/{product_id}/audio")
-    async def upload_product_audio(workspace_id: str, product_id: str, request: Request, x_filename: str | None = Header(default=None), authorization: str | None = Header(default=None)):
+    async def upload_product_audio(workspace_id: str, product_id: str, request: Request, filename: str | None = None, x_filename: str | None = Header(default=None), authorization: str | None = Header(default=None)):
         denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"})
         if denied: return denied
         length = request.headers.get("content-length")
@@ -1162,14 +1162,15 @@ def create_app(
             "audio/flac", "audio/x-flac", "audio/mp4", "audio/x-m4a",
             "application/octet-stream",
         }
-        if not x_filename or mime_type not in allowed_mime_types or not length or not length.isdigit() or not 0 < int(length) <= 250 * 1024 * 1024:
+        upload_filename = filename or (x_filename if x_filename and x_filename.isascii() else None)
+        if not upload_filename or mime_type not in allowed_mime_types or not length or not length.isdigit() or not 0 < int(length) <= 250 * 1024 * 1024:
             from api.errors import error_response
             return error_response(400, "invalid_audio", "Invalid audio upload")
         try:
             content = await request.body()
             if len(content) != int(length) or len(content) > 250 * 1024 * 1024:
                 raise ValueError("invalid audio size")
-            value = app.state.product_workflow_service.upload_audio(workspace_id, product_id, x_filename, content) if app.state.product_workflow_service else None
+            value = app.state.product_workflow_service.upload_audio(workspace_id, product_id, upload_filename, content) if app.state.product_workflow_service else None
         except (TypeError, ValueError):
             from api.errors import error_response
             return error_response(400, "invalid_audio", "Audio upload was rejected")

@@ -976,6 +976,11 @@ assistant. It stops for missing YouTube connection and for the user's final
 Naver publish click, supports failed-stage retry, and shows safe results and
 Artifact content without internal paths.
 
+Localized audio filenames are encoded in the upload query, not copied into an
+HTTP header. The shared browser client rejects non-ASCII header values, so
+Workspace names, Artifact filenames, and user-entered text remain display/body
+data and cannot trigger the browser's ISO-8859-1 header construction error.
+
 Fake Text is the launcher default so structured Music Plan and Content Brief
 generation is deterministic and offline. Ollama can still be selected
 explicitly with the existing environment contract, but the installed small
