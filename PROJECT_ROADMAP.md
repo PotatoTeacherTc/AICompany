@@ -8,9 +8,9 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 143
+## Current baseline: Mission 145
 
-Mission 1-143 completion means completion of each Mission's explicitly bounded
+Mission 1-145 completion means completion of each Mission's explicitly bounded
 Contract, Foundation, Fake/Offline, or Local Integration scope. It does not
 mean that Project APEX as a whole is Production Ready.
 
@@ -87,7 +87,43 @@ cloud deployment, distributed execution, or Production Ready status.
   production organization.
 - Excluded: AI-based assignment, employee LLM calls, Research/Meeting execution,
   quality scoring, automatic rework, Dashboard redesign/character UI, and
-  Mission 144 or later work.
+  Intelligence execution; those remain outside Mission 143.
+
+### Mission 144 — Research Intelligence (Complete, Fake/Offline Foundation)
+
+- Adds validated ResearchRequest, normalized ResearchSource, evidence-linked
+  ResearchFinding, evidence-basis Confidence, and ResearchReport contracts.
+- Reuses the Mission 143 RESEARCH assignment and RESEARCHER identity, optional
+  Mission 142 Bible snapshot metadata, StateRepository, UsageMetadata, timeout
+  isolation, and safe ExecutionHistory summaries.
+- FakeResearchProvider is deterministic and offline. Sources retain separate
+  publication/retrieval times, safe references, summaries, access status, and
+  disagreement. A Finding cannot exist without actual normalized Source IDs.
+- Research supplies evidence and limitations; it never makes the final product
+  decision. Confidence records source count, quality, freshness, agreement,
+  coverage, uncertainty, and level and is not a guarantee of truth.
+- Company memory is an optional safe reader boundary only. Knowledge learning,
+  scheduled collection, external search, paid Research Providers, and Mission
+  146 work are absent.
+
+### Mission 145 — Meeting Intelligence (Complete, Fake/Offline Foundation)
+
+- Adds Meeting, structured Contribution, MeetingMinutes, configurable multiple
+  Plan, Decision, and ExecutionPlan contracts. A valid immutable ResearchReport
+  fingerprint and real Organization participants are required.
+- FakeMeetingProvider produces public-safe structured contributions and three
+  configurable, materially distinct evidence-linked Plans. The bounded diversity
+  check compares concept, audience, platform, visual/message direction, and risk.
+- Rule selection is deterministic; equal feasibility returns
+  USER_INPUT_REQUIRED and explicit selection uses USER_SELECTED. ExecutionPlan
+  preserves manual Suno, private YouTube, and manual Naver approval boundaries
+  and does not invoke Pipelines or Providers.
+- Authenticated Workspace APIs and a minimal Dashboard view expose reports,
+  source/confidence/limitations, meetings, minutes, Plan comparison/selection,
+  Decisions, and Execution Plans.
+- Stored meeting data is structured evidence/proposal/risk/decision summaries,
+  never hidden reasoning. Production Diversity, QA/quality loops, live Meeting
+  UI, external LLM/Research Providers, and Mission 146 are unimplemented.
 
 The verified implementation currently provides a Task/Queue/Worker execution
 path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,

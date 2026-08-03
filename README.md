@@ -1,11 +1,12 @@
 # AICompany
 
-Official baseline: **Mission 143**. Current product status:
+Official baseline: **Mission 145**. Current product status:
 **Local/Fake SaaS Beta + bounded single-host Production Integration**.
-Completion through Mission 143 is limited to each Mission's documented Contract, Foundation,
+Completion through Mission 145 is limited to each Mission's documented Contract, Foundation,
 Fake/Offline, or Local Integration scope; Project APEX is not Production Ready.
-Missions 142 and 143 are the approved versioned AI Company and Organization
-Foundations. Mission 144 and later are undefined and unimplemented. A separate approved real-use product
+Missions 142-145 are the approved versioned AI Company, Organization, and
+Fake/Offline Intelligence Foundations. Mission 146 and later are undefined and
+unimplemented. A separate approved real-use product
 roadmap, `@1` through `@10`, is complete at its documented Local Product
 boundary. The `@` stages remain a separate product roadmap.
 
@@ -40,7 +41,24 @@ security behavior stay centralized. Existing Workflow callers require no
 Organization and retain their prior behavior. Persistent execution metadata
 contains only organization IDs. Production does not auto-create employees or a
 Company; AI assignment, employee LLM calls, organization editing UI, character
-UI, and Mission 144 or later work are not implemented.
+UI, and Intelligence execution were not implemented by Mission 143.
+
+## Research and Meeting Intelligence (Missions 144-145)
+
+The optional Intelligence path produces an evidence-backed Research Report,
+structured Meeting Minutes, configurable distinct Plans, a bounded Rule/User
+Decision, and an Execution Plan. Sources store only safe references and summaries
+with separate publication/retrieval times. Findings require actual Source IDs;
+disagreement and limitations remain visible. Confidence shows its evidence basis
+and is not a guarantee of truth.
+
+Meeting records contain structured public-safe contributions and decisions, not
+internal reasoning. The Dashboard can inspect reports, evidence counts,
+confidence, limitations, meetings, Plan comparisons/selections, Decisions, and
+Execution Plans for the selected company. Product Workflow remains usable with
+no Intelligence metadata. Only deterministic Fake Providers are enabled; no
+external Research/LLM Provider, QA improvement loop, scheduled research, live
+Meeting UI, Knowledge learning, or Mission 146 work exists.
 
 AI 기반 자동화와 콘텐츠 제작 시스템을 연구하는 개인 AI 프로젝트 워크스페이스입니다.
 

@@ -1,0 +1,5 @@
+.intelligence article { border: 1px solid #ddd8cd; padding: 16px; margin: 10px 0; }
+.plan-compare { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.plan-compare article { display: grid; gap: 8px; }
+.intelligence-detail { max-height: 420px; overflow: auto; background: #f5f2ea; padding: 14px; white-space: pre-wrap; }
+@media (max-width: 900px) { .plan-compare { grid-template-columns: 1fr; } }

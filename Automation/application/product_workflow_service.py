@@ -30,7 +30,7 @@ class ProductWorkflowService:
         self._requests = {}
         self.execution.register_target("product-workflow", self._run_job)
 
-    def submit(self, workspace_id, request_text, idempotency_key, bible_bundle=None, organization_metadata=None):
+    def submit(self, workspace_id, request_text, idempotency_key, bible_bundle=None, organization_metadata=None, intelligence_metadata=None):
         workspace_id = _identifier(workspace_id, "workspace_id")
         idempotency_key = _identifier(idempotency_key, "idempotency_key")
         if not isinstance(request_text, str) or not request_text.strip() or len(request_text) > 4000:
@@ -44,6 +44,7 @@ class ProductWorkflowService:
             bible_bundle = self.bible_resolver.resolve(workspace_id)
         bible_versions = bible_bundle.version_metadata() if bible_bundle is not None else {}
         organization_metadata = _organization_metadata(organization_metadata)
+        intelligence_metadata = _intelligence_metadata(intelligence_metadata)
         record = {
             "product_id": product_id, "workspace_id": workspace_id,
             "status": "PENDING", "progress": 0,
@@ -53,6 +54,7 @@ class ProductWorkflowService:
             "request_redacted": True,
             "bible_versions": bible_versions,
             "organization_metadata": organization_metadata,
+            "intelligence_metadata": intelligence_metadata,
         }
         self.repository.save(PRODUCT_WORKFLOW_KIND, product_id, workspace_id, record)
         self._requests[(workspace_id, product_id)] = request_text.strip()
@@ -240,7 +242,8 @@ def _pipeline(job, record, status):
         "status": status, "pipeline": "Product Workflow", "task_type": "PRODUCT",
         "data": {"product_id": job.mission_id, "product_status": record["status"],
                  "bible_versions": dict(record.get("bible_versions") or {}),
-                 "organization_metadata": dict(record.get("organization_metadata") or {})},
+                 "organization_metadata": dict(record.get("organization_metadata") or {}),
+                 "intelligence_metadata": dict(record.get("intelligence_metadata") or {})},
         "artifacts": [], "error": None if status == "SUCCESS" else "JobError: StageFailure",
     }
 
@@ -261,4 +264,13 @@ def _organization_metadata(value):
     allowed = {"assignment_id", "company_id", "manager_id", "department_id", "employee_id"}
     if not isinstance(value, dict) or set(value) != allowed:
         raise ValueError("invalid organization metadata")
+    return {key: _identifier(item, key) for key, item in value.items()}
+
+
+def _intelligence_metadata(value):
+    if value is None:
+        return {}
+    allowed = {"research_report_id", "meeting_id", "decision_id", "execution_plan_id"}
+    if not isinstance(value, dict) or set(value) - allowed:
+        raise ValueError("invalid intelligence metadata")
     return {key: _identifier(item, key) for key, item in value.items()}

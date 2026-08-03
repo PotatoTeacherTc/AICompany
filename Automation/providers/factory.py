@@ -12,6 +12,7 @@ from providers.content_media import (
 )
 from providers.text import FakeTextProvider, OllamaTextProvider, OpenAITextProvider
 from providers.naver_blog import FakeNaverBlogBrowser, PlaywrightNaverBlogBrowser
+from providers.intelligence import FakeResearchProvider, FakeMeetingProvider
 from core.production_config import resolve_secret_value
 from core.structured_logging import LogLevel, safe_log
 
@@ -41,6 +42,24 @@ class ProviderFactory:
             )
 
         raise ValueError(f"Unsupported AI provider: {provider_name}")
+
+    @classmethod
+    def research_from_environment(cls, environment=None):
+        environment = os.environ if environment is None else environment
+        name = environment.get("AICOMPANY_RESEARCH_PROVIDER", "fake").lower()
+        timeout = cls._timeout(environment.get("AICOMPANY_RESEARCH_PROVIDER_TIMEOUT", "10"))
+        if name != "fake":
+            raise ValueError("Unsupported or disabled research provider")
+        return ProviderSelection(FakeResearchProvider(), "fake-research-v1", timeout)
+
+    @classmethod
+    def meeting_from_environment(cls, environment=None):
+        environment = os.environ if environment is None else environment
+        name = environment.get("AICOMPANY_MEETING_PROVIDER", "fake").lower()
+        timeout = cls._timeout(environment.get("AICOMPANY_MEETING_PROVIDER_TIMEOUT", "10"))
+        if name != "fake":
+            raise ValueError("Unsupported or disabled meeting provider")
+        return ProviderSelection(FakeMeetingProvider(), "fake-meeting-v1", timeout)
 
     @classmethod
     def music_from_environment(cls, environment=None):

@@ -205,6 +205,35 @@ class ExecutionHistory:
             self.records.append(record)
         self.save()
 
+    def record_intelligence(self, workspace_id, record_id, task_type, status, identifiers, safe_summary, usage=None):
+        allowed = {
+            "research_request_id", "research_report_id", "meeting_id",
+            "decision_id", "execution_plan_id", "assignment_id", "company_id",
+            "manager_id", "department_id", "employee_id",
+        }
+        safe_ids = {
+            key: value for key, value in (identifiers or {}).items()
+            if key in allowed and isinstance(value, str)
+        }
+        record = {
+            "task_id": record_id, "mission_id": safe_ids.get("assignment_id"),
+            "task": f"{task_type.title()} intelligence", "parameters": {},
+            "workspace_id": workspace_id, "parent_task_id": None,
+            "retry_count": 0, "max_retries": 0, "timeout_seconds": None,
+            "last_error_type": None, "status": status,
+            "created_at": datetime.now().astimezone().isoformat(),
+            "queued_at": None, "started_at": None,
+            "completed_at": datetime.now().astimezone().isoformat(),
+            "duration_seconds": None,
+            "result": {"identifiers": safe_ids, "summary": safe_summary, "usage": usage},
+            "task_type": task_type.upper(), "pipeline": f"{task_type.title()} Intelligence",
+        }
+        self.records = [value for value in self.records if value.get("task_id") != record_id]
+        self.records.append(record)
+        if self.state_repository is not None:
+            self.state_repository.save("execution", record_id, workspace_id, record)
+        self.save()
+
     def record_music(self, task, pipeline_result):
         data = pipeline_result.get("data") or {}
         artifacts = [
@@ -338,6 +367,13 @@ class ExecutionHistory:
                     if key in {
                         "assignment_id", "company_id", "manager_id",
                         "department_id", "employee_id",
+                    } and isinstance(value, str)
+                },
+                "intelligence_metadata": {
+                    key: value for key, value in (data.get("intelligence_metadata") or {}).items()
+                    if key in {
+                        "research_report_id", "meeting_id", "decision_id",
+                        "execution_plan_id",
                     } and isinstance(value, str)
                 },
             },

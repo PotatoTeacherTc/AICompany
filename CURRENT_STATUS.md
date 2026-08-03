@@ -2,7 +2,28 @@
 
 ## Mission
 
-Official current baseline: **Mission 143**.
+Official current baseline: **Mission 145**.
+
+Missions 144-145 add the optional Fake/Offline Intelligence path: Organization
+RESEARCH assignment -> evidence-backed Research Report -> structured Meeting ->
+multiple distinct Plans -> bounded Decision -> Execution Plan. Research provides
+evidence and limitations rather than deciding. Publication and retrieval times
+remain separate, disagreements are preserved, and Findings require existing
+Source IDs. Confidence exposes its source count/quality/freshness/agreement/
+coverage/uncertainty basis and is not a factual guarantee.
+
+Meeting storage contains public-safe structured contributions, minutes,
+proposals, disagreements, risks, and decisions rather than internal reasoning.
+Rule-based selection is the default; ties require user input and explicit Plan
+selection is supported. The resulting plan preserves manual Suno, private
+YouTube, and manual Naver confirmation boundaries and does not directly execute
+Pipelines. The existing Product Workflow accepts optional Intelligence IDs and
+continues unchanged without them.
+
+Only deterministic Fake Research/Meeting Providers are connected. No external
+Research or paid LLM Provider, production Diversity Engine, QA score/rework,
+scheduled research, Knowledge learning, live Meeting UI, or Mission 146 work is
+implemented.
 
 Mission 143 adds an optional Organization Engine above Product Workflow. Its
 Workspace-scoped Company, Manager, Employee, ReportingLine, Assignment, and
@@ -18,7 +39,7 @@ empty organization metadata. Local and production compositions provide the
 engine but do not create an arbitrary production Company, Department, Manager,
 or Employee. Assignment remains deterministic rather than AI-driven. Employee
 LLM calls, Research/Meeting execution, QA scoring, automatic rework, Dashboard
-redesign, character UI, and Mission 144 or later work remain unimplemented.
+redesign, character UI, and Intelligence execution were outside Mission 143.
 
 Mission 142 adds an optional versioned AI Company standards foundation. Company
 Constitution, Company Bible, Department Bible, and Employee Bible assets are
@@ -997,14 +1018,14 @@ not inferred from a missing historical mission log.
   model directory, Docker data, secrets, and Credential Manager records are not
   moved.
 
-The current Backend suite contains **524 tests**. Its expected command is:
+The current Backend suite contains **533 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Current verification result: **524 run, 519 passed, 0 failed, 5 conditional
+Current verification result: **533 run, 528 passed, 0 failed, 5 conditional
 integration skips**. Credential/real Provider tests remain explicit environment-gated;
 Windows Credential Manager coverage passed in the host-permission run.
 

@@ -9,6 +9,7 @@ from application.job_execution_api_service import JobExecutionApiService
 from application.persistent_execution_service import PersistentExecutionService
 from application.product_workflow_service import ProductWorkflowService
 from application.organization_service import OrganizationService
+from application.intelligence_service import IntelligenceService
 from application.product_content_runner import ProductContentRunner
 from core.artifact_manager import ArtifactManager
 from core.artifact_repository import StateArtifactRepository
@@ -18,6 +19,7 @@ from core.batch import BatchManager
 from core.company_bible import BibleManager
 from core.department import DepartmentManager, WorkerDirectory
 from core.organization_engine import OrganizationEngine, ORGANIZATION_TASK_TYPES
+from core.intelligence import IntelligenceEngine
 from core.execution_history import ExecutionHistory
 from core.infrastructure import (
     InfrastructureConfig,
@@ -112,6 +114,15 @@ def create_production_app(environment=None):
     department_manager = DepartmentManager(repository, worker_directory, ORGANIZATION_TASK_TYPES)
     organization_engine = OrganizationEngine(repository, department_manager, product)
     organization_service = OrganizationService(department_manager, worker_directory, organization_engine)
+    research_selection = ProviderFactory.research_from_environment(values)
+    meeting_selection = ProviderFactory.meeting_from_environment(values)
+    intelligence_service = IntelligenceService(IntelligenceEngine(
+        repository, organization_engine, bible_manager,
+        research_provider=research_selection.provider,
+        meeting_provider=meeting_selection.provider,
+        timeout_seconds=min(research_selection.timeout_seconds, meeting_selection.timeout_seconds),
+        history=history,
+    ))
     job_api = JobExecutionApiService(
         execution, history, artifacts, usage, BatchManager(queue, repository)
     )
@@ -133,6 +144,7 @@ def create_production_app(environment=None):
         job_execution_api_service=job_api,
         product_workflow_service=product,
         organization_service=organization_service,
+        intelligence_service=intelligence_service,
         bible_service=bible_manager,
         health_service=BackendHealthService(
             persistence_probe=repository.health,

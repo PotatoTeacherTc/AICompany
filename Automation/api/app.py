@@ -33,6 +33,7 @@ def create_app(
     onboarding_service=None,
     product_workflow_service=None,
     bible_service=None,
+    intelligence_service=None,
     health_service=None,
     auth_required=False,
     allowed_origins=(
@@ -237,6 +238,7 @@ def create_app(
     app.state.onboarding_service = onboarding_service
     app.state.product_workflow_service = product_workflow_service
     app.state.bible_service = bible_service
+    app.state.intelligence_service = intelligence_service
     if audit_service is None:
         from application.audit_service import AuditService
         audit_service = AuditService()
@@ -1325,6 +1327,111 @@ def create_app(
         if denied: return denied
         try: return app.state.bible_service.resolve(workspace_id, department_type.upper() if department_type else None, role_type.upper() if role_type else None).to_dict()
         except (AttributeError, TypeError, ValueError): return _bible_error()
+
+    def _intelligence_error(status=400, code="invalid_intelligence_request"):
+        from api.errors import error_response
+        return error_response(status, code, "Intelligence request is invalid")
+
+    @app.post("/workspaces/{workspace_id}/intelligence/research", status_code=201)
+    def create_research_request(workspace_id: str, payload: dict, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"})
+        if denied: return denied
+        try: return app.state.intelligence_service.create_research(workspace_id, payload)
+        except (AttributeError, TypeError, ValueError): return _intelligence_error()
+
+    @app.post("/workspaces/{workspace_id}/intelligence/research/{request_id}/run")
+    def run_research_request(workspace_id: str, request_id: str, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"})
+        if denied: return denied
+        try: return app.state.intelligence_service.run_research(workspace_id, request_id)
+        except (AttributeError, TypeError, ValueError): return _intelligence_error()
+
+    @app.get("/workspaces/{workspace_id}/intelligence/research/{request_id}")
+    def get_research_request(workspace_id: str, request_id: str, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"})
+        if denied: return denied
+        value = app.state.intelligence_service.get_research(workspace_id, request_id) if app.state.intelligence_service else None
+        return value if value else _intelligence_error(404, "research_not_found")
+
+    @app.get("/workspaces/{workspace_id}/intelligence/reports")
+    def list_research_reports(workspace_id: str, project_id: str | None = None, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"})
+        if denied: return denied
+        return app.state.intelligence_service.list_reports(workspace_id, project_id)
+
+    @app.get("/workspaces/{workspace_id}/intelligence/reports/{report_id}")
+    def get_research_report(workspace_id: str, report_id: str, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"})
+        if denied: return denied
+        value=app.state.intelligence_service.get_report(workspace_id, report_id)
+        return value if value else _intelligence_error(404,"report_not_found")
+
+    @app.get("/workspaces/{workspace_id}/intelligence/reports/{report_id}/sources")
+    def list_research_sources(workspace_id: str, report_id: str, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"})
+        if denied: return denied
+        return app.state.intelligence_service.list_sources(workspace_id, report_id)
+
+    @app.post("/workspaces/{workspace_id}/intelligence/meetings", status_code=201)
+    def create_intelligence_meeting(workspace_id: str, payload: dict, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"})
+        if denied: return denied
+        try:return app.state.intelligence_service.create_meeting(workspace_id,payload)
+        except (AttributeError,TypeError,ValueError):return _intelligence_error()
+
+    @app.get("/workspaces/{workspace_id}/intelligence/meetings")
+    def list_intelligence_meetings(workspace_id: str, authorization: str | None = Header(default=None)):
+        denied=_authorize_workspace(app,workspace_id,authorization,{"OWNER","ADMIN","MEMBER"})
+        if denied:return denied
+        return app.state.intelligence_service.list_meetings(workspace_id)
+
+    @app.post("/workspaces/{workspace_id}/intelligence/meetings/{meeting_id}/run")
+    def run_intelligence_meeting(workspace_id: str, meeting_id: str, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"})
+        if denied:return denied
+        try:return app.state.intelligence_service.run_meeting(workspace_id,meeting_id)
+        except (AttributeError,TypeError,ValueError):return _intelligence_error()
+
+    @app.get("/workspaces/{workspace_id}/intelligence/meetings/{meeting_id}")
+    def get_intelligence_meeting(workspace_id: str, meeting_id: str, authorization: str | None = Header(default=None)):
+        denied=_authorize_workspace(app,workspace_id,authorization,{"OWNER","ADMIN","MEMBER"})
+        if denied:return denied
+        value=app.state.intelligence_service.get_meeting(workspace_id,meeting_id)
+        return value if value else _intelligence_error(404,"meeting_not_found")
+
+    @app.get("/workspaces/{workspace_id}/intelligence/meetings/{meeting_id}/minutes")
+    def get_meeting_minutes(workspace_id: str, meeting_id: str, authorization: str | None = Header(default=None)):
+        denied=_authorize_workspace(app,workspace_id,authorization,{"OWNER","ADMIN","MEMBER"})
+        if denied:return denied
+        value=app.state.intelligence_service.get_minutes(workspace_id,meeting_id)
+        return value if value else _intelligence_error(404,"minutes_not_found")
+
+    @app.get("/workspaces/{workspace_id}/intelligence/meetings/{meeting_id}/plans")
+    def list_meeting_plans(workspace_id: str, meeting_id: str, authorization: str | None = Header(default=None)):
+        denied=_authorize_workspace(app,workspace_id,authorization,{"OWNER","ADMIN","MEMBER"})
+        if denied:return denied
+        return app.state.intelligence_service.list_plans(workspace_id,meeting_id)
+
+    @app.post("/workspaces/{workspace_id}/intelligence/meetings/{meeting_id}/decision")
+    def select_meeting_plan(workspace_id: str, meeting_id: str, payload: dict | None = None, authorization: str | None = Header(default=None)):
+        denied=_authorize_workspace(app,workspace_id,authorization,{"OWNER","ADMIN","MEMBER"})
+        if denied:return denied
+        try:return app.state.intelligence_service.decide(workspace_id,meeting_id,(payload or {}).get("plan_id"))
+        except (AttributeError,TypeError,ValueError):return _intelligence_error()
+
+    @app.get("/workspaces/{workspace_id}/intelligence/meetings/{meeting_id}/decision")
+    def get_meeting_decision(workspace_id: str, meeting_id: str, authorization: str | None = Header(default=None)):
+        denied=_authorize_workspace(app,workspace_id,authorization,{"OWNER","ADMIN","MEMBER"})
+        if denied:return denied
+        value=app.state.intelligence_service.get_decision(workspace_id,meeting_id)
+        return value if value else _intelligence_error(404,"decision_not_found")
+
+    @app.get("/workspaces/{workspace_id}/intelligence/meetings/{meeting_id}/execution-plan")
+    def get_intelligence_execution_plan(workspace_id: str, meeting_id: str, authorization: str | None = Header(default=None)):
+        denied=_authorize_workspace(app,workspace_id,authorization,{"OWNER","ADMIN","MEMBER"})
+        if denied:return denied
+        value=app.state.intelligence_service.get_execution_plan(workspace_id,meeting_id)
+        return value if value else _intelligence_error(404,"execution_plan_not_found")
 
     @app.get("/workspaces/{workspace_id}/jobs")
     def list_jobs(workspace_id: str, status: str | None = None, limit: int = 50, offset: int = 0, authorization: str | None = Header(default=None)):

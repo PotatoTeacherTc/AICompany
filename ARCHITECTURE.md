@@ -2,7 +2,7 @@
 
 ## Baseline and maturity
 
-The official baseline is Mission 143. Completion through Mission 143 refers to
+The official baseline is Mission 145. Completion through Mission 145 refers to
 each Mission's bounded Contract, Foundation, Fake/Offline, or Local Integration
 scope. The overall product is **Local/Fake SaaS Beta + bounded single-host
 Production Integration**, not Production Ready.
@@ -24,8 +24,8 @@ Metadata/Fake Install Marketplace Foundation. Mission 131 is a bounded
 PostgreSQL Production Integration for the shared StateRepository. Billing
 remains Manual/Fake.
 
-Missions 142 and 143 are the explicitly approved AI Company and Organization
-Foundations. No later numbered
+Missions 142-145 are the explicitly approved AI Company, Organization, and
+Fake/Offline Intelligence Foundations. No later numbered
 Mission is defined. The approved `@1`-`@10` roadmap is a
 separate product-completion sequence and is not an implementation claim.
 Enterprise and AICompany v1.0 are unimplemented.
@@ -84,6 +84,34 @@ Runtime records use IDLE, ASSIGNED, RUNNING, WAITING, COMPLETED, and FAILED and
 can reconcile an Assignment with its current Product Workflow status. The
 Backend adds authenticated read-only organization, employee, assignment, and
 runtime views. It does not add an organization editor or Dashboard redesign.
+
+## Research and Meeting Intelligence
+
+`core/intelligence.py` and `providers/intelligence.py` add an optional path over
+Bible and Organization. ResearchRequest is assigned to the existing RESEARCH
+Department/RESEARCHER and resolved against an execution-time Bible version
+snapshot. FakeResearchProvider returns normalized safe Source summaries;
+Findings must reference those Sources. A Confidence record explains count,
+quality, freshness, agreement, coverage, uncertainty, and level. Published and
+retrieved timestamps bound freshness claims. Research supplies evidence but
+does not choose an execution strategy.
+
+A Meeting pins a ResearchReport fingerprint and resolves actual Organization
+participants. Only structured contributions, evidence references, proposals,
+risks, disagreements, minutes, and decisions are persisted—not chain-of-thought
+or Bible contents. FakeMeetingProvider is deterministic and timeout-isolated.
+Configurable Plan count defaults to three; the bounded diversity contract checks
+concept, audience, platform strategy, visual/message direction, and risk. Rule,
+User, Manager, and Consensus are the allowed Decision methods, with this phase
+implementing deterministic Rule and explicit User selection.
+
+ExecutionPlan is a planning boundary above Product Workflow. It contains the
+existing ordered stages and approval boundaries but invokes neither Pipeline nor
+Provider. Product Workflow optionally records research_report_id, meeting_id,
+decision_id, and execution_plan_id; callers without them are unchanged. Local
+Product and production compositions inject the offline engines without creating
+Organization data or enabling external Providers. Auth/RBAC APIs and a minimal
+Dashboard Intelligence view preserve Workspace isolation.
 
 ## Real-use E2E reuse boundary
 

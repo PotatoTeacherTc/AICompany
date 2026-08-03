@@ -27,6 +27,11 @@ test("dashboard source keeps credentials out of persistent browser storage", asy
   assert.match(source, /indeterminate/);
   assert.match(source, /disabled=\{/);
   assert.match(source, /최근 활동/);
+  assert.match(source, /인텔리전스/);
+  assert.match(source, /intelligence\/reports/);
+  assert.match(source, /intelligence\/meetings/);
+  assert.match(source, /Confidence|신뢰 수준/);
+  assert.match(source, /이 계획 선택/);
 });
 test("API client has timeout and bearer injection", async () => {
   const source = await readFile(new URL("../src/api.ts", import.meta.url), "utf8");

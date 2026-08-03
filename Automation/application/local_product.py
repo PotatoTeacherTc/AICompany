@@ -9,6 +9,7 @@ from application.usage_reporting_service import UsageReportingService
 from application.credential_service import CredentialService
 from application.job_execution_api_service import JobExecutionApiService
 from application.login_service import LoginService
+from application.intelligence_service import IntelligenceService
 from application.organization_service import OrganizationService
 from application.persistent_execution_service import PersistentExecutionService
 from application.product_content_runner import ProductContentRunner
@@ -39,6 +40,7 @@ from core.youtube_publishing import YouTubeConnectionRepository, YouTubeConnecti
 from core.company_bible import BibleManager
 from core.department import DepartmentManager, WorkerDirectory
 from core.organization_engine import OrganizationEngine, ORGANIZATION_TASK_TYPES
+from core.intelligence import IntelligenceEngine
 from providers.factory import ProviderFactory
 
 
@@ -72,6 +74,15 @@ def create_local_product_app(environment=None):
     department_manager = DepartmentManager(states, worker_directory, ORGANIZATION_TASK_TYPES)
     organization_engine = OrganizationEngine(states, department_manager, product)
     organization_service = OrganizationService(department_manager, worker_directory, organization_engine)
+    research_selection = ProviderFactory.research_from_environment(values)
+    meeting_selection = ProviderFactory.meeting_from_environment(values)
+    intelligence_service = IntelligenceService(IntelligenceEngine(
+        states, organization_engine, bible_manager,
+        research_provider=research_selection.provider,
+        meeting_provider=meeting_selection.provider,
+        timeout_seconds=min(research_selection.timeout_seconds, meeting_selection.timeout_seconds),
+        history=history,
+    ))
 
     local_state = root / "local-product"; local_state.mkdir(parents=True, exist_ok=True)
     users = UserService(FileUserRepository(local_state / "users.json"))
@@ -99,6 +110,7 @@ def create_local_product_app(environment=None):
         product_workflow_service=product, auth_required=True, security_settings=security,
         organization_service=organization_service,
         bible_service=bible_manager,
+        intelligence_service=intelligence_service,
         health_service=BackendHealthService(lambda: True, lambda: True, lambda: True),
     ))
 
