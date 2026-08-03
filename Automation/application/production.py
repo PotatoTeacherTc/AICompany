@@ -10,6 +10,7 @@ from application.persistent_execution_service import PersistentExecutionService
 from application.product_workflow_service import ProductWorkflowService
 from application.organization_service import OrganizationService
 from application.intelligence_service import IntelligenceService
+from application.production_quality_service import ProductionQualityService
 from application.product_content_runner import ProductContentRunner
 from core.artifact_manager import ArtifactManager
 from core.artifact_repository import StateArtifactRepository
@@ -20,6 +21,7 @@ from core.company_bible import BibleManager
 from core.department import DepartmentManager, WorkerDirectory
 from core.organization_engine import OrganizationEngine, ORGANIZATION_TASK_TYPES
 from core.intelligence import IntelligenceEngine
+from core.production_quality import ProductionQualityEngine
 from core.execution_history import ExecutionHistory
 from core.infrastructure import (
     InfrastructureConfig,
@@ -116,13 +118,16 @@ def create_production_app(environment=None):
     organization_service = OrganizationService(department_manager, worker_directory, organization_engine)
     research_selection = ProviderFactory.research_from_environment(values)
     meeting_selection = ProviderFactory.meeting_from_environment(values)
-    intelligence_service = IntelligenceService(IntelligenceEngine(
+    intelligence_engine = IntelligenceEngine(
         repository, organization_engine, bible_manager,
         research_provider=research_selection.provider,
         meeting_provider=meeting_selection.provider,
         timeout_seconds=min(research_selection.timeout_seconds, meeting_selection.timeout_seconds),
         history=history,
-    ))
+    )
+    intelligence_service = IntelligenceService(intelligence_engine)
+    production_selection=ProviderFactory.production_from_environment(values);quality_selection=ProviderFactory.quality_from_environment(values)
+    production_quality_service = ProductionQualityService(ProductionQualityEngine(repository,intelligence_engine,organization_engine,production_selection.provider,quality_selection.provider,min(production_selection.timeout_seconds,quality_selection.timeout_seconds),history=history))
     job_api = JobExecutionApiService(
         execution, history, artifacts, usage, BatchManager(queue, repository)
     )
@@ -145,6 +150,7 @@ def create_production_app(environment=None):
         product_workflow_service=product,
         organization_service=organization_service,
         intelligence_service=intelligence_service,
+        production_quality_service=production_quality_service,
         bible_service=bible_manager,
         health_service=BackendHealthService(
             persistence_probe=repository.health,

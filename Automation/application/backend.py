@@ -155,6 +155,7 @@ class BackendDependencies:
     product_workflow_service: object | None = None
     bible_service: object | None = None
     intelligence_service: object | None = None
+    production_quality_service: object | None = None
     health_service: BackendHealthService | None = None
     auth_required: bool = False
     allowed_origins: tuple[str, ...] = (
@@ -216,6 +217,7 @@ def create_backend_app(dependencies=None):
         product_workflow_service=dependencies.product_workflow_service,
         bible_service=dependencies.bible_service,
         intelligence_service=dependencies.intelligence_service,
+        production_quality_service=dependencies.production_quality_service,
         health_service=health_service,
         auth_required=dependencies.auth_required,
         allowed_origins=(

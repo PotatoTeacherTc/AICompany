@@ -10,6 +10,7 @@ from application.credential_service import CredentialService
 from application.job_execution_api_service import JobExecutionApiService
 from application.login_service import LoginService
 from application.intelligence_service import IntelligenceService
+from application.production_quality_service import ProductionQualityService
 from application.organization_service import OrganizationService
 from application.persistent_execution_service import PersistentExecutionService
 from application.product_content_runner import ProductContentRunner
@@ -41,6 +42,7 @@ from core.company_bible import BibleManager
 from core.department import DepartmentManager, WorkerDirectory
 from core.organization_engine import OrganizationEngine, ORGANIZATION_TASK_TYPES
 from core.intelligence import IntelligenceEngine
+from core.production_quality import ProductionQualityEngine
 from providers.factory import ProviderFactory
 
 
@@ -76,13 +78,16 @@ def create_local_product_app(environment=None):
     organization_service = OrganizationService(department_manager, worker_directory, organization_engine)
     research_selection = ProviderFactory.research_from_environment(values)
     meeting_selection = ProviderFactory.meeting_from_environment(values)
-    intelligence_service = IntelligenceService(IntelligenceEngine(
+    intelligence_engine = IntelligenceEngine(
         states, organization_engine, bible_manager,
         research_provider=research_selection.provider,
         meeting_provider=meeting_selection.provider,
         timeout_seconds=min(research_selection.timeout_seconds, meeting_selection.timeout_seconds),
         history=history,
-    ))
+    )
+    intelligence_service = IntelligenceService(intelligence_engine)
+    production_selection=ProviderFactory.production_from_environment(values);quality_selection=ProviderFactory.quality_from_environment(values)
+    production_quality_service = ProductionQualityService(ProductionQualityEngine(states,intelligence_engine,organization_engine,production_selection.provider,quality_selection.provider,min(production_selection.timeout_seconds,quality_selection.timeout_seconds),history=history))
 
     local_state = root / "local-product"; local_state.mkdir(parents=True, exist_ok=True)
     users = UserService(FileUserRepository(local_state / "users.json"))
@@ -111,6 +116,7 @@ def create_local_product_app(environment=None):
         organization_service=organization_service,
         bible_service=bible_manager,
         intelligence_service=intelligence_service,
+        production_quality_service=production_quality_service,
         health_service=BackendHealthService(lambda: True, lambda: True, lambda: True),
     ))
 

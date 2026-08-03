@@ -34,6 +34,7 @@ def create_app(
     product_workflow_service=None,
     bible_service=None,
     intelligence_service=None,
+    production_quality_service=None,
     health_service=None,
     auth_required=False,
     allowed_origins=(
@@ -239,6 +240,7 @@ def create_app(
     app.state.product_workflow_service = product_workflow_service
     app.state.bible_service = bible_service
     app.state.intelligence_service = intelligence_service
+    app.state.production_quality_service = production_quality_service
     if audit_service is None:
         from application.audit_service import AuditService
         audit_service = AuditService()
@@ -1432,6 +1434,44 @@ def create_app(
         if denied:return denied
         value=app.state.intelligence_service.get_execution_plan(workspace_id,meeting_id)
         return value if value else _intelligence_error(404,"execution_plan_not_found")
+
+    def _pq(workspace_id, authorization, method, *args):
+        denied=_authorize_workspace(app,workspace_id,authorization,{"OWNER","ADMIN","MEMBER"})
+        if denied:return denied
+        if app.state.production_quality_service is None:return _intelligence_error(503,"production_quality_unavailable")
+        try:return getattr(app.state.production_quality_service,method)(workspace_id,*args)
+        except (AttributeError,KeyError,TypeError,ValueError):return _intelligence_error()
+
+    @app.post("/workspaces/{workspace_id}/production/briefs",status_code=201)
+    def create_production_brief(workspace_id:str,payload:dict,authorization:str|None=Header(default=None)):return _pq(workspace_id,authorization,"create_brief",payload)
+    @app.get("/workspaces/{workspace_id}/production/briefs")
+    def list_production_briefs(workspace_id:str,authorization:str|None=Header(default=None)):return _pq(workspace_id,authorization,"list_briefs")
+    @app.get("/workspaces/{workspace_id}/production/briefs/{brief_id}")
+    def get_production_brief(workspace_id:str,brief_id:str,authorization:str|None=Header(default=None)):return _pq(workspace_id,authorization,"get_brief",brief_id)
+    @app.post("/workspaces/{workspace_id}/production/briefs/{brief_id}/candidates")
+    def generate_candidates(workspace_id:str,brief_id:str,payload:dict|None=None,authorization:str|None=Header(default=None)):return _pq(workspace_id,authorization,"generate",brief_id,payload or {})
+    @app.get("/workspaces/{workspace_id}/production/briefs/{brief_id}/candidates")
+    def list_candidates(workspace_id:str,brief_id:str,authorization:str|None=Header(default=None)):return _pq(workspace_id,authorization,"candidates",brief_id)
+    @app.get("/workspaces/{workspace_id}/production/briefs/{brief_id}/comparison")
+    def compare_candidates(workspace_id:str,brief_id:str,authorization:str|None=Header(default=None)):return _pq(workspace_id,authorization,"compare",brief_id)
+    @app.post("/workspaces/{workspace_id}/quality/rubrics",status_code=201)
+    def create_quality_rubric(workspace_id:str,payload:dict,authorization:str|None=Header(default=None)):return _pq(workspace_id,authorization,"create_rubric",payload)
+    @app.post("/workspaces/{workspace_id}/quality/candidates/{candidate_id}/reviews")
+    def review_candidate(workspace_id:str,candidate_id:str,payload:dict,authorization:str|None=Header(default=None)):return _pq(workspace_id,authorization,"review",candidate_id,payload)
+    @app.get("/workspaces/{workspace_id}/quality/candidates/{candidate_id}/reviews")
+    def list_candidate_reviews(workspace_id:str,candidate_id:str,authorization:str|None=Header(default=None)):return _pq(workspace_id,authorization,"reviews",candidate_id)
+    @app.post("/workspaces/{workspace_id}/quality/candidates/{candidate_id}/score")
+    def score_candidate(workspace_id:str,candidate_id:str,payload:dict,authorization:str|None=Header(default=None)):return _pq(workspace_id,authorization,"score",candidate_id,payload)
+    @app.get("/workspaces/{workspace_id}/quality/candidates/{candidate_id}/score")
+    def get_candidate_score(workspace_id:str,candidate_id:str,authorization:str|None=Header(default=None)):return _pq(workspace_id,authorization,"get_score",candidate_id)
+    @app.post("/workspaces/{workspace_id}/quality/candidates/{candidate_id}/improvements")
+    def improve_candidate(workspace_id:str,candidate_id:str,authorization:str|None=Header(default=None)):return _pq(workspace_id,authorization,"improve",candidate_id)
+    @app.get("/workspaces/{workspace_id}/quality/candidates/{candidate_id}/improvements")
+    def list_candidate_improvements(workspace_id:str,candidate_id:str,authorization:str|None=Header(default=None)):return _pq(workspace_id,authorization,"improvements",candidate_id)
+    @app.get("/workspaces/{workspace_id}/quality/briefs/{brief_id}/report")
+    def get_quality_report(workspace_id:str,brief_id:str,authorization:str|None=Header(default=None)):return _pq(workspace_id,authorization,"final",brief_id)
+    @app.post("/workspaces/{workspace_id}/quality/briefs/{brief_id}/selection")
+    def select_candidate(workspace_id:str,brief_id:str,payload:dict,authorization:str|None=Header(default=None)):return _pq(workspace_id,authorization,"select",brief_id,payload.get("candidate_id"))
 
     @app.get("/workspaces/{workspace_id}/jobs")
     def list_jobs(workspace_id: str, status: str | None = None, limit: int = 50, offset: int = 0, authorization: str | None = Header(default=None)):

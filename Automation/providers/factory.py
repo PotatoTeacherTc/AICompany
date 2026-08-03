@@ -13,6 +13,7 @@ from providers.content_media import (
 from providers.text import FakeTextProvider, OllamaTextProvider, OpenAITextProvider
 from providers.naver_blog import FakeNaverBlogBrowser, PlaywrightNaverBlogBrowser
 from providers.intelligence import FakeResearchProvider, FakeMeetingProvider
+from providers.production_quality import FakeProductionProvider, FakeQualityProvider
 from core.production_config import resolve_secret_value
 from core.structured_logging import LogLevel, safe_log
 
@@ -42,6 +43,18 @@ class ProviderFactory:
             )
 
         raise ValueError(f"Unsupported AI provider: {provider_name}")
+
+    @classmethod
+    def production_from_environment(cls, environment=None):
+        environment=os.environ if environment is None else environment
+        if environment.get("AICOMPANY_PRODUCTION_PROVIDER","fake").lower()!="fake":raise ValueError("Unsupported production provider")
+        return ProviderSelection(FakeProductionProvider(),"fake-structured-v1",cls._timeout(environment.get("AICOMPANY_PRODUCTION_PROVIDER_TIMEOUT","30")))
+
+    @classmethod
+    def quality_from_environment(cls, environment=None):
+        environment=os.environ if environment is None else environment
+        if environment.get("AICOMPANY_QUALITY_PROVIDER","fake").lower()!="fake":raise ValueError("Unsupported quality provider")
+        return ProviderSelection(FakeQualityProvider(),"fake-quality-v1",cls._timeout(environment.get("AICOMPANY_QUALITY_PROVIDER_TIMEOUT","30")))
 
     @classmethod
     def research_from_environment(cls, environment=None):

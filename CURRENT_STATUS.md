@@ -2,7 +2,17 @@
 
 ## Mission
 
-Official current baseline: **Mission 145**.
+Official current baseline: **Mission 147**.
+
+Missions 146-147 add an optional Fake/Offline path from ExecutionPlan through
+three structurally different Candidates, repetition checks, Creator Self
+Review, separate Cross Review, evidence-bearing QA scoring, at most two targeted
+improvements, and a user-selectable FinalQualityReport. The implementation
+reuses StateRepository, Organization identities, Bible version metadata, Usage,
+ExecutionHistory, authenticated Workspace APIs, and the existing Workflow
+boundary. Quality scores are evaluations with limitations, not performance
+guarantees. External paid Providers, background execution, learning, automatic
+publishing, and Mission 148+ remain unimplemented.
 
 Missions 144-145 add the optional Fake/Offline Intelligence path: Organization
 RESEARCH assignment -> evidence-backed Research Report -> structured Meeting ->
@@ -20,10 +30,9 @@ YouTube, and manual Naver confirmation boundaries and does not directly execute
 Pipelines. The existing Product Workflow accepts optional Intelligence IDs and
 continues unchanged without them.
 
-Only deterministic Fake Research/Meeting Providers are connected. No external
-Research or paid LLM Provider, production Diversity Engine, QA score/rework,
-scheduled research, Knowledge learning, live Meeting UI, or Mission 146 work is
-implemented.
+Only deterministic Fake Research/Meeting and Production/Quality Providers are
+connected. No external Research or paid LLM Provider, scheduled research,
+Knowledge learning, live Meeting UI, or Mission 148+ work is implemented.
 
 Mission 143 adds an optional Organization Engine above Product Workflow. Its
 Workspace-scoped Company, Manager, Employee, ReportingLine, Assignment, and
@@ -76,8 +85,8 @@ installed small Ollama model did not reliably satisfy the complex Music Plan
 schema; Ollama remains separately verified for free-form local Text and an
 invalid structured response fails safely.
 
-Current verification baseline: Backend **503 tests passed** with five
-conditional integration skips, Frontend **2 tests passed**, and Frontend
+Current verification baseline: Backend **539 run / 534 passed** with five
+conditional integration skips, Frontend **3 tests passed**, and Frontend
 production build passed. @11 is undefined and was not started.
 
 The @10 local owner bootstrap was corrected after a real launcher defect: the
@@ -1025,7 +1034,7 @@ cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Current verification result: **533 run, 528 passed, 0 failed, 5 conditional
+Current verification result: **539 run, 534 passed, 0 failed, 5 conditional
 integration skips**. Credential/real Provider tests remain explicit environment-gated;
 Windows Credential Manager coverage passed in the host-permission run.
 

@@ -1,11 +1,11 @@
 # AICompany
 
-Official baseline: **Mission 145**. Current product status:
+Official baseline: **Mission 147**. Current product status:
 **Local/Fake SaaS Beta + bounded single-host Production Integration**.
-Completion through Mission 145 is limited to each Mission's documented Contract, Foundation,
+Completion through Mission 147 is limited to each Mission's documented Contract, Foundation,
 Fake/Offline, or Local Integration scope; Project APEX is not Production Ready.
 Missions 142-145 are the approved versioned AI Company, Organization, and
-Fake/Offline Intelligence Foundations. Mission 146 and later are undefined and
+Fake/Offline Intelligence Foundations. Mission 148 and later are undefined and
 unimplemented. A separate approved real-use product
 roadmap, `@1` through `@10`, is complete at its documented Local Product
 boundary. The `@` stages remain a separate product roadmap.
@@ -57,8 +57,24 @@ internal reasoning. The Dashboard can inspect reports, evidence counts,
 confidence, limitations, meetings, Plan comparisons/selections, Decisions, and
 Execution Plans for the selected company. Product Workflow remains usable with
 no Intelligence metadata. Only deterministic Fake Providers are enabled; no
-external Research/LLM Provider, QA improvement loop, scheduled research, live
-Meeting UI, Knowledge learning, or Mission 146 work exists.
+external Research/LLM Provider, scheduled research, live Meeting UI, or
+Knowledge learning exists.
+
+## Production and Quality Intelligence (Missions 146-147)
+
+An approved ExecutionPlan can create a Workspace-scoped ProductionBrief and
+three deterministic but structurally different Candidates. Diversity checks
+cover text/title/opening, visual/composition/platform dimensions, recent
+artifact reuse, and safe fingerprints; changing only a seed is rejected.
+
+Creator Self Review, separate Cross Review, and QA evaluate eight weighted
+criteria with evidence. A failing Candidate may receive at most two targeted
+improvement attempts. FinalQualityReport contains safe comparisons, scores,
+limitations, and explicit user selection. The minimal Dashboard panel exposes
+these records. Only Fake Production/Quality Providers are enabled, API cost is
+zero, and no prompt or Bible source text is stored. Scheduling, background
+production, automatic publishing, learning, real paid Providers, and Mission
+148+ are not implemented.
 
 AI 기반 자동화와 콘텐츠 제작 시스템을 연구하는 개인 AI 프로젝트 워크스페이스입니다.
 

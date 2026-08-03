@@ -8,7 +8,19 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 145
+## Current baseline: Mission 147
+
+### Mission 146 — Production Intelligence (Complete, Fake/Offline Foundation)
+
+- Converts a validated ExecutionPlan into an idempotent Workspace ProductionBrief and three structurally distinct Candidates.
+- Diversity compares concept, wording, title/opening patterns, visual composition, platform strategy, prior artifacts, and a safe fingerprint; seed-only variation is rejected.
+- Reuses Bible version IDs, Organization, StateRepository, Usage, History, authenticated APIs, and the existing Workflow boundary. Only a deterministic Fake Provider is enabled.
+
+### Mission 147 — Quality Intelligence (Complete, Fake/Offline Foundation)
+
+- Adds evidence-bearing QualityRubric/QualityScore, Creator Self Review, separate Cross Review, QA review, bounded ImprovementRequest, and FinalQualityReport contracts.
+- Improvement is limited to two attempts and stops on repeated failures or usage limits. Existing approval and publishing boundaries remain unchanged.
+- No automatic publishing, scheduling/background execution, performance learning, real paid Provider, or Mission 148+ work is included.
 
 Mission 1-145 completion means completion of each Mission's explicitly bounded
 Contract, Foundation, Fake/Offline, or Local Integration scope. It does not

@@ -2,7 +2,7 @@
 
 ## Baseline and maturity
 
-The official baseline is Mission 145. Completion through Mission 145 refers to
+The official baseline is Mission 147. Completion through Mission 147 refers to
 each Mission's bounded Contract, Foundation, Fake/Offline, or Local Integration
 scope. The overall product is **Local/Fake SaaS Beta + bounded single-host
 Production Integration**, not Production Ready.
@@ -86,6 +86,20 @@ Backend adds authenticated read-only organization, employee, assignment, and
 runtime views. It does not add an organization editor or Dashboard redesign.
 
 ## Research and Meeting Intelligence
+
+The next optional layer is `ProductionQualityEngine`:
+
+`ExecutionPlan -> ProductionBrief -> Candidate[] -> Self Review -> Cross Review
+-> QualityScore -> bounded ImprovementRequest -> FinalQualityReport`.
+
+It reuses StateRepository, Organization roles, Bible version IDs,
+ExecutionHistory, Provider Factory, authenticated Workspace APIs, and the
+existing Pipeline/Publishing boundary. Diversity is structural, not merely a
+random seed change. Prompt assembly is represented only by a safe fingerprint;
+prompt and Bible source text are not persisted. QA requires criterion evidence
+and reports limitations rather than guaranteeing performance. Only Fake
+Production/Quality Providers are enabled. Background execution, automatic
+publishing, learning, and Mission 148+ remain outside this layer.
 
 `core/intelligence.py` and `providers/intelligence.py` add an optional path over
 Bible and Organization. ResearchRequest is assigned to the existing RESEARCH

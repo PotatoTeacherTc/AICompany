@@ -210,6 +210,8 @@ class ExecutionHistory:
             "research_request_id", "research_report_id", "meeting_id",
             "decision_id", "execution_plan_id", "assignment_id", "company_id",
             "manager_id", "department_id", "employee_id",
+            "production_brief_id", "candidate_id", "rubric_id", "score_id",
+            "improvement_request_id",
         }
         safe_ids = {
             key: value for key, value in (identifiers or {}).items()
