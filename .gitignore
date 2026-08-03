@@ -7,3 +7,10 @@ secrets/
 # Local Naver login session; never commit cookies/profile data.
 Automation/.browser-profiles/
 Automation/product-data/
+# Local Product runtime and migration targets; never commit user data/models.
+Models/
+BrowserProfiles/
+Cache/
+Logs/
+Artifacts/
+Temp/

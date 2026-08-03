@@ -961,15 +961,21 @@ not inferred from a missing historical mission log.
   Meeting, Bible, and Announcement panels are reusable presentation contracts
   visibly labelled `준비 중`, with no invented execution data. Character
   binaries remain absent and a central empty registry controls future assets.
+- Local runtime migration now directs Product state/logs, managed Artifacts,
+  Naver browser profile, temporary files, Ollama models, and npm/uv/pip caches
+  to Git-ignored directories below `D:\AICompany`. Supported environment
+  variables are used; installed applications, ComfyUI's existing D-drive shared
+  model directory, Docker data, secrets, and Credential Manager records are not
+  moved.
 
-The current Backend suite contains **506 tests**. Its expected command is:
+The current Backend suite contains **508 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Current verification result: **506 run, 501 passed, 0 failed, 5 conditional
+Current verification result: **508 run, 503 passed, 0 failed, 5 conditional
 integration skips**. Credential/real Provider tests remain explicit environment-gated;
 Windows Credential Manager coverage passed in the host-permission run.
 

@@ -300,6 +300,24 @@ class ProductWorkflowTests(unittest.TestCase):
         self.assertIn('http://127.0.0.1:8000/auth/login', source)
         self.assertLess(source.index('http://127.0.0.1:8000/auth/login'), source.index('AICompany is running and local login was verified'))
 
+    def test_launcher_keeps_runtime_data_under_project_root(self):
+        root = Path(__file__).parents[2]
+        start = (root / "start-aicompany.ps1").read_text(encoding="utf-8")
+        stop = (root / "stop-aicompany.ps1").read_text(encoding="utf-8")
+        for value in ("Models", "BrowserProfiles", "Cache", "Logs", "Artifacts", "Temp"):
+            self.assertIn(f'Join-Path $projectRoot "{value}', start)
+        for variable in ("NPM_CONFIG_CACHE", "UV_CACHE_DIR", "PIP_CACHE_DIR", "OLLAMA_MODELS"):
+            self.assertIn(f"$env:{variable}", start)
+        self.assertIn('Logs\\LocalProduct\\runtime.json', stop)
+
+    def test_local_product_accepts_separate_artifact_root(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); artifacts = root / "separate-artifacts"
+            app = create_local_product_app({**self._local_environment(root / "product"),
+                                            "AICOMPANY_ARTIFACT_ROOT": str(artifacts)})
+            self.assertIsNotNone(app)
+            self.assertTrue(artifacts.is_dir())
+
     def test_explicit_owner_reset_changes_only_owner_credential(self):
         with tempfile.TemporaryDirectory() as temporary:
             environment = self._local_environment(temporary)

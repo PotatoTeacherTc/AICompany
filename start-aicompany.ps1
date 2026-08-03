@@ -7,7 +7,16 @@ $automationRoot = Join-Path $projectRoot "Automation"
 $webRoot = Join-Path $projectRoot "Web"
 $python = Join-Path $automationRoot "venv\Scripts\python.exe"
 if (-not (Test-Path -LiteralPath $python)) { throw "AICompany Python environment is unavailable." }
-$runtime = Join-Path $automationRoot "product-data\runtime.json"
+$modelsRoot = Join-Path $projectRoot "Models"
+$cacheRoot = Join-Path $projectRoot "Cache"
+$logsRoot = Join-Path $projectRoot "Logs\LocalProduct"
+$artifactsRoot = Join-Path $projectRoot "Artifacts"
+$profilesRoot = Join-Path $projectRoot "BrowserProfiles"
+$tempRoot = Join-Path $projectRoot "Temp"
+foreach ($path in @($modelsRoot, $cacheRoot, $logsRoot, $artifactsRoot, $profilesRoot, $tempRoot)) {
+    New-Item -ItemType Directory -Force -Path $path | Out-Null
+}
+$runtime = Join-Path $logsRoot "runtime.json"
 if (Test-Path -LiteralPath $runtime) {
     try {
         $existingRuntime = Get-Content -LiteralPath $runtime -Raw | ConvertFrom-Json
@@ -37,7 +46,16 @@ if ($plainPassword.Length -lt 12) { throw "The local password must contain at le
 $env:AICOMPANY_LOCAL_EMAIL = "owner@localhost"
 $env:AICOMPANY_LOCAL_PASSWORD = $plainPassword
 $env:AICOMPANY_SIGNING_SECRET = -join ((1..48) | ForEach-Object { [char](Get-Random -Minimum 33 -Maximum 126) })
-$env:AICOMPANY_PRODUCT_ROOT = Join-Path $automationRoot "logs\music-plans"
+$env:AICOMPANY_PRODUCT_ROOT = $logsRoot
+$env:AICOMPANY_ARTIFACT_ROOT = $artifactsRoot
+$env:AICOMPANY_RUNTIME_FILE = $runtime
+$env:AICOMPANY_TEMP_ROOT = $tempRoot
+$env:TEMP = $tempRoot
+$env:TMP = $tempRoot
+$env:NPM_CONFIG_CACHE = Join-Path $cacheRoot "npm"
+$env:UV_CACHE_DIR = Join-Path $cacheRoot "uv"
+$env:PIP_CACHE_DIR = Join-Path $cacheRoot "pip"
+$env:OLLAMA_MODELS = Join-Path $modelsRoot "Ollama"
 $env:ALLOW_PAID_PROVIDER = "False"
 if ($ResetOwnerPassword) {
     $env:AICOMPANY_RESET_OWNER_PASSWORD = "true"
@@ -65,7 +83,7 @@ if (-not $env:AICOMPANY_COMFYUI_ENDPOINT) { $env:AICOMPANY_COMFYUI_ENDPOINT = "h
 if (-not $env:AICOMPANY_COMFYUI_WORKFLOW_PATH) { $env:AICOMPANY_COMFYUI_WORKFLOW_PATH = Join-Path $automationRoot "workflows\comfyui\checkpoint-basic-v1.json" }
 $env:AICOMPANY_VIDEO_PROVIDER = "ffmpeg"
 $env:AICOMPANY_NAVER_BLOG_PROVIDER = "playwright"
-$env:AICOMPANY_NAVER_PROFILE_DIR = Join-Path $automationRoot ".browser-profiles\naver"
+$env:AICOMPANY_NAVER_PROFILE_DIR = Join-Path $profilesRoot "Naver"
 $clientSecret = Join-Path $projectRoot "secrets\client_secret.json"
 if (Test-Path -LiteralPath $clientSecret) { $env:AICOMPANY_GOOGLE_CLIENT_SECRET_FILE = $clientSecret }
 

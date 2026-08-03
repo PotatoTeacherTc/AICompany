@@ -966,6 +966,24 @@ The reset helper is launched as an Automation module from the `Automation`
 working directory; it does not modify global `PYTHONPATH` or embed a repository
 path in Python source.
 
+### Local Product data locations
+
+The Windows launcher keeps mutable AICompany runtime data under the repository
+root without moving installed applications:
+
+- `Models/Ollama` via the official `OLLAMA_MODELS` variable
+- `BrowserProfiles/Naver` for the dedicated Playwright profile
+- `Cache/npm`, `Cache/uv`, and `Cache/pip` via their supported cache variables
+- `Logs/LocalProduct` for persistent local state and runtime metadata
+- `Artifacts` for managed content bytes
+- `Temp` for launcher child-process temporary files
+
+These directories are Git-ignored. Ollama, ComfyUI Desktop, Docker Desktop,
+Node, Python, and Edge installations remain in their installed locations.
+ComfyUI Desktop continues using its existing D-drive shared model directory;
+Docker data is outside this migration. OAuth tokens remain only in Windows
+Credential Manager and `secrets/` remains unchanged.
+
 The Dashboard accepts one natural-language content order, displays the Suno
 package and `WAITING_FOR_INPUT`, and accepts MP3/WAV/FLAC/M4A upload directly
 from the browser. The upload is Workspace-authorized, size/MIME/signature/

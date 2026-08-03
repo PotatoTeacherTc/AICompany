@@ -1302,6 +1302,12 @@ added behind the existing Provider abstraction without changing the workflow.
   Employees, departments, Research, Meeting, Bible, announcements, and
   character assets remain explicitly unconnected placeholders, not completed
   product features. No new Mission or `@11` scope is created.
+- Runtime migration: the @10 launcher consolidates mutable Local Product state,
+  Artifacts, browser profile, temporary data, Ollama models, and development
+  caches below the Git-ignored D-drive repository root using supported settings.
+  Installed applications, Docker data, ComfyUI's already-D-drive model store,
+  secrets, and Credential Manager data remain in place. This is an operational
+  migration of @10, not a new product stage.
 
 ### @ stage constitutional verification
 
