@@ -8,9 +8,9 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 141
+## Current baseline: Mission 142
 
-Mission 1-141 completion means completion of each Mission's explicitly bounded
+Mission 1-142 completion means completion of each Mission's explicitly bounded
 Contract, Foundation, Fake/Offline, or Local Integration scope. It does not
 mean that Project APEX as a whole is Production Ready.
 
@@ -42,6 +42,29 @@ and Admin; and Docker-based local execution.
 
 These capabilities do not imply external media generation, real payment,
 cloud deployment, distributed execution, or Production Ready status.
+
+### Mission 142 — AI Company Foundation (Complete, Contract/Foundation)
+
+- Goal: add versioned, Workspace-scoped organizational standards above the
+  existing Product Workflow without creating a second organization engine.
+- Scope: Company Constitution, Company Bible, Department Bible, and Employee
+  Bible contracts; validation and serialization; version activation/archive;
+  immutable execution snapshots; StateRepository persistence; optional Product
+  Workflow version metadata; and authenticated minimum Backend API operations.
+- Hierarchy: Constitution -> Company -> Department -> Employee. References are
+  validated by version, and each scoped asset has at most one ACTIVE version.
+  Activating a new version archives the former ACTIVE version in the same
+  repository write.
+- Compatibility: Bible resolution is optional. A Workflow without Bible assets
+  follows its existing behavior. When present, only selected version IDs are
+  persisted in Workflow/ExecutionHistory metadata; Bible contents are not.
+- Excluded: production brand doctrine, Research or Meeting execution, employee
+  LLM calls, quality scoring, automatic rework, scheduled publishing, Bible
+  editor UI, and Mission 143 or later work.
+- Verification: contract and resolver tests cover validation, Workspace
+  isolation, activation, parent references, missing assets, immutable snapshots,
+  restart persistence, failed-write atomicity, Workflow compatibility, safe
+  History metadata, and Auth/RBAC API boundaries.
 
 The verified implementation currently provides a Task/Queue/Worker execution
 path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,

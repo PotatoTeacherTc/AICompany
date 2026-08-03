@@ -2,7 +2,7 @@
 
 ## Baseline and maturity
 
-The official baseline is Mission 141. Completion through Mission 141 refers to
+The official baseline is Mission 142. Completion through Mission 142 refers to
 each Mission's bounded Contract, Foundation, Fake/Offline, or Local Integration
 scope. The overall product is **Local/Fake SaaS Beta + bounded single-host
 Production Integration**, not Production Ready.
@@ -24,9 +24,34 @@ Metadata/Fake Install Marketplace Foundation. Mission 131 is a bounded
 PostgreSQL Production Integration for the shared StateRepository. Billing
 remains Manual/Fake.
 
-No later numbered Mission is defined. The approved `@1`-`@10` roadmap is a
+Mission 142 is the explicitly approved AI Company Foundation. No later numbered
+Mission is defined. The approved `@1`-`@10` roadmap is a
 separate product-completion sequence and is not an implementation claim.
 Enterprise and AICompany v1.0 are unimplemented.
+
+## Versioned AI Company standards
+
+`core/company_bible.py` adds a standards asset layer, not a new execution or
+organization engine. Frozen contracts form the resolution chain Company
+Constitution -> Company Bible -> Department Bible -> Employee Bible. Each
+record is Workspace-scoped and versioned. One registry record per asset scope
+contains its versions, allowing activation and archival to be committed by one
+existing StateRepository save and avoiding partially changed active state.
+
+`BibleManager.resolve()` validates parent version references and returns an
+immutable `BibleBundle` for the execution boundary. Explicit versions and
+ACTIVE versions are supported, while missing layers are allowed. This fixed
+bundle prevents later activation from changing a running execution. The local
+composition optionally injects the resolver into `ProductWorkflowService`;
+legacy callers need no changes and retain the pre-Mission behavior. Persistent
+Workflow and ExecutionHistory data contain only version identifiers, never the
+Bible contents. Auth/RBAC-protected API endpoints expose the minimum create,
+read, activate, and active-bundle operations without adding a Dashboard editor.
+
+A Bible is a governed, versioned company asset above an individual Prompt: it
+defines durable standards and traceable references rather than storing request
+text. Mission 142 does not supply real Potato Company doctrine or connect these
+contracts to Research, Meetings, employee LLM execution, QA, or rework.
 
 ## Real-use E2E reuse boundary
 

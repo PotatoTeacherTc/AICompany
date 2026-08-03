@@ -14,6 +14,7 @@ from core.artifact_repository import StateArtifactRepository
 from core.object_storage import ArtifactStorageAdapter, StorageFactory
 from application.artifact_service import ArtifactApplicationService
 from core.batch import BatchManager
+from core.company_bible import BibleManager
 from core.execution_history import ExecutionHistory
 from core.infrastructure import (
     InfrastructureConfig,
@@ -73,6 +74,7 @@ def create_production_app(environment=None):
     artifacts = create_artifact_manager(values, repository)
     usage = UsageEngine(repository)
     execution = PersistentExecutionService(queue, worker, history, artifacts, usage)
+    bible_manager = BibleManager(repository)
     youtube_connections = None
     if os.name == "nt":
         try:
@@ -101,6 +103,7 @@ def create_production_app(environment=None):
         # first local product job in-process while the existing queue still
         # provides idempotency and single-claim protection.
         auto_run=True,
+        bible_resolver=bible_manager,
     )
     job_api = JobExecutionApiService(
         execution, history, artifacts, usage, BatchManager(queue, repository)
@@ -122,6 +125,7 @@ def create_production_app(environment=None):
         persistent_execution_service=execution,
         job_execution_api_service=job_api,
         product_workflow_service=product,
+        bible_service=bible_manager,
         health_service=BackendHealthService(
             persistence_probe=repository.health,
             queue_probe=queue.health if hasattr(queue, "health") else lambda: True,

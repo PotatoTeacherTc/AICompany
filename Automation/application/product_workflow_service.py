@@ -18,17 +18,19 @@ class ProductWorkflowService:
     written to StateRepository, logs, history, or an external response.
     """
 
-    def __init__(self, repository, execution_service, stage_runner, connection_probes=None, auto_run=False, youtube_connector=None):
+    def __init__(self, repository, execution_service, stage_runner, connection_probes=None, auto_run=False, youtube_connector=None, bible_resolver=None):
         self.repository = repository
         self.execution = execution_service
         self.stage_runner = stage_runner
         self.connection_probes = dict(connection_probes or {})
         self.auto_run = bool(auto_run)
         self.youtube_connector = youtube_connector
+        self.bible_resolver = bible_resolver
+        self._bible_snapshots = {}
         self._requests = {}
         self.execution.register_target("product-workflow", self._run_job)
 
-    def submit(self, workspace_id, request_text, idempotency_key):
+    def submit(self, workspace_id, request_text, idempotency_key, bible_bundle=None):
         workspace_id = _identifier(workspace_id, "workspace_id")
         idempotency_key = _identifier(idempotency_key, "idempotency_key")
         if not isinstance(request_text, str) or not request_text.strip() or len(request_text) > 4000:
@@ -38,6 +40,9 @@ class ProductWorkflowService:
         if existing is not None:
             return self._safe(existing)
         now = _now()
+        if bible_bundle is None and self.bible_resolver is not None:
+            bible_bundle = self.bible_resolver.resolve(workspace_id)
+        bible_versions = bible_bundle.version_metadata() if bible_bundle is not None else {}
         record = {
             "product_id": product_id, "workspace_id": workspace_id,
             "status": "PENDING", "progress": 0,
@@ -45,9 +50,12 @@ class ProductWorkflowService:
             "stages": {stage: {"status": "PENDING"} for stage in PRODUCT_STAGES},
             "artifacts": [], "results": {}, "safe_error": None,
             "request_redacted": True,
+            "bible_versions": bible_versions,
         }
         self.repository.save(PRODUCT_WORKFLOW_KIND, product_id, workspace_id, record)
         self._requests[(workspace_id, product_id)] = request_text.strip()
+        if bible_bundle is not None:
+            self._bible_snapshots[(workspace_id, product_id)] = bible_bundle
         job = self.execution.submit(
             workspace_id, product_id, "product-workflow", idempotency_key,
         )
@@ -57,6 +65,13 @@ class ProductWorkflowService:
         if self.auto_run:
             Thread(target=self.run_once, args=(workspace_id,), daemon=True).start()
         return self._safe(record)
+
+    def bible_snapshot(self, workspace_id, product_id):
+        """Return the immutable in-process execution snapshot, if selected."""
+        return self._bible_snapshots.get((
+            _identifier(workspace_id, "workspace_id"),
+            _identifier(product_id, "product_id"),
+        ))
 
     def run_once(self, workspace_id):
         return self.execution.run_once(_identifier(workspace_id, "workspace_id"))
@@ -221,7 +236,8 @@ class ProductWorkflowService:
 def _pipeline(job, record, status):
     return {
         "status": status, "pipeline": "Product Workflow", "task_type": "PRODUCT",
-        "data": {"product_id": job.mission_id, "product_status": record["status"]},
+        "data": {"product_id": job.mission_id, "product_status": record["status"],
+                 "bible_versions": dict(record.get("bible_versions") or {})},
         "artifacts": [], "error": None if status == "SUCCESS" else "JobError: StageFailure",
     }
 

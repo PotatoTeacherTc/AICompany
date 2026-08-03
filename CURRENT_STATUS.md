@@ -2,7 +2,20 @@
 
 ## Mission
 
-Official current baseline: **Mission 141**.
+Official current baseline: **Mission 142**.
+
+Mission 142 adds an optional versioned AI Company standards foundation. Company
+Constitution, Company Bible, Department Bible, and Employee Bible assets are
+stored through the existing StateRepository and resolved in that order as a
+Workspace-scoped immutable execution snapshot. ACTIVE versions are unique per
+scope, replaced versions are archived, and invalid parent-version references
+are rejected. Product Workflow remains backward compatible when no Bible is
+configured; when one is selected, only its version identifiers can flow into
+Workflow and ExecutionHistory metadata. No production Bible is auto-created.
+
+This is a Contract/Foundation boundary. Research and Meeting execution, actual
+employee LLM calls, QA scoring, automatic rework, scheduled publication, Bible
+editing UI, and Mission 143 or later functionality remain unimplemented.
 
 `@10 — Product Workflow Dashboard` is complete at a bounded Local Product
 Integration boundary. A Workspace user can submit one natural-language order
@@ -968,14 +981,14 @@ not inferred from a missing historical mission log.
   model directory, Docker data, secrets, and Credential Manager records are not
   moved.
 
-The current Backend suite contains **508 tests**. Its expected command is:
+The current Backend suite contains **517 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Current verification result: **508 run, 503 passed, 0 failed, 5 conditional
+Current verification result: **517 run, 512 passed, 0 failed, 5 conditional
 integration skips**. Credential/real Provider tests remain explicit environment-gated;
 Windows Credential Manager coverage passed in the host-permission run.
 

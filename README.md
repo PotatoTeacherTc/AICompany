@@ -1,14 +1,29 @@
 # AICompany
 
-Official baseline: **Mission 141**. Current product status:
+Official baseline: **Mission 142**. Current product status:
 **Local/Fake SaaS Beta + bounded single-host Production Integration**.
-Completion through Mission 141 is limited to each Mission's documented Contract, Foundation,
+Completion through Mission 142 is limited to each Mission's documented Contract, Foundation,
 Fake/Offline, or Local Integration scope; Project APEX is not Production Ready.
-The next numbered Mission is undefined. A separate approved real-use product
-roadmap, `@1` through `@10`, has completed `@1 — Real LLM foundation` and
-`@2 — Music planning employee and Suno creation package` at their
-Mock-verified boundaries; the real credential smoke remains pending and `@3`
-has not started. The `@` stages are not Mission 142 onward.
+Mission 142 is the approved versioned AI Company Foundation. Mission 143 and
+later are undefined and unimplemented. A separate approved real-use product
+roadmap, `@1` through `@10`, is complete at its documented Local Product
+boundary. The `@` stages remain a separate product roadmap.
+
+## Versioned company standards (Mission 142)
+
+Mission 142 provides Workspace-scoped Company Constitution, Company Bible,
+Department Bible, and Employee Bible assets. They resolve in that order into an
+immutable execution snapshot. Assets support DRAFT, ACTIVE, and ARCHIVED
+versions; activating a replacement archives the former ACTIVE version through
+the existing persistence abstraction.
+
+These Bibles are governed, versioned company assets above one-off Prompts.
+Product Workflow integration is optional and backward compatible: when a
+bundle is selected, only its version identifiers are retained in safe metadata,
+not its contents. The Backend supports authenticated minimum create/read/
+activate/bundle operations; there is no editor UI and no production default
+Bible. Research, Meetings, employee LLM execution, QA scoring, automatic
+rework, and Mission 143 or later work are not part of this foundation.
 
 AI 기반 자동화와 콘텐츠 제작 시스템을 연구하는 개인 AI 프로젝트 워크스페이스입니다.
 

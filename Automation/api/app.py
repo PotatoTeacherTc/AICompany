@@ -32,6 +32,7 @@ def create_app(
     admin_service=None,
     onboarding_service=None,
     product_workflow_service=None,
+    bible_service=None,
     health_service=None,
     auth_required=False,
     allowed_origins=(
@@ -235,6 +236,7 @@ def create_app(
     app.state.admin_service = admin_service
     app.state.onboarding_service = onboarding_service
     app.state.product_workflow_service = product_workflow_service
+    app.state.bible_service = bible_service
     if audit_service is None:
         from application.audit_service import AuditService
         audit_service = AuditService()
@@ -1228,6 +1230,101 @@ def create_app(
             from api.errors import error_response
             return error_response(409, "youtube_not_configured", "YouTube client configuration is required")
         return value
+
+    def _bible_error():
+        from api.errors import error_response
+        return error_response(400, "invalid_bible", "Bible request is invalid")
+
+    @app.get("/workspaces/{workspace_id}/bibles/constitution")
+    def get_constitution(workspace_id: str, version: str | None = None, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"})
+        if denied: return denied
+        value = app.state.bible_service.get_constitution(workspace_id, version) if app.state.bible_service else None
+        return value.to_dict() if value else None
+
+    @app.post("/workspaces/{workspace_id}/bibles/constitution", status_code=201)
+    def create_constitution(workspace_id: str, payload: dict, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN"})
+        if denied: return denied
+        try: return app.state.bible_service.create_constitution(workspace_id, payload).to_dict()
+        except (AttributeError, TypeError, ValueError): return _bible_error()
+
+    @app.post("/workspaces/{workspace_id}/bibles/constitution/{version}/activate")
+    def activate_constitution(workspace_id: str, version: str, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN"})
+        if denied: return denied
+        try: return app.state.bible_service.activate_constitution(workspace_id, version).to_dict()
+        except (AttributeError, TypeError, ValueError): return _bible_error()
+
+    @app.get("/workspaces/{workspace_id}/bibles/company")
+    def get_company_bible(workspace_id: str, version: str | None = None, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"})
+        if denied: return denied
+        value = app.state.bible_service.get_company_bible(workspace_id, version) if app.state.bible_service else None
+        return value.to_dict() if value else None
+
+    @app.post("/workspaces/{workspace_id}/bibles/company", status_code=201)
+    def create_company_bible(workspace_id: str, payload: dict, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN"})
+        if denied: return denied
+        try: return app.state.bible_service.create_company_bible(workspace_id, payload).to_dict()
+        except (AttributeError, TypeError, ValueError): return _bible_error()
+
+    @app.post("/workspaces/{workspace_id}/bibles/company/{version}/activate")
+    def activate_company_bible(workspace_id: str, version: str, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN"})
+        if denied: return denied
+        try: return app.state.bible_service.activate_company_bible(workspace_id, version).to_dict()
+        except (AttributeError, TypeError, ValueError): return _bible_error()
+
+    @app.get("/workspaces/{workspace_id}/bibles/departments/{department_type}")
+    def get_department_bible(workspace_id: str, department_type: str, version: str | None = None, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"})
+        if denied: return denied
+        value = app.state.bible_service.get_department_bible(workspace_id, department_type, version) if app.state.bible_service else None
+        return value.to_dict() if value else None
+
+    @app.post("/workspaces/{workspace_id}/bibles/departments/{department_type}", status_code=201)
+    def create_department_bible(workspace_id: str, department_type: str, payload: dict, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN"})
+        if denied: return denied
+        try: return app.state.bible_service.create_department_bible(workspace_id, {**payload, "department_type": department_type.upper()}).to_dict()
+        except (AttributeError, TypeError, ValueError): return _bible_error()
+
+    @app.post("/workspaces/{workspace_id}/bibles/departments/{department_type}/{version}/activate")
+    def activate_department_bible(workspace_id: str, department_type: str, version: str, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN"})
+        if denied: return denied
+        try: return app.state.bible_service.activate_department_bible(workspace_id, department_type.upper(), version).to_dict()
+        except (AttributeError, TypeError, ValueError): return _bible_error()
+
+    @app.get("/workspaces/{workspace_id}/bibles/employees/{department_type}/{role_type}")
+    def get_employee_bible(workspace_id: str, department_type: str, role_type: str, version: str | None = None, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"})
+        if denied: return denied
+        value = app.state.bible_service.get_employee_bible(workspace_id, department_type.upper(), role_type.upper(), version) if app.state.bible_service else None
+        return value.to_dict() if value else None
+
+    @app.post("/workspaces/{workspace_id}/bibles/employees/{department_type}/{role_type}", status_code=201)
+    def create_employee_bible(workspace_id: str, department_type: str, role_type: str, payload: dict, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN"})
+        if denied: return denied
+        try: return app.state.bible_service.create_employee_bible(workspace_id, {**payload, "department_type": department_type.upper(), "role_type": role_type.upper()}).to_dict()
+        except (AttributeError, TypeError, ValueError): return _bible_error()
+
+    @app.post("/workspaces/{workspace_id}/bibles/employees/{department_type}/{role_type}/{version}/activate")
+    def activate_employee_bible(workspace_id: str, department_type: str, role_type: str, version: str, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN"})
+        if denied: return denied
+        try: return app.state.bible_service.activate_employee_bible(workspace_id, department_type.upper(), role_type.upper(), version).to_dict()
+        except (AttributeError, TypeError, ValueError): return _bible_error()
+
+    @app.get("/workspaces/{workspace_id}/bibles/bundle")
+    def get_bible_bundle(workspace_id: str, department_type: str | None = None, role_type: str | None = None, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"})
+        if denied: return denied
+        try: return app.state.bible_service.resolve(workspace_id, department_type.upper() if department_type else None, role_type.upper() if role_type else None).to_dict()
+        except (AttributeError, TypeError, ValueError): return _bible_error()
 
     @app.get("/workspaces/{workspace_id}/jobs")
     def list_jobs(workspace_id: str, status: str | None = None, limit: int = 50, offset: int = 0, authorization: str | None = Header(default=None)):

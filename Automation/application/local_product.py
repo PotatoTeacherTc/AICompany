@@ -35,6 +35,7 @@ from core.workspace_membership_repository import FileWorkspaceMembershipReposito
 from core.workspace_repository import FileWorkspaceRepository
 from core.workspace import Workspace
 from core.youtube_publishing import YouTubeConnectionRepository, YouTubeConnectionService
+from core.company_bible import BibleManager
 from providers.factory import ProviderFactory
 
 
@@ -52,6 +53,7 @@ def create_local_product_app(environment=None):
     queue = PersistentJobQueue(states, workspace_ids=("default", "youtube-smoke"))
     execution = PersistentExecutionService(queue, InProcessJobWorker(queue), history, artifacts, usage)
     connections = YouTubeConnectionService(YouTubeConnectionRepository(states), WindowsLocalSecureTokenStore())
+    bible_manager = BibleManager(states)
     youtube_connector = YouTubeConnectionCoordinator(
         connections, values.get("AICOMPANY_GOOGLE_CLIENT_SECRET_FILE")
     )
@@ -62,7 +64,7 @@ def create_local_product_app(environment=None):
         "comfyui": lambda _w: "CONFIGURED" if values.get("AICOMPANY_IMAGE_PROVIDER") == "comfyui" else "NOT_CONFIGURED",
         "youtube": youtube_connector.status,
         "naver": lambda _w: "CONNECTED" if naver is not None else "NOT_CONFIGURED",
-    }, auto_run=True, youtube_connector=youtube_connector)
+    }, auto_run=True, youtube_connector=youtube_connector, bible_resolver=bible_manager)
 
     local_state = root / "local-product"; local_state.mkdir(parents=True, exist_ok=True)
     users = UserService(FileUserRepository(local_state / "users.json"))
@@ -88,6 +90,7 @@ def create_local_product_app(environment=None):
         persistent_execution_service=execution,
         job_execution_api_service=JobExecutionApiService(execution, history, artifacts, usage),
         product_workflow_service=product, auth_required=True, security_settings=security,
+        bible_service=bible_manager,
         health_service=BackendHealthService(lambda: True, lambda: True, lambda: True),
     ))
 

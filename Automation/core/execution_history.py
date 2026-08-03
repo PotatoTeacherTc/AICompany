@@ -326,6 +326,13 @@ class ExecutionHistory:
                 "usage": data.get("provider_usage"),
                 "artifacts": list(artifacts or []),
                 "error": pipeline_result.get("error"),
+                "bible_versions": {
+                    key: value for key, value in (data.get("bible_versions") or {}).items()
+                    if key in {
+                        "constitution_version", "company_bible_version",
+                        "department_bible_version", "employee_bible_version",
+                    } and isinstance(value, str)
+                },
             },
             "task_type": pipeline_result.get("task_type"),
             "pipeline": pipeline_result.get("pipeline"),
