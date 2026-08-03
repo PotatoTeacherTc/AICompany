@@ -2,7 +2,7 @@
 
 ## Baseline and maturity
 
-The official baseline is Mission 142. Completion through Mission 142 refers to
+The official baseline is Mission 143. Completion through Mission 143 refers to
 each Mission's bounded Contract, Foundation, Fake/Offline, or Local Integration
 scope. The overall product is **Local/Fake SaaS Beta + bounded single-host
 Production Integration**, not Production Ready.
@@ -24,7 +24,8 @@ Metadata/Fake Install Marketplace Foundation. Mission 131 is a bounded
 PostgreSQL Production Integration for the shared StateRepository. Billing
 remains Manual/Fake.
 
-Mission 142 is the explicitly approved AI Company Foundation. No later numbered
+Missions 142 and 143 are the explicitly approved AI Company and Organization
+Foundations. No later numbered
 Mission is defined. The approved `@1`-`@10` roadmap is a
 separate product-completion sequence and is not an implementation claim.
 Enterprise and AICompany v1.0 are unimplemented.
@@ -52,6 +53,37 @@ A Bible is a governed, versioned company asset above an individual Prompt: it
 defines durable standards and traceable references rather than storing request
 text. Mission 142 does not supply real Potato Company doctrine or connect these
 contracts to Research, Meetings, employee LLM execution, QA, or rework.
+
+## Organization execution layer
+
+`core/organization_engine.py` composes the existing DepartmentManager,
+StateRepository, and ProductWorkflowService. It adds Company, Manager,
+Employee, ReportingLine, Assignment, and Runtime records without replacing the
+earlier Worker/Department/Collaboration contracts. Registries and every lookup
+are Workspace-scoped. Test fixtures can construct a complete deterministic
+organization; production composition performs no automatic organization
+creation.
+
+The routing boundary is deliberately layered:
+
+```text
+User -> CEO -> Manager -> Department -> Employee -> Product Workflow
+     -> Pipeline -> Artifact / Usage / ExecutionHistory
+```
+
+The fixed Assignment table is a replaceable policy and makes no Provider or LLM
+call. An Employee represents responsibility, reporting line, and routing
+identity; direct execution there would duplicate timeout, Provider, Pipeline,
+Artifact, Usage, and recovery contracts. Product Workflow therefore remains
+the execution owner. Organization is optional DI, so legacy Workflow callers
+record empty organization metadata and behave unchanged. When selected, only
+assignment/company/manager/department/employee IDs enter persistent execution
+metadata; request and Bible contents do not.
+
+Runtime records use IDLE, ASSIGNED, RUNNING, WAITING, COMPLETED, and FAILED and
+can reconcile an Assignment with its current Product Workflow status. The
+Backend adds authenticated read-only organization, employee, assignment, and
+runtime views. It does not add an organization editor or Dashboard redesign.
 
 ## Real-use E2E reuse boundary
 

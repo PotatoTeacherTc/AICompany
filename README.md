@@ -1,11 +1,11 @@
 # AICompany
 
-Official baseline: **Mission 142**. Current product status:
+Official baseline: **Mission 143**. Current product status:
 **Local/Fake SaaS Beta + bounded single-host Production Integration**.
-Completion through Mission 142 is limited to each Mission's documented Contract, Foundation,
+Completion through Mission 143 is limited to each Mission's documented Contract, Foundation,
 Fake/Offline, or Local Integration scope; Project APEX is not Production Ready.
-Mission 142 is the approved versioned AI Company Foundation. Mission 143 and
-later are undefined and unimplemented. A separate approved real-use product
+Missions 142 and 143 are the approved versioned AI Company and Organization
+Foundations. Mission 144 and later are undefined and unimplemented. A separate approved real-use product
 roadmap, `@1` through `@10`, is complete at its documented Local Product
 boundary. The `@` stages remain a separate product roadmap.
 
@@ -23,7 +23,24 @@ bundle is selected, only its version identifiers are retained in safe metadata,
 not its contents. The Backend supports authenticated minimum create/read/
 activate/bundle operations; there is no editor UI and no production default
 Bible. Research, Meetings, employee LLM execution, QA scoring, automatic
-rework, and Mission 143 or later work are not part of this foundation.
+rework, and employee execution are not part of the Mission 142 foundation.
+
+## Organization execution engine (Mission 143)
+
+The optional Organization Engine provides Workspace-scoped Company, Manager,
+Department, Employee, Reporting Line, Assignment, and Runtime contracts. Fixed
+offline rules route a task through CEO and Manager accountability to one of the
+seven bounded departments and an eligible employee role. Organization state is
+available through authenticated read-only Backend endpoints and survives the
+existing InMemory/JSON persistence boundaries.
+
+Employees do not run Providers or Pipelines directly. They delegate to the
+existing Product Workflow so Artifact, Usage, ExecutionHistory, retry, and
+security behavior stay centralized. Existing Workflow callers require no
+Organization and retain their prior behavior. Persistent execution metadata
+contains only organization IDs. Production does not auto-create employees or a
+Company; AI assignment, employee LLM calls, organization editing UI, character
+UI, and Mission 144 or later work are not implemented.
 
 AI 기반 자동화와 콘텐츠 제작 시스템을 연구하는 개인 AI 프로젝트 워크스페이스입니다.
 

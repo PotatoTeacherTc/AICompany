@@ -8,6 +8,7 @@ from application.plan_service import PlanApplicationService
 from application.job_execution_api_service import JobExecutionApiService
 from application.persistent_execution_service import PersistentExecutionService
 from application.product_workflow_service import ProductWorkflowService
+from application.organization_service import OrganizationService
 from application.product_content_runner import ProductContentRunner
 from core.artifact_manager import ArtifactManager
 from core.artifact_repository import StateArtifactRepository
@@ -15,6 +16,8 @@ from core.object_storage import ArtifactStorageAdapter, StorageFactory
 from application.artifact_service import ArtifactApplicationService
 from core.batch import BatchManager
 from core.company_bible import BibleManager
+from core.department import DepartmentManager, WorkerDirectory
+from core.organization_engine import OrganizationEngine, ORGANIZATION_TASK_TYPES
 from core.execution_history import ExecutionHistory
 from core.infrastructure import (
     InfrastructureConfig,
@@ -105,6 +108,10 @@ def create_production_app(environment=None):
         auto_run=True,
         bible_resolver=bible_manager,
     )
+    worker_directory = WorkerDirectory()
+    department_manager = DepartmentManager(repository, worker_directory, ORGANIZATION_TASK_TYPES)
+    organization_engine = OrganizationEngine(repository, department_manager, product)
+    organization_service = OrganizationService(department_manager, worker_directory, organization_engine)
     job_api = JobExecutionApiService(
         execution, history, artifacts, usage, BatchManager(queue, repository)
     )
@@ -125,6 +132,7 @@ def create_production_app(environment=None):
         persistent_execution_service=execution,
         job_execution_api_service=job_api,
         product_workflow_service=product,
+        organization_service=organization_service,
         bible_service=bible_manager,
         health_service=BackendHealthService(
             persistence_probe=repository.health,

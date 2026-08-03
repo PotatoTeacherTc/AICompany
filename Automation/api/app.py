@@ -1485,6 +1485,44 @@ def create_app(
             return error_response(404, "worker_not_found", "Worker not found")
         return value
 
+    @app.get("/workspaces/{workspace_id}/organization")
+    def get_company_organization(workspace_id: str, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"})
+        if denied: return denied
+        return app.state.organization_service.organization(workspace_id)
+
+    @app.get("/workspaces/{workspace_id}/organization/employees")
+    def list_company_employees(workspace_id: str, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"})
+        if denied: return denied
+        return app.state.organization_service.list_employees(workspace_id)
+
+    @app.get("/workspaces/{workspace_id}/organization/assignments")
+    def list_company_assignments(workspace_id: str, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"})
+        if denied: return denied
+        return app.state.organization_service.list_assignments(workspace_id)
+
+    @app.get("/workspaces/{workspace_id}/organization/assignments/{assignment_id}")
+    def get_company_assignment(workspace_id: str, assignment_id: str, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"})
+        if denied: return denied
+        value = app.state.organization_service.get_assignment(workspace_id, assignment_id)
+        if value is None:
+            from api.errors import error_response
+            return error_response(404, "assignment_not_found", "Assignment not found")
+        return value
+
+    @app.get("/workspaces/{workspace_id}/organization/assignments/{assignment_id}/runtime")
+    def get_company_runtime(workspace_id: str, assignment_id: str, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"})
+        if denied: return denied
+        value = app.state.organization_service.runtime(workspace_id, assignment_id)
+        if value is None:
+            from api.errors import error_response
+            return error_response(404, "runtime_not_found", "Runtime not found")
+        return value
+
     @app.post("/workspaces/{workspace_id}/members", status_code=201)
     def add_member(workspace_id: str, payload: dict, authorization: str | None = Header(default=None)):
         denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN"})

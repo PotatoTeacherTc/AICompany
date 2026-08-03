@@ -333,6 +333,13 @@ class ExecutionHistory:
                         "department_bible_version", "employee_bible_version",
                     } and isinstance(value, str)
                 },
+                "organization_metadata": {
+                    key: value for key, value in (data.get("organization_metadata") or {}).items()
+                    if key in {
+                        "assignment_id", "company_id", "manager_id",
+                        "department_id", "employee_id",
+                    } and isinstance(value, str)
+                },
             },
             "task_type": pipeline_result.get("task_type"),
             "pipeline": pipeline_result.get("pipeline"),

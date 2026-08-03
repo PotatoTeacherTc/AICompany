@@ -1,9 +1,29 @@
 class OrganizationService:
     """Safe DTO boundary over the existing Department and Worker contracts."""
 
-    def __init__(self, department_manager, worker_directory):
+    def __init__(self, department_manager, worker_directory, engine=None):
         self.departments = department_manager
         self.workers = worker_directory
+        self.engine = engine
+
+    def organization(self, workspace_id):
+        return self.engine.snapshot(workspace_id) if self.engine else {
+            "workspace_id": workspace_id, "company": None,
+            "departments": [], "employees": [], "reporting_lines": [],
+        }
+
+    def list_employees(self, workspace_id):
+        return {"items": [value.to_dict() for value in self.engine.list_employees(workspace_id)]} if self.engine else {"items": []}
+
+    def list_assignments(self, workspace_id):
+        return {"items": [value.to_dict() for value in self.engine.list_assignments(workspace_id)]} if self.engine else {"items": []}
+
+    def get_assignment(self, workspace_id, assignment_id):
+        value = self.engine.get_assignment(workspace_id, assignment_id) if self.engine else None
+        return value.to_dict() if value else None
+
+    def runtime(self, workspace_id, assignment_id):
+        return self.engine.runtime(workspace_id, assignment_id) if self.engine else None
 
     def list_departments(self, workspace_id):
         return {"items": [

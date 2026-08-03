@@ -8,9 +8,9 @@ execute, validate, and present the work while recording per-user work,
 artifacts, usage, and costs. The product will ultimately support accounts,
 workspaces, subscriptions, and credit-based billing.
 
-## Current baseline: Mission 142
+## Current baseline: Mission 143
 
-Mission 1-142 completion means completion of each Mission's explicitly bounded
+Mission 1-143 completion means completion of each Mission's explicitly bounded
 Contract, Foundation, Fake/Offline, or Local Integration scope. It does not
 mean that Project APEX as a whole is Production Ready.
 
@@ -60,11 +60,34 @@ cloud deployment, distributed execution, or Production Ready status.
   persisted in Workflow/ExecutionHistory metadata; Bible contents are not.
 - Excluded: production brand doctrine, Research or Meeting execution, employee
   LLM calls, quality scoring, automatic rework, scheduled publishing, Bible
-  editor UI, and Mission 143 or later work.
+  editor UI, and employee execution; those remain outside Mission 142.
 - Verification: contract and resolver tests cover validation, Workspace
   isolation, activation, parent references, missing assets, immutable snapshots,
   restart persistence, failed-write atomicity, Workflow compatibility, safe
   History metadata, and Auth/RBAC API boundaries.
+
+### Mission 143 — Organization Engine (Complete, Contract/Foundation)
+
+- Goal: establish the executable organization path User -> CEO -> Manager ->
+  Department -> Employee -> existing Product Workflow.
+- Scope: Workspace-scoped Company, Manager, Employee, ReportingLine,
+  Assignment, and Runtime contracts; the existing Department registry extended
+  with RESEARCH, MUSIC, DESIGN, VIDEO, MARKETING, QA, and FILE; deterministic
+  task-to-department/employee rules; JSON/InMemory persistence; safe
+  organization identifiers in Workflow/ExecutionHistory; and authenticated
+  read-only organization, employee, assignment, and runtime APIs.
+- Routing: an Employee is an accountable routing identity, not a replacement
+  executor. It delegates to Product Workflow, which continues to own Pipeline,
+  Artifact, Usage, and History behavior. Existing Product Workflow callers can
+  omit Organization and retain their previous behavior.
+- Runtime: IDLE, ASSIGNED, RUNNING, WAITING, COMPLETED, and FAILED are the
+  bounded state vocabulary. Assignment is idempotent and Workspace-scoped.
+- Defaults: deterministic Fake fixtures exist only in tests. Local Product and
+  production composition inject the engine but never invent or activate a
+  production organization.
+- Excluded: AI-based assignment, employee LLM calls, Research/Meeting execution,
+  quality scoring, automatic rework, Dashboard redesign/character UI, and
+  Mission 144 or later work.
 
 The verified implementation currently provides a Task/Queue/Worker execution
 path, keyword-based classification, a registry of FILE, MUSIC, CONTENT,

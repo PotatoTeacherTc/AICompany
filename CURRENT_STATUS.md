@@ -2,7 +2,23 @@
 
 ## Mission
 
-Official current baseline: **Mission 142**.
+Official current baseline: **Mission 143**.
+
+Mission 143 adds an optional Organization Engine above Product Workflow. Its
+Workspace-scoped Company, Manager, Employee, ReportingLine, Assignment, and
+Runtime contracts reuse the existing Department and StateRepository layers.
+Fixed rules select one of RESEARCH, MUSIC, DESIGN, VIDEO, MARKETING, QA, or FILE
+and an eligible CEO/MANAGER/RESEARCHER/PLANNER/CREATOR/REVIEWER/QA role. The
+selected Employee delegates execution to Product Workflow; it does not execute
+Provider or Pipeline work itself. Workflow and ExecutionHistory retain only
+company, manager, department, employee, and assignment identifiers.
+
+Organization is optional DI. Existing Product Workflow callers continue with
+empty organization metadata. Local and production compositions provide the
+engine but do not create an arbitrary production Company, Department, Manager,
+or Employee. Assignment remains deterministic rather than AI-driven. Employee
+LLM calls, Research/Meeting execution, QA scoring, automatic rework, Dashboard
+redesign, character UI, and Mission 144 or later work remain unimplemented.
 
 Mission 142 adds an optional versioned AI Company standards foundation. Company
 Constitution, Company Bible, Department Bible, and Employee Bible assets are
@@ -15,7 +31,7 @@ Workflow and ExecutionHistory metadata. No production Bible is auto-created.
 
 This is a Contract/Foundation boundary. Research and Meeting execution, actual
 employee LLM calls, QA scoring, automatic rework, scheduled publication, Bible
-editing UI, and Mission 143 or later functionality remain unimplemented.
+editing UI and employee execution were not part of Mission 142.
 
 `@10 — Product Workflow Dashboard` is complete at a bounded Local Product
 Integration boundary. A Workspace user can submit one natural-language order
@@ -981,14 +997,14 @@ not inferred from a missing historical mission log.
   model directory, Docker data, secrets, and Credential Manager records are not
   moved.
 
-The current Backend suite contains **517 tests**. Its expected command is:
+The current Backend suite contains **524 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Current verification result: **517 run, 512 passed, 0 failed, 5 conditional
+Current verification result: **524 run, 519 passed, 0 failed, 5 conditional
 integration skips**. Credential/real Provider tests remain explicit environment-gated;
 Windows Credential Manager coverage passed in the host-permission run.
 

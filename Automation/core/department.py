@@ -14,6 +14,12 @@ DEPARTMENT_TYPES = {
     "MEDIA",
     "QUALITY_ASSURANCE",
     "OPERATIONS",
+    "MUSIC",
+    "DESIGN",
+    "VIDEO",
+    "MARKETING",
+    "QA",
+    "FILE",
 }
 DEFAULT_DEPARTMENTS = (
     ("Planning", "PLANNING", ("PLANNING",)),
