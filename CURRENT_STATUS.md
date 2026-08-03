@@ -955,6 +955,12 @@ not inferred from a missing historical mission log.
   guidance, action feedback, and recent stage activity.
 - This is an @10 defect correction, not a new stage. No public YouTube action,
   automatic Naver publish click, or `@11` work was added.
+- The existing Vite Dashboard has a responsive Potato Company home scaffold.
+  Work totals and current-work rows use Product Workflow responses; unavailable
+  cost is labelled `집계 준비 중`. Character, employee, department, Research,
+  Meeting, Bible, and Announcement panels are reusable presentation contracts
+  visibly labelled `준비 중`, with no invented execution data. Character
+  binaries remain absent and a central empty registry controls future assets.
 
 The current Backend suite contains **506 tests**. Its expected command is:
 

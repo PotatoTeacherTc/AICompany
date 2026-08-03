@@ -1295,6 +1295,13 @@ added behind the existing Provider abstraction without changing the workflow.
   Progress never decreases within a Workflow; internal status codes are mapped
   to user guidance, busy feedback, indeterminate running state, and safe recent
   stage activity. This does not extend the @10 boundary or begin `@11`.
+- Presentation scaffold: the Vite/TypeScript UI adds a responsive company home
+  and replaceable CharacterAvatar, EmployeeCard, DepartmentPanel,
+  ActivityCharacter, CEOWelcome, CompanySummaryCards, work-list, and future-
+  feature panel contracts. Only Product Workflow data drives active values.
+  Employees, departments, Research, Meeting, Bible, announcements, and
+  character assets remain explicitly unconnected placeholders, not completed
+  product features. No new Mission or `@11` scope is created.
 
 ### @ stage constitutional verification
 

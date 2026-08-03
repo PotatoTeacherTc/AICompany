@@ -35,3 +35,28 @@ test("API client has timeout and bearer injection", async () => {
   assert.match(source, /ASCII-safe values only/);
   assert.match(source, /\\x20-\\x7e/);
 });
+
+test("company UI scaffold is explicit, replaceable, and non-functional", async () => {
+  const components = await readFile(new URL("../src/components/company.tsx", import.meta.url), "utf8");
+  const home = await readFile(new URL("../src/components/HomePage.tsx", import.meta.url), "utf8");
+  const registry = await readFile(new URL("../src/characterAssets.ts", import.meta.url), "utf8");
+  const styles = await readFile(new URL("../src/company.css", import.meta.url), "utf8");
+  assert.match(components, /function CharacterAvatar/);
+  assert.match(components, /이미지 준비 중/);
+  assert.match(components, /function EmployeeCard/);
+  assert.match(components, /displayStatus="준비 중"/);
+  assert.match(components, /function DepartmentPanel/);
+  assert.match(components, /function ActivityCharacter/);
+  assert.match(components, /function CEOWelcome/);
+  assert.match(components, /function CompanySummaryCards/);
+  assert.match(components, /CurrentWorkList/);
+  assert.match(components, /RecentWorkList/);
+  assert.match(components, /FutureFeaturePanel/);
+  assert.match(home, /Research.*Meeting.*Bible.*Announcement/s);
+  assert.match(home, /연결되지 않았습니다/);
+  assert.equal(registry.includes("/characters/"), false);
+  assert.match(registry, /lim-potato.*general-potato.*code-potato/s);
+  assert.match(styles, /@media\(max-width:900px\)/);
+  assert.match(styles, /@media\(max-width:520px\)/);
+  assert.match(styles, /object-fit:cover/);
+});

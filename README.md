@@ -992,6 +992,15 @@ feedback, running work uses an indeterminate indicator, and displayed progress
 is monotonic for one Workflow. Recent safe stage events provide activity without
 prompt text, provider errors, secrets, or internal paths.
 
+The Dashboard home also provides a bounded Potato Company presentation scaffold
+inside the existing Vite/TypeScript application. CEO welcome, actual Job
+summary/current-work cards, an activity placeholder, and reusable character,
+employee, department, and future-feature components reserve stable layout
+slots. Employee, department, Research, Meeting, Bible, and Announcement
+integrations are explicitly labelled **준비 중** and execute nothing. No
+character binary is tracked; future approved assets are enabled centrally via
+`characterAssets.ts` and the documented `Web/public/characters/` slots.
+
 Localized audio filenames are encoded in the upload query, not copied into an
 HTTP header. The shared browser client rejects non-ASCII header values, so
 Workspace names, Artifact filenames, and user-entered text remain display/body
