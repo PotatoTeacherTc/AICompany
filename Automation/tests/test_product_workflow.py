@@ -2,12 +2,14 @@ import unittest
 import shutil
 import tempfile
 import wave
+import time
 from pathlib import Path
 
 from fastapi.testclient import TestClient
 
 from api.app import create_app
 from application.product_workflow_service import ProductWorkflowService, PRODUCT_STAGES
+from application.youtube_connection_coordinator import YouTubeConnectionCoordinator
 from application.persistent_execution_service import PersistentExecutionService
 from core.artifact_manager import ArtifactManager
 from core.execution_history import ExecutionHistory
@@ -97,6 +99,73 @@ class ProductWorkflowTests(unittest.TestCase):
         self.assertEqual(client.get(f"/workspaces/workspace-a/product-jobs/{product_id}").json()["status"], "COMPLETED")
         self.assertEqual(client.get("/workspaces/workspace-a/product-jobs").json()["items"][0]["workspace_id"], "workspace-a")
         self.assertEqual(client.get("/workspaces/workspace-a/connections").status_code, 200)
+
+    def test_youtube_connection_is_explicit_and_workspace_scoped(self):
+        class Connector:
+            def __init__(self): self.connected = set()
+            def status(self, workspace):
+                return {"status": "CONNECTED" if workspace in self.connected else "NOT_CONFIGURED"}
+            def start(self, workspace):
+                self.connected.add(workspace)
+                return {"component": "youtube", "workspace_id": workspace,
+                        "status": "CONNECTED", "channel_title": "Safe Channel"}
+        connector = Connector()
+        service = ProductWorkflowService(
+            self.repository, self.service.execution, lambda *_: {"status":"COMPLETED"},
+            {"youtube": connector.status}, youtube_connector=connector,
+        )
+        client = TestClient(create_app(product_workflow_service=service))
+        self.assertEqual(service.connections("workspace-a")["items"][1]["status"], "NOT_CONFIGURED")
+        response = client.post("/workspaces/workspace-a/connections/youtube")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["workspace_id"], "workspace-a")
+        self.assertEqual(service.connections("workspace-a")["items"][1]["status"], "CONNECTED")
+        self.assertEqual(service.connections("workspace-b")["items"][1]["status"], "NOT_CONFIGURED")
+
+    def test_real_coordinator_keeps_tokens_out_and_recovers_connection_status(self):
+        class Flow:
+            def authorize(self, config, workspace, timeout_seconds=0):
+                self.args = (config["installed"]["client_id"], workspace, timeout_seconds)
+                return ({"access_token":"hidden-access","refresh_token":"hidden-refresh",
+                         "expires_at":"2099-01-01T00:00:00+00:00","token_type":"Bearer",
+                         "granted_scopes":YOUTUBE_SCOPES},
+                        {"channel_id":"channel-a","safe_channel_title":"Safe Channel"})
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "client.json"
+            path.write_text('{"installed":{"client_id":"safe-id"}}', encoding="utf-8")
+            repository = InMemoryStateRepository(); tokens = FakeSecureTokenStore()
+            connections = YouTubeConnectionService(YouTubeConnectionRepository(repository), tokens)
+            coordinator = YouTubeConnectionCoordinator(connections, path, Flow())
+            self.assertEqual(coordinator.start("workspace-a")["status"], "AUTHORIZATION_PENDING")
+            for _ in range(100):
+                status = coordinator.status("workspace-a")
+                if status["status"] == "CONNECTED": break
+                time.sleep(.01)
+            self.assertEqual(status["status"], "CONNECTED")
+            self.assertEqual(status["channel_title"], "Safe Channel")
+            self.assertNotIn("hidden", str(status))
+            self.assertEqual(coordinator.status("workspace-b")["status"], "NOT_CONFIGURED")
+
+    def test_connection_checkpoint_resume_never_reduces_progress(self):
+        class Runner:
+            connected = False
+            def __call__(self, stage, *_):
+                if stage == "YOUTUBE" and not self.connected:
+                    return {"status":"CONNECTION_REQUIRED"}
+                return {"status":"COMPLETED"}
+        runner = Runner(); repository = InMemoryStateRepository(); queue = PersistentJobQueue(repository)
+        execution = PersistentExecutionService(queue, InProcessJobWorker(queue), ExecutionHistory(state_repository=repository), ArtifactManager(), UsageEngine(repository))
+        service = ProductWorkflowService(repository, execution, runner)
+        item = service.submit("workspace-a", "request", "connection-progress")
+        service.run_once("workspace-a")
+        waiting = service.get("workspace-a", item["product_id"])
+        self.assertEqual(waiting["status"], "CONNECTION_REQUIRED")
+        self.assertEqual(waiting["progress"], 85)
+        service.resume("workspace-a", item["product_id"]); service.run_once("workspace-a")
+        self.assertEqual(service.get("workspace-a", item["product_id"])["progress"], 85)
+        runner.connected = True
+        service.resume("workspace-a", item["product_id"]); service.run_once("workspace-a")
+        self.assertEqual(service.get("workspace-a", item["product_id"])["progress"], 100)
 
     @unittest.skipUnless(shutil.which("ffmpeg") and shutil.which("ffprobe"), "FFmpeg local integration required")
     def test_existing_orchestrators_complete_fake_product_e2e(self):

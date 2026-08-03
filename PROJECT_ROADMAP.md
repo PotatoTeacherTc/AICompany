@@ -1287,6 +1287,14 @@ added behind the existing Provider abstraction without changing the workflow.
   suite, Frontend tests/build, and one opt-in real Local E2E passed. This remains
   single-host Local Product Integration, not Production Ready. No `@11` stage
   is defined or implemented.
+- Usability correction: the Dashboard uses company-facing Workspace labels,
+  persists only the last authorized company ID with safe fallback, and reloads
+  Work/Results/Connections on company change. Selected-company YouTube OAuth is
+  explicitly initiated from Connections or its Workflow checkpoint, uses the
+  existing Credential Manager boundary, and requires CONNECTED before resume.
+  Progress never decreases within a Workflow; internal status codes are mapped
+  to user guidance, busy feedback, indeterminate running state, and safe recent
+  stage activity. This does not extend the @10 boundary or begin `@11`.
 
 ### @ stage constitutional verification
 

@@ -1216,6 +1216,19 @@ def create_app(
             return error_response(503, "product_unavailable", "Product workflow is unavailable")
         return app.state.product_workflow_service.connections(workspace_id)
 
+    @app.post("/workspaces/{workspace_id}/connections/youtube")
+    def connect_product_youtube(workspace_id: str, authorization: str | None = Header(default=None)):
+        denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN"})
+        if denied: return denied
+        if app.state.product_workflow_service is None:
+            from api.errors import error_response
+            return error_response(503, "product_unavailable", "Product workflow is unavailable")
+        value = app.state.product_workflow_service.connect_youtube(workspace_id)
+        if value.get("status") == "NOT_CONFIGURED":
+            from api.errors import error_response
+            return error_response(409, "youtube_not_configured", "YouTube client configuration is required")
+        return value
+
     @app.get("/workspaces/{workspace_id}/jobs")
     def list_jobs(workspace_id: str, status: str | None = None, limit: int = 50, offset: int = 0, authorization: str | None = Header(default=None)):
         denied = _authorize_workspace(app, workspace_id, authorization, {"OWNER", "ADMIN", "MEMBER"})

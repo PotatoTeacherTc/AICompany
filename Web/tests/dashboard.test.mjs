@@ -3,15 +3,16 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 test("dashboard source keeps credentials out of persistent browser storage", async () => {
   const source = await readFile(new URL("../src/main.tsx", import.meta.url), "utf8");
-  assert.equal(source.includes("localStorage"), false);
+  assert.match(source, /aicompany\.last-company-id/);
+  assert.equal(/localStorage\.setItem\([^,]+,\s*(token|password)/.test(source), false);
   assert.equal(source.includes("sessionStorage"), false);
-  assert.match(source, /Workspace/);
-  assert.match(source, /ONE REQUEST/);
+  assert.match(source, /현재 회사/);
+  assert.match(source, /회사 선택/);
   assert.match(source, /product-jobs/);
   assert.match(source, /PLANNING.*MUSIC.*IMAGE.*BLOG.*VIDEO.*YOUTUBE.*NAVER/);
   assert.match(source, /USER_CONFIRM_REQUIRED/);
   assert.match(source, /\/connections/);
-  assert.match(source, /Completed audio/);
+  assert.match(source, /완성 음원/);
   assert.match(source, /\/audio/);
   assert.match(source, /\/resume/);
   assert.match(source, /\/retry/);
@@ -19,6 +20,13 @@ test("dashboard source keeps credentials out of persistent browser storage", asy
   assert.equal(source.includes("internal_ref"), false);
   assert.equal(source.includes("X-Filename"), false);
   assert.match(source, /encodeURIComponent\(file\.name\)/);
+  assert.match(source, /YouTube 연결하기/);
+  assert.match(source, /작업 계속하기/);
+  assert.match(source, /CONNECTION_REQUIRED.*계정 연결 필요/);
+  assert.match(source, /Math\.max/);
+  assert.match(source, /indeterminate/);
+  assert.match(source, /disabled=\{/);
+  assert.match(source, /최근 활동/);
 });
 test("API client has timeout and bearer injection", async () => {
   const source = await readFile(new URL("../src/api.ts", import.meta.url), "utf8");

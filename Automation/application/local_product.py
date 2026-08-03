@@ -12,6 +12,7 @@ from application.login_service import LoginService
 from application.persistent_execution_service import PersistentExecutionService
 from application.product_content_runner import ProductContentRunner
 from application.product_workflow_service import ProductWorkflowService
+from application.youtube_connection_coordinator import YouTubeConnectionCoordinator
 from application.session_service import SessionService
 from application.user_service import UserService
 from application.workspace_membership_service import WorkspaceMembershipService
@@ -49,14 +50,17 @@ def create_local_product_app(environment=None):
     queue = PersistentJobQueue(states, workspace_ids=("default", "youtube-smoke"))
     execution = PersistentExecutionService(queue, InProcessJobWorker(queue), history, artifacts, usage)
     connections = YouTubeConnectionService(YouTubeConnectionRepository(states), WindowsLocalSecureTokenStore())
+    youtube_connector = YouTubeConnectionCoordinator(
+        connections, values.get("AICOMPANY_GOOGLE_CLIENT_SECRET_FILE")
+    )
     try: naver = ProviderFactory.naver_blog_from_environment(values).provider
     except Exception: naver = None
     runner = ProductContentRunner(root, states, artifacts, history, usage, values, connections, None, naver)
     product = ProductWorkflowService(states, execution, runner, {
         "comfyui": lambda _w: "CONFIGURED" if values.get("AICOMPANY_IMAGE_PROVIDER") == "comfyui" else "NOT_CONFIGURED",
-        "youtube": lambda w: "CONNECTED" if connections.repository.list(w) else "NOT_CONFIGURED",
+        "youtube": youtube_connector.status,
         "naver": lambda _w: "CONNECTED" if naver is not None else "NOT_CONFIGURED",
-    }, auto_run=True)
+    }, auto_run=True, youtube_connector=youtube_connector)
 
     local_state = root / "local-product"; local_state.mkdir(parents=True, exist_ok=True)
     users = UserService(FileUserRepository(local_state / "users.json"))

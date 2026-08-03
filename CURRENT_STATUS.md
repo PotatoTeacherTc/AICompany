@@ -939,15 +939,32 @@ not inferred from a missing historical mission log.
 
 ## Test status
 
-The current Backend suite contains **503 tests**. Its expected command is:
+### @10 Local Product usability correction
+
+- The Dashboard now presents Workspace scope as a company and pins the selected
+  company across Work, Results, and Connections. The last accessible company ID
+  is restored locally with an authorization-safe fallback.
+- YouTube connection can be initiated explicitly for the selected company via
+  the existing loopback OAuth and Windows Credential Manager boundary. Another
+  company's connection is never treated as the current company's connection.
+- A YouTube checkpoint no longer exposes a misleading generic Continue action.
+  It shows the required action/company, then enables Workflow continuation only
+  after connection succeeds.
+- Backend and UI progress are monotonic; running work is indeterminate between
+  real events. Internal status codes are mapped to Korean labels with safe
+  guidance, action feedback, and recent stage activity.
+- This is an @10 defect correction, not a new stage. No public YouTube action,
+  automatic Naver publish click, or `@11` work was added.
+
+The current Backend suite contains **506 tests**. Its expected command is:
 
 ```powershell
 cd Automation
 python -m unittest discover -s tests -v
 ```
 
-Current verification result: **503 passed, 0 failed, 5 conditional integration
-skips**. Credential/real Provider tests remain explicit environment-gated;
+Current verification result: **506 run, 501 passed, 0 failed, 5 conditional
+integration skips**. Credential/real Provider tests remain explicit environment-gated;
 Windows Credential Manager coverage passed in the host-permission run.
 
 ## Not implemented

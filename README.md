@@ -976,6 +976,22 @@ assistant. It stops for missing YouTube connection and for the user's final
 Naver publish click, supports failed-stage retry, and shows safe results and
 Artifact content without internal paths.
 
+The Local Product UI calls a Workspace a **company** while preserving every
+ID-based Backend contract. The selected company is pinned in the navigation;
+Work, Results, and Connections state their company scope and reload immediately
+after a switch. Only the last accessible company ID is kept in browser local
+storage, with fallback to the first authorized company if it is no longer
+available. Credentials are never stored there.
+
+The Connections screen can explicitly start the existing loopback Google OAuth
+flow for the selected company. Tokens remain only in Windows Credential Manager.
+A Workflow stopped at YouTube offers connection—not a generic Continue—and can
+resume only after that same company reports CONNECTED. Internal statuses are
+shown as Korean user-facing labels, action buttons show bounded busy/result
+feedback, running work uses an indeterminate indicator, and displayed progress
+is monotonic for one Workflow. Recent safe stage events provide activity without
+prompt text, provider errors, secrets, or internal paths.
+
 Localized audio filenames are encoded in the upload query, not copied into an
 HTTP header. The shared browser client rejects non-ASCII header values, so
 Workspace names, Artifact filenames, and user-entered text remain display/body

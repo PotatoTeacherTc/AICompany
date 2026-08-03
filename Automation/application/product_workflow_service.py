@@ -18,12 +18,13 @@ class ProductWorkflowService:
     written to StateRepository, logs, history, or an external response.
     """
 
-    def __init__(self, repository, execution_service, stage_runner, connection_probes=None, auto_run=False):
+    def __init__(self, repository, execution_service, stage_runner, connection_probes=None, auto_run=False, youtube_connector=None):
         self.repository = repository
         self.execution = execution_service
         self.stage_runner = stage_runner
         self.connection_probes = dict(connection_probes or {})
         self.auto_run = bool(auto_run)
+        self.youtube_connector = youtube_connector
         self._requests = {}
         self.execution.register_target("product-workflow", self._run_job)
 
@@ -140,11 +141,21 @@ class ProductWorkflowService:
             if probe is not None:
                 try:
                     value = probe(workspace_id)
+                    if isinstance(value, dict):
+                        items.append(sanitize_for_read({"component": name, **value}))
+                        continue
                     status = "CONNECTED" if value is True else str(value).upper()
                 except Exception:
                     status = "UNAVAILABLE"
             items.append({"component": name, "status": status})
         return {"workspace_id": workspace_id, "items": items}
+
+    def connect_youtube(self, workspace_id):
+        workspace_id = _identifier(workspace_id, "workspace_id")
+        if self.youtube_connector is None:
+            return {"component": "youtube", "workspace_id": workspace_id,
+                    "status": "NOT_CONFIGURED", "safe_error": "CLIENT_CONFIGURATION_REQUIRED"}
+        return sanitize_for_read(self.youtube_connector.start(workspace_id))
 
     def _run_job(self, job):
         record = self.repository.get(PRODUCT_WORKFLOW_KIND, job.mission_id, job.workspace_id)
@@ -157,7 +168,10 @@ class ProductWorkflowService:
         for index, stage in enumerate(PRODUCT_STAGES[start:], start=start):
             record["current_stage"] = stage
             record["stages"][stage] = {"status": "RUNNING", "started_at": _now()}
-            record["progress"] = int(index * 100 / len(PRODUCT_STAGES))
+            record["progress"] = max(
+                int(record.get("progress") or 0),
+                int(index * 100 / len(PRODUCT_STAGES)),
+            )
             record["updated_at"] = _now()
             self.repository.save(PRODUCT_WORKFLOW_KIND, job.mission_id, job.workspace_id, record)
             try:
@@ -181,7 +195,10 @@ class ProductWorkflowService:
             record["updated_at"] = _now()
             if status in {"WAITING_FOR_INPUT", "CONNECTION_REQUIRED", "USER_ACTION_REQUIRED", "USER_CONFIRM_REQUIRED"}:
                 record["status"] = status
-                record["progress"] = int((index + 1) * 100 / len(PRODUCT_STAGES))
+                record["progress"] = max(
+                    int(record.get("progress") or 0),
+                    int((index + 1) * 100 / len(PRODUCT_STAGES)),
+                )
                 self.repository.save(PRODUCT_WORKFLOW_KIND, job.mission_id, job.workspace_id, record)
                 return _pipeline(job, record, "SUCCESS")
             if status not in {"COMPLETED", "SUCCESS", "PUBLISHED"}:
